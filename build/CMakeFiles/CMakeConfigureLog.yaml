@@ -1,0 +1,1043 @@
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineSystem.cmake:200 (message)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      The target system is: Linux -  - arm
+      The host system is: Linux - 5.15.167.4-microsoft-standard-WSL2 - x86_64
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" succeeded.
+      Compiler: /home/megshark/3588_work/rk3588_toolchain/bin/aarch64-linux-gcc 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      
+      
+      Compilation of the C compiler identification source "CMakeCCompilerId.c" produced "a.out"
+      
+      The C compiler identification is GNU, found in:
+        /home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704/build/CMakeFiles/3.31.6/CompilerIdC/a.out
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" succeeded.
+      Compiler: /home/megshark/3588_work/rk3588_toolchain/bin/aarch64-linux-g++ 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      0
+      
+      
+      Compilation of the CXX compiler identification source "CMakeCXXCompilerId.cpp" produced "a.out"
+      
+      The CXX compiler identification is GNU, found in:
+        /home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704/build/CMakeFiles/3.31.6/CompilerIdCXX/a.out
+      
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
+      - "/usr/share/cmake-3.31/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:15 (project)"
+    checks:
+      - "Detecting C compiler ABI info"
+    directories:
+      source: "/home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704/build/CMakeFiles/CMakeScratch/TryCompile-xmqmGp"
+      binary: "/home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704/build/CMakeFiles/CMakeScratch/TryCompile-xmqmGp"
+    cmakeVariables:
+      CMAKE_C_FLAGS: ""
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "CMAKE_C_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704/build/CMakeFiles/CMakeScratch/TryCompile-xmqmGp'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_d6256/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_d6256.dir/build.make CMakeFiles/cmTC_d6256.dir/build
+        gmake[1]: Entering directory '/home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704/build/CMakeFiles/CMakeScratch/TryCompile-xmqmGp'
+        Building C object CMakeFiles/cmTC_d6256.dir/CMakeCCompilerABI.c.o
+        /home/megshark/3588_work/rk3588_toolchain/bin/aarch64-linux-gcc   -v -o CMakeFiles/cmTC_d6256.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake-3.31/Modules/CMakeCCompilerABI.c
+        Using built-in specs.
+        COLLECT_GCC=/home/megshark/3588_work/rk3588_toolchain/bin/aarch64-linux-gcc.br_real
+        Target: aarch64-buildroot-linux-gnu
+        Configured with: ./configure --prefix=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --sysconfdir=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/etc --enable-static --target=aarch64-buildroot-linux-gnu --with-sysroot=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/aarch64-buildroot-linux-gnu/sysroot --enable-__cxa_atexit --with-gnu-ld --disable-libssp --disable-multilib --disable-decimal-float --enable-plugins --enable-lto --with-gmp=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-mpc=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-mpfr=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-pkgversion='Buildroot -g707f65bed4-dirty' --with-bugurl=http://bugs.buildroot.net/ --without-zstd --disable-libquadmath --disable-libquadmath-support --enable-tls --enable-threads --without-isl --without-cloog --with-abi=lp64 --with-cpu=cortex-a76.cortex-a55 --enable-languages=c,c++ --with-build-time-tools=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/aarch64-buildroot-linux-gnu/bin --enable-shared --enable-libgomp
+        Thread model: posix
+        Supported LTO compression algorithms: zlib
+        gcc version 11.3.0 (Buildroot -g707f65bed4-dirty) 
+        COLLECT_GCC_OPTIONS='-fstack-protector-strong' '-fPIE' '-pie' '-v' '-o' 'CMakeFiles/cmTC_d6256.dir/CMakeCCompilerABI.c.o' '-c' '-mcpu=cortex-a76.cortex-a55' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_d6256.dir/'
+         /home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/cc1 -quiet -v -iprefix /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/ -isysroot /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot /usr/share/cmake-3.31/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_d6256.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mcpu=cortex-a76.cortex-a55 -mlittle-endian -mabi=lp64 -version -fstack-protector-strong -fPIE -o /tmp/ccZbibaS.s
+        GNU C17 (Buildroot -g707f65bed4-dirty) version 11.3.0 (aarch64-buildroot-linux-gnu)
+        	compiled by GNU C version 10.3.0, GMP version 6.2.1, MPFR version 4.1.0, MPC version 1.2.1, isl version none
+        warning: GMP header version 6.2.1 differs from library version 6.3.0.
+        warning: MPFR header version 4.1.0 differs from library version 4.2.2.
+        warning: MPC header version 1.2.1 differs from library version 1.3.1.
+        GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
+        ignoring duplicate directory "/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/../../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include"
+        ignoring nonexistent directory "/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/local/include"
+        ignoring duplicate directory "/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/../../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include-fixed"
+        ignoring duplicate directory "/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/../../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include
+         /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include-fixed
+         /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include
+         /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include
+        End of search list.
+        GNU C17 (Buildroot -g707f65bed4-dirty) version 11.3.0 (aarch64-buildroot-linux-gnu)
+        	compiled by GNU C version 10.3.0, GMP version 6.2.1, MPFR version 4.1.0, MPC version 1.2.1, isl version none
+        warning: GMP header version 6.2.1 differs from library version 6.3.0.
+        warning: MPFR header version 4.1.0 differs from library version 4.2.2.
+        warning: MPC header version 1.2.1 differs from library version 1.3.1.
+        GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
+        Compiler executable checksum: c29b76c3c4fc003f031a5baef9c0190b
+        COLLECT_GCC_OPTIONS='-fstack-protector-strong' '-fPIE' '-pie' '-v' '-o' 'CMakeFiles/cmTC_d6256.dir/CMakeCCompilerABI.c.o' '-c' '-mcpu=cortex-a76.cortex-a55' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_d6256.dir/'
+         /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/bin/as -v -EL -march=armv8.2-a+fp16+rcpc+dotprod -mabi=lp64 -o CMakeFiles/cmTC_d6256.dir/CMakeCCompilerABI.c.o /tmp/ccZbibaS.s
+        GNU assembler version 2.37 (aarch64-buildroot-linux-gnu) using BFD version (GNU Binutils) 2.37
+        COMPILER_PATH=/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/:/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/bin/
+        LIBRARY_PATH=/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/
+        COLLECT_GCC_OPTIONS='-fstack-protector-strong' '-fPIE' '-pie' '-v' '-o' 'CMakeFiles/cmTC_d6256.dir/CMakeCCompilerABI.c.o' '-c' '-mcpu=cortex-a76.cortex-a55' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_d6256.dir/CMakeCCompilerABI.c.'
+        Linking C executable cmTC_d6256
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_d6256.dir/link.txt --verbose=1
+        Using built-in specs.
+        COLLECT_GCC=/home/megshark/3588_work/rk3588_toolchain/bin/aarch64-linux-gcc.br_real
+        COLLECT_LTO_WRAPPER=/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/lto-wrapper
+        Target: aarch64-buildroot-linux-gnu
+        Configured with: ./configure --prefix=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --sysconfdir=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/etc --enable-static --target=aarch64-buildroot-linux-gnu --with-sysroot=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/aarch64-buildroot-linux-gnu/sysroot --enable-__cxa_atexit --with-gnu-ld --disable-libssp --disable-multilib --disable-decimal-float --enable-plugins --enable-lto --with-gmp=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-mpc=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-mpfr=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-pkgversion='Buildroot -g707f65bed4-dirty' --with-bugurl=http://bugs.buildroot.net/ --without-zstd --disable-libquadmath --disable-libquadmath-support --enable-tls --enable-threads --without-isl --without-cloog --with-abi=lp64 --with-cpu=cortex-a76.cortex-a55 --enable-languages=c,c++ --with-build-time-tools=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/aarch64-buildroot-linux-gnu/bin --enable-shared --enable-libgomp
+        Thread model: posix
+        Supported LTO compression algorithms: zlib
+        gcc version 11.3.0 (Buildroot -g707f65bed4-dirty) 
+        COMPILER_PATH=/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/:/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/bin/
+        LIBRARY_PATH=/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/
+        COLLECT_GCC_OPTIONS='-fstack-protector-strong' '-fPIE' '-pie' '-v' '-o' 'cmTC_d6256' '-mcpu=cortex-a76.cortex-a55' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'cmTC_d6256.'
+         /home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/collect2 -plugin /home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/liblto_plugin.so -plugin-opt=/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/lto-wrapper -plugin-opt=-fresolution=/tmp/ccVC6C8e.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --sysroot=/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot --eh-frame-hdr -dynamic-linker /lib/ld-linux-aarch64.so.1 -X -EL -maarch64linux -pie -o cmTC_d6256 /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/Scrt1.o /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crti.o /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtbeginS.o -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0 -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib -z now -z relro -v CMakeFiles/cmTC_d6256.dir/CMakeCCompilerABI.c.o -lgcc --push-state --as-needed -lgcc_s --pop-state -lc -lgcc --push-state --as-needed -lgcc_s --pop-state /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtendS.o /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crtn.o
+        collect2 version 11.3.0
+        /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/bin/ld -plugin /home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/liblto_plugin.so -plugin-opt=/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/lto-wrapper -plugin-opt=-fresolution=/tmp/ccVC6C8e.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --sysroot=/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot --eh-frame-hdr -dynamic-linker /lib/ld-linux-aarch64.so.1 -X -EL -maarch64linux -pie -o cmTC_d6256 /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/Scrt1.o /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crti.o /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtbeginS.o -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0 -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib -z now -z relro -v CMakeFiles/cmTC_d6256.dir/CMakeCCompilerABI.c.o -lgcc --push-state --as-needed -lgcc_s --pop-state -lc -lgcc --push-state --as-needed -lgcc_s --pop-state /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtendS.o /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crtn.o
+        GNU ld (GNU Binutils) 2.37
+        COLLECT_GCC_OPTIONS='-fstack-protector-strong' '-fPIE' '-pie' '-v' '-o' 'cmTC_d6256' '-mcpu=cortex-a76.cortex-a55' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'cmTC_d6256.'
+        /home/megshark/3588_work/rk3588_toolchain/bin/aarch64-linux-gcc  -v -Wl,-v CMakeFiles/cmTC_d6256.dir/CMakeCCompilerABI.c.o -o cmTC_d6256
+        gmake[1]: Leaving directory '/home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704/build/CMakeFiles/CMakeScratch/TryCompile-xmqmGp'
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:182 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Parsed C implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include]
+          add: [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include-fixed]
+          add: [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include]
+          add: [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include]
+        end of search list found
+        collapse include dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include] ==> [/home/megshark/3588_work/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include]
+        collapse include dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include-fixed] ==> [/home/megshark/3588_work/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include-fixed]
+        collapse include dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/include]
+        collapse include dir [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include]
+        implicit include dirs: [/home/megshark/3588_work/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include;/home/megshark/3588_work/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include-fixed;/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/include;/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Parsed C implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
+        ignore line: [Change Dir: '/home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704/build/CMakeFiles/CMakeScratch/TryCompile-xmqmGp']
+        ignore line: []
+        ignore line: [Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_d6256/fast]
+        ignore line: [/usr/bin/gmake  -f CMakeFiles/cmTC_d6256.dir/build.make CMakeFiles/cmTC_d6256.dir/build]
+        ignore line: [gmake[1]: Entering directory '/home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704/build/CMakeFiles/CMakeScratch/TryCompile-xmqmGp']
+        ignore line: [Building C object CMakeFiles/cmTC_d6256.dir/CMakeCCompilerABI.c.o]
+        ignore line: [/home/megshark/3588_work/rk3588_toolchain/bin/aarch64-linux-gcc   -v -o CMakeFiles/cmTC_d6256.dir/CMakeCCompilerABI.c.o -c /usr/share/cmake-3.31/Modules/CMakeCCompilerABI.c]
+        ignore line: [Using built-in specs.]
+        ignore line: [COLLECT_GCC=/home/megshark/3588_work/rk3588_toolchain/bin/aarch64-linux-gcc.br_real]
+        ignore line: [Target: aarch64-buildroot-linux-gnu]
+        ignore line: [Configured with: ./configure --prefix=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --sysconfdir=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/etc --enable-static --target=aarch64-buildroot-linux-gnu --with-sysroot=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/aarch64-buildroot-linux-gnu/sysroot --enable-__cxa_atexit --with-gnu-ld --disable-libssp --disable-multilib --disable-decimal-float --enable-plugins --enable-lto --with-gmp=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-mpc=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-mpfr=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-pkgversion='Buildroot -g707f65bed4-dirty' --with-bugurl=http://bugs.buildroot.net/ --without-zstd --disable-libquadmath --disable-libquadmath-support --enable-tls --enable-threads --without-isl --without-cloog --with-abi=lp64 --with-cpu=cortex-a76.cortex-a55 --enable-languages=c,c++ --with-build-time-tools=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/aarch64-buildroot-linux-gnu/bin --enable-shared --enable-libgomp]
+        ignore line: [Thread model: posix]
+        ignore line: [Supported LTO compression algorithms: zlib]
+        ignore line: [gcc version 11.3.0 (Buildroot -g707f65bed4-dirty) ]
+        ignore line: [COLLECT_GCC_OPTIONS='-fstack-protector-strong' '-fPIE' '-pie' '-v' '-o' 'CMakeFiles/cmTC_d6256.dir/CMakeCCompilerABI.c.o' '-c' '-mcpu=cortex-a76.cortex-a55' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_d6256.dir/']
+        ignore line: [ /home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/cc1 -quiet -v -iprefix /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/ -isysroot /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot /usr/share/cmake-3.31/Modules/CMakeCCompilerABI.c -quiet -dumpdir CMakeFiles/cmTC_d6256.dir/ -dumpbase CMakeCCompilerABI.c.c -dumpbase-ext .c -mcpu=cortex-a76.cortex-a55 -mlittle-endian -mabi=lp64 -version -fstack-protector-strong -fPIE -o /tmp/ccZbibaS.s]
+        ignore line: [GNU C17 (Buildroot -g707f65bed4-dirty) version 11.3.0 (aarch64-buildroot-linux-gnu)]
+        ignore line: [	compiled by GNU C version 10.3.0  GMP version 6.2.1  MPFR version 4.1.0  MPC version 1.2.1  isl version none]
+        ignore line: [warning: GMP header version 6.2.1 differs from library version 6.3.0.]
+        ignore line: [warning: MPFR header version 4.1.0 differs from library version 4.2.2.]
+        ignore line: [warning: MPC header version 1.2.1 differs from library version 1.3.1.]
+        ignore line: [GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072]
+        ignore line: [ignoring duplicate directory "/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/../../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include"]
+        ignore line: [ignoring nonexistent directory "/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/local/include"]
+        ignore line: [ignoring duplicate directory "/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/../../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include-fixed"]
+        ignore line: [ignoring duplicate directory "/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/../../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include]
+        ignore line: [ /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include-fixed]
+        ignore line: [ /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include]
+        ignore line: [ /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include]
+        ignore line: [End of search list.]
+        ignore line: [GNU C17 (Buildroot -g707f65bed4-dirty) version 11.3.0 (aarch64-buildroot-linux-gnu)]
+        ignore line: [	compiled by GNU C version 10.3.0  GMP version 6.2.1  MPFR version 4.1.0  MPC version 1.2.1  isl version none]
+        ignore line: [warning: GMP header version 6.2.1 differs from library version 6.3.0.]
+        ignore line: [warning: MPFR header version 4.1.0 differs from library version 4.2.2.]
+        ignore line: [warning: MPC header version 1.2.1 differs from library version 1.3.1.]
+        ignore line: [GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072]
+        ignore line: [Compiler executable checksum: c29b76c3c4fc003f031a5baef9c0190b]
+        ignore line: [COLLECT_GCC_OPTIONS='-fstack-protector-strong' '-fPIE' '-pie' '-v' '-o' 'CMakeFiles/cmTC_d6256.dir/CMakeCCompilerABI.c.o' '-c' '-mcpu=cortex-a76.cortex-a55' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_d6256.dir/']
+        ignore line: [ /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/bin/as -v -EL -march=armv8.2-a+fp16+rcpc+dotprod -mabi=lp64 -o CMakeFiles/cmTC_d6256.dir/CMakeCCompilerABI.c.o /tmp/ccZbibaS.s]
+        ignore line: [GNU assembler version 2.37 (aarch64-buildroot-linux-gnu) using BFD version (GNU Binutils) 2.37]
+        ignore line: [COMPILER_PATH=/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/:/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/bin/]
+        ignore line: [LIBRARY_PATH=/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/]
+        ignore line: [COLLECT_GCC_OPTIONS='-fstack-protector-strong' '-fPIE' '-pie' '-v' '-o' 'CMakeFiles/cmTC_d6256.dir/CMakeCCompilerABI.c.o' '-c' '-mcpu=cortex-a76.cortex-a55' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_d6256.dir/CMakeCCompilerABI.c.']
+        ignore line: [Linking C executable cmTC_d6256]
+        ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_d6256.dir/link.txt --verbose=1]
+        ignore line: [Using built-in specs.]
+        ignore line: [COLLECT_GCC=/home/megshark/3588_work/rk3588_toolchain/bin/aarch64-linux-gcc.br_real]
+        ignore line: [COLLECT_LTO_WRAPPER=/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/lto-wrapper]
+        ignore line: [Target: aarch64-buildroot-linux-gnu]
+        ignore line: [Configured with: ./configure --prefix=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --sysconfdir=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/etc --enable-static --target=aarch64-buildroot-linux-gnu --with-sysroot=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/aarch64-buildroot-linux-gnu/sysroot --enable-__cxa_atexit --with-gnu-ld --disable-libssp --disable-multilib --disable-decimal-float --enable-plugins --enable-lto --with-gmp=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-mpc=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-mpfr=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-pkgversion='Buildroot -g707f65bed4-dirty' --with-bugurl=http://bugs.buildroot.net/ --without-zstd --disable-libquadmath --disable-libquadmath-support --enable-tls --enable-threads --without-isl --without-cloog --with-abi=lp64 --with-cpu=cortex-a76.cortex-a55 --enable-languages=c,c++ --with-build-time-tools=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/aarch64-buildroot-linux-gnu/bin --enable-shared --enable-libgomp]
+        ignore line: [Thread model: posix]
+        ignore line: [Supported LTO compression algorithms: zlib]
+        ignore line: [gcc version 11.3.0 (Buildroot -g707f65bed4-dirty) ]
+        ignore line: [COMPILER_PATH=/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/:/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/bin/]
+        ignore line: [LIBRARY_PATH=/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/]
+        ignore line: [COLLECT_GCC_OPTIONS='-fstack-protector-strong' '-fPIE' '-pie' '-v' '-o' 'cmTC_d6256' '-mcpu=cortex-a76.cortex-a55' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'cmTC_d6256.']
+        link line: [ /home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/collect2 -plugin /home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/liblto_plugin.so -plugin-opt=/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/lto-wrapper -plugin-opt=-fresolution=/tmp/ccVC6C8e.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --sysroot=/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot --eh-frame-hdr -dynamic-linker /lib/ld-linux-aarch64.so.1 -X -EL -maarch64linux -pie -o cmTC_d6256 /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/Scrt1.o /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crti.o /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtbeginS.o -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0 -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib -z now -z relro -v CMakeFiles/cmTC_d6256.dir/CMakeCCompilerABI.c.o -lgcc --push-state --as-needed -lgcc_s --pop-state -lc -lgcc --push-state --as-needed -lgcc_s --pop-state /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtendS.o /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crtn.o]
+          arg [/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/collect2] ==> ignore
+          arg [-plugin] ==> ignore
+          arg [/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/liblto_plugin.so] ==> ignore
+          arg [-plugin-opt=/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/lto-wrapper] ==> ignore
+          arg [-plugin-opt=-fresolution=/tmp/ccVC6C8e.res] ==> ignore
+          arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
+          arg [-plugin-opt=-pass-through=-lgcc_s] ==> ignore
+          arg [-plugin-opt=-pass-through=-lc] ==> ignore
+          arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
+          arg [-plugin-opt=-pass-through=-lgcc_s] ==> ignore
+          arg [--sysroot=/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot] ==> ignore
+          arg [--eh-frame-hdr] ==> ignore
+          arg [-dynamic-linker] ==> ignore
+          arg [/lib/ld-linux-aarch64.so.1] ==> ignore
+          arg [-X] ==> ignore
+          arg [-EL] ==> ignore
+          arg [-maarch64linux] ==> ignore
+          arg [-pie] ==> ignore
+          arg [-o] ==> ignore
+          arg [cmTC_d6256] ==> ignore
+          arg [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/Scrt1.o] ==> obj [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/Scrt1.o]
+          arg [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crti.o] ==> obj [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crti.o]
+          arg [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtbeginS.o] ==> obj [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtbeginS.o]
+          arg [-L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0] ==> dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0]
+          arg [-L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc] ==> dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc]
+          arg [-L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/../lib64] ==> dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/../lib64]
+          arg [-L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/../lib64] ==> dir [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/../lib64]
+          arg [-L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64] ==> dir [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64]
+          arg [-L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib] ==> dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib]
+          arg [-L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib] ==> dir [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib]
+          arg [-L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib] ==> dir [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib]
+          arg [-znow] ==> ignore
+          arg [-zrelro] ==> ignore
+          arg [-v] ==> ignore
+          arg [CMakeFiles/cmTC_d6256.dir/CMakeCCompilerABI.c.o] ==> ignore
+          arg [-lgcc] ==> lib [gcc]
+          arg [--push-state] ==> ignore
+          arg [--as-needed] ==> ignore
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [--pop-state] ==> ignore
+          arg [-lc] ==> lib [c]
+          arg [-lgcc] ==> lib [gcc]
+          arg [--push-state] ==> ignore
+          arg [--as-needed] ==> ignore
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [--pop-state] ==> ignore
+          arg [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtendS.o] ==> obj [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtendS.o]
+          arg [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crtn.o] ==> obj [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crtn.o]
+        ignore line: [collect2 version 11.3.0]
+        ignore line: [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/bin/ld -plugin /home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/liblto_plugin.so -plugin-opt=/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/lto-wrapper -plugin-opt=-fresolution=/tmp/ccVC6C8e.res -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lgcc_s --sysroot=/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot --eh-frame-hdr -dynamic-linker /lib/ld-linux-aarch64.so.1 -X -EL -maarch64linux -pie -o cmTC_d6256 /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/Scrt1.o /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crti.o /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtbeginS.o -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0 -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib -z now -z relro -v CMakeFiles/cmTC_d6256.dir/CMakeCCompilerABI.c.o -lgcc --push-state --as-needed -lgcc_s --pop-state -lc -lgcc --push-state --as-needed -lgcc_s --pop-state /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtendS.o /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crtn.o]
+        linker tool for 'C': /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/bin/ld
+        collapse obj [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/Scrt1.o] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib64/Scrt1.o]
+        collapse obj [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crti.o] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib64/crti.o]
+        collapse obj [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtbeginS.o] ==> [/home/megshark/3588_work/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtbeginS.o]
+        collapse obj [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtendS.o] ==> [/home/megshark/3588_work/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtendS.o]
+        collapse obj [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crtn.o] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib64/crtn.o]
+        collapse library dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0] ==> [/home/megshark/3588_work/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0]
+        collapse library dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc] ==> [/home/megshark/3588_work/rk3588_toolchain/lib/gcc]
+        collapse library dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/../lib64] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/lib64]
+        collapse library dir [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/../lib64] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib64]
+        collapse library dir [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib64]
+        collapse library dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/lib]
+        collapse library dir [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib]
+        collapse library dir [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib]
+        implicit libs: [gcc;gcc_s;c;gcc;gcc_s]
+        implicit objs: [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib64/Scrt1.o;/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib64/crti.o;/home/megshark/3588_work/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtbeginS.o;/home/megshark/3588_work/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtendS.o;/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib64/crtn.o]
+        implicit dirs: [/home/megshark/3588_work/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0;/home/megshark/3588_work/rk3588_toolchain/lib/gcc;/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/lib64;/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib64;/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib64;/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/lib;/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib;/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib]
+        implicit fwks: []
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:255 (cmake_determine_linker_id)"
+      - "/usr/share/cmake-3.31/Modules/CMakeTestCCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Running the C compiler's linker: "/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/bin/ld" "-v"
+      GNU ld (GNU Binutils) 2.37
+  -
+    kind: "try_compile-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:74 (try_compile)"
+      - "/usr/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:15 (project)"
+    checks:
+      - "Detecting CXX compiler ABI info"
+    directories:
+      source: "/home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704/build/CMakeFiles/CMakeScratch/TryCompile-eNXT1S"
+      binary: "/home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704/build/CMakeFiles/CMakeScratch/TryCompile-eNXT1S"
+    cmakeVariables:
+      CMAKE_CXX_FLAGS: ""
+      CMAKE_CXX_SCAN_FOR_MODULES: "OFF"
+      CMAKE_EXE_LINKER_FLAGS: ""
+    buildResult:
+      variable: "CMAKE_CXX_ABI_COMPILED"
+      cached: true
+      stdout: |
+        Change Dir: '/home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704/build/CMakeFiles/CMakeScratch/TryCompile-eNXT1S'
+        
+        Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_c6da9/fast
+        /usr/bin/gmake  -f CMakeFiles/cmTC_c6da9.dir/build.make CMakeFiles/cmTC_c6da9.dir/build
+        gmake[1]: Entering directory '/home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704/build/CMakeFiles/CMakeScratch/TryCompile-eNXT1S'
+        Building CXX object CMakeFiles/cmTC_c6da9.dir/CMakeCXXCompilerABI.cpp.o
+        /home/megshark/3588_work/rk3588_toolchain/bin/aarch64-linux-g++   -v -o CMakeFiles/cmTC_c6da9.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake-3.31/Modules/CMakeCXXCompilerABI.cpp
+        Using built-in specs.
+        COLLECT_GCC=/home/megshark/3588_work/rk3588_toolchain/bin/aarch64-linux-g++.br_real
+        Target: aarch64-buildroot-linux-gnu
+        Configured with: ./configure --prefix=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --sysconfdir=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/etc --enable-static --target=aarch64-buildroot-linux-gnu --with-sysroot=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/aarch64-buildroot-linux-gnu/sysroot --enable-__cxa_atexit --with-gnu-ld --disable-libssp --disable-multilib --disable-decimal-float --enable-plugins --enable-lto --with-gmp=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-mpc=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-mpfr=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-pkgversion='Buildroot -g707f65bed4-dirty' --with-bugurl=http://bugs.buildroot.net/ --without-zstd --disable-libquadmath --disable-libquadmath-support --enable-tls --enable-threads --without-isl --without-cloog --with-abi=lp64 --with-cpu=cortex-a76.cortex-a55 --enable-languages=c,c++ --with-build-time-tools=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/aarch64-buildroot-linux-gnu/bin --enable-shared --enable-libgomp
+        Thread model: posix
+        Supported LTO compression algorithms: zlib
+        gcc version 11.3.0 (Buildroot -g707f65bed4-dirty) 
+        COLLECT_GCC_OPTIONS='-fstack-protector-strong' '-fPIE' '-pie' '-v' '-o' 'CMakeFiles/cmTC_c6da9.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mcpu=cortex-a76.cortex-a55' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_c6da9.dir/'
+         /home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/cc1plus -quiet -v -iprefix /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/ -isysroot /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot -D_GNU_SOURCE /usr/share/cmake-3.31/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_c6da9.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mcpu=cortex-a76.cortex-a55 -mlittle-endian -mabi=lp64 -version -fstack-protector-strong -fPIE -o /tmp/cckKmjsc.s
+        GNU C++17 (Buildroot -g707f65bed4-dirty) version 11.3.0 (aarch64-buildroot-linux-gnu)
+        	compiled by GNU C version 10.3.0, GMP version 6.2.1, MPFR version 4.1.0, MPC version 1.2.1, isl version none
+        warning: GMP header version 6.2.1 differs from library version 6.3.0.
+        warning: MPFR header version 4.1.0 differs from library version 4.2.2.
+        warning: MPC header version 1.2.1 differs from library version 1.3.1.
+        GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
+        ignoring duplicate directory "/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/../../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include/c++/11.3.0"
+        ignoring duplicate directory "/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/../../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include/c++/11.3.0/aarch64-buildroot-linux-gnu"
+        ignoring duplicate directory "/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/../../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include/c++/11.3.0/backward"
+        ignoring duplicate directory "/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/../../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include"
+        ignoring nonexistent directory "/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/local/include"
+        ignoring duplicate directory "/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/../../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include-fixed"
+        ignoring duplicate directory "/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/../../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include"
+        #include "..." search starts here:
+        #include <...> search starts here:
+         /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include/c++/11.3.0
+         /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include/c++/11.3.0/aarch64-buildroot-linux-gnu
+         /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include/c++/11.3.0/backward
+         /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include
+         /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include-fixed
+         /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include
+         /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include
+        End of search list.
+        GNU C++17 (Buildroot -g707f65bed4-dirty) version 11.3.0 (aarch64-buildroot-linux-gnu)
+        	compiled by GNU C version 10.3.0, GMP version 6.2.1, MPFR version 4.1.0, MPC version 1.2.1, isl version none
+        warning: GMP header version 6.2.1 differs from library version 6.3.0.
+        warning: MPFR header version 4.1.0 differs from library version 4.2.2.
+        warning: MPC header version 1.2.1 differs from library version 1.3.1.
+        GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072
+        Compiler executable checksum: b1a6046cafd45c28e9c9fe38ef05cb22
+        COLLECT_GCC_OPTIONS='-fstack-protector-strong' '-fPIE' '-pie' '-v' '-o' 'CMakeFiles/cmTC_c6da9.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mcpu=cortex-a76.cortex-a55' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_c6da9.dir/'
+         /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/bin/as -v -EL -march=armv8.2-a+fp16+rcpc+dotprod -mabi=lp64 -o CMakeFiles/cmTC_c6da9.dir/CMakeCXXCompilerABI.cpp.o /tmp/cckKmjsc.s
+        GNU assembler version 2.37 (aarch64-buildroot-linux-gnu) using BFD version (GNU Binutils) 2.37
+        COMPILER_PATH=/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/:/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/bin/
+        LIBRARY_PATH=/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/
+        COLLECT_GCC_OPTIONS='-fstack-protector-strong' '-fPIE' '-pie' '-v' '-o' 'CMakeFiles/cmTC_c6da9.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mcpu=cortex-a76.cortex-a55' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_c6da9.dir/CMakeCXXCompilerABI.cpp.'
+        Linking CXX executable cmTC_c6da9
+        /usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c6da9.dir/link.txt --verbose=1
+        Using built-in specs.
+        COLLECT_GCC=/home/megshark/3588_work/rk3588_toolchain/bin/aarch64-linux-g++.br_real
+        COLLECT_LTO_WRAPPER=/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/lto-wrapper
+        Target: aarch64-buildroot-linux-gnu
+        Configured with: ./configure --prefix=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --sysconfdir=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/etc --enable-static --target=aarch64-buildroot-linux-gnu --with-sysroot=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/aarch64-buildroot-linux-gnu/sysroot --enable-__cxa_atexit --with-gnu-ld --disable-libssp --disable-multilib --disable-decimal-float --enable-plugins --enable-lto --with-gmp=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-mpc=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-mpfr=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-pkgversion='Buildroot -g707f65bed4-dirty' --with-bugurl=http://bugs.buildroot.net/ --without-zstd --disable-libquadmath --disable-libquadmath-support --enable-tls --enable-threads --without-isl --without-cloog --with-abi=lp64 --with-cpu=cortex-a76.cortex-a55 --enable-languages=c,c++ --with-build-time-tools=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/aarch64-buildroot-linux-gnu/bin --enable-shared --enable-libgomp
+        Thread model: posix
+        Supported LTO compression algorithms: zlib
+        gcc version 11.3.0 (Buildroot -g707f65bed4-dirty) 
+        COMPILER_PATH=/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/:/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/bin/
+        LIBRARY_PATH=/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/
+        COLLECT_GCC_OPTIONS='-fstack-protector-strong' '-fPIE' '-pie' '-v' '-o' 'cmTC_c6da9' '-shared-libgcc' '-mcpu=cortex-a76.cortex-a55' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'cmTC_c6da9.'
+         /home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/collect2 -plugin /home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/liblto_plugin.so -plugin-opt=/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/lto-wrapper -plugin-opt=-fresolution=/tmp/ccKeBetd.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --sysroot=/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot --eh-frame-hdr -dynamic-linker /lib/ld-linux-aarch64.so.1 -X -EL -maarch64linux -pie -o cmTC_c6da9 /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/Scrt1.o /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crti.o /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtbeginS.o -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0 -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib -z now -z relro -v CMakeFiles/cmTC_c6da9.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtendS.o /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crtn.o
+        collect2 version 11.3.0
+        /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/bin/ld -plugin /home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/liblto_plugin.so -plugin-opt=/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/lto-wrapper -plugin-opt=-fresolution=/tmp/ccKeBetd.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --sysroot=/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot --eh-frame-hdr -dynamic-linker /lib/ld-linux-aarch64.so.1 -X -EL -maarch64linux -pie -o cmTC_c6da9 /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/Scrt1.o /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crti.o /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtbeginS.o -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0 -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib -z now -z relro -v CMakeFiles/cmTC_c6da9.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtendS.o /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crtn.o
+        GNU ld (GNU Binutils) 2.37
+        COLLECT_GCC_OPTIONS='-fstack-protector-strong' '-fPIE' '-pie' '-v' '-o' 'cmTC_c6da9' '-shared-libgcc' '-mcpu=cortex-a76.cortex-a55' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'cmTC_c6da9.'
+        /home/megshark/3588_work/rk3588_toolchain/bin/aarch64-linux-g++  -v -Wl,-v CMakeFiles/cmTC_c6da9.dir/CMakeCXXCompilerABI.cpp.o -o cmTC_c6da9
+        gmake[1]: Leaving directory '/home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704/build/CMakeFiles/CMakeScratch/TryCompile-eNXT1S'
+        
+      exitCode: 0
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:182 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Parsed CXX implicit include dir info: rv=done
+        found start of include info
+        found start of implicit include info
+          add: [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include/c++/11.3.0]
+          add: [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include/c++/11.3.0/aarch64-buildroot-linux-gnu]
+          add: [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include/c++/11.3.0/backward]
+          add: [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include]
+          add: [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include-fixed]
+          add: [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include]
+          add: [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include]
+        end of search list found
+        collapse include dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include/c++/11.3.0] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/include/c++/11.3.0]
+        collapse include dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include/c++/11.3.0/aarch64-buildroot-linux-gnu] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/include/c++/11.3.0/aarch64-buildroot-linux-gnu]
+        collapse include dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include/c++/11.3.0/backward] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/include/c++/11.3.0/backward]
+        collapse include dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include] ==> [/home/megshark/3588_work/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include]
+        collapse include dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include-fixed] ==> [/home/megshark/3588_work/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include-fixed]
+        collapse include dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/include]
+        collapse include dir [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include]
+        implicit include dirs: [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/include/c++/11.3.0;/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/include/c++/11.3.0/aarch64-buildroot-linux-gnu;/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/include/c++/11.3.0/backward;/home/megshark/3588_work/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include;/home/megshark/3588_work/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include-fixed;/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/include;/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include]
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:218 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Parsed CXX implicit link information:
+        link line regex: [^( *|.*[/\\])(ld[0-9]*(\\.[a-z]+)?|CMAKE_LINK_STARTFILE-NOTFOUND|([^/\\]+-)?ld|collect2)[^/\\]*( |$)]
+        linker tool regex: [^[ 	]*(->|")?[ 	]*(([^"]*[/\\])?(ld[0-9]*(\\.[a-z]+)?))("|,| |$)]
+        ignore line: [Change Dir: '/home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704/build/CMakeFiles/CMakeScratch/TryCompile-eNXT1S']
+        ignore line: []
+        ignore line: [Run Build Command(s): /usr/bin/cmake -E env VERBOSE=1 /usr/bin/gmake -f Makefile cmTC_c6da9/fast]
+        ignore line: [/usr/bin/gmake  -f CMakeFiles/cmTC_c6da9.dir/build.make CMakeFiles/cmTC_c6da9.dir/build]
+        ignore line: [gmake[1]: Entering directory '/home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704/build/CMakeFiles/CMakeScratch/TryCompile-eNXT1S']
+        ignore line: [Building CXX object CMakeFiles/cmTC_c6da9.dir/CMakeCXXCompilerABI.cpp.o]
+        ignore line: [/home/megshark/3588_work/rk3588_toolchain/bin/aarch64-linux-g++   -v -o CMakeFiles/cmTC_c6da9.dir/CMakeCXXCompilerABI.cpp.o -c /usr/share/cmake-3.31/Modules/CMakeCXXCompilerABI.cpp]
+        ignore line: [Using built-in specs.]
+        ignore line: [COLLECT_GCC=/home/megshark/3588_work/rk3588_toolchain/bin/aarch64-linux-g++.br_real]
+        ignore line: [Target: aarch64-buildroot-linux-gnu]
+        ignore line: [Configured with: ./configure --prefix=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --sysconfdir=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/etc --enable-static --target=aarch64-buildroot-linux-gnu --with-sysroot=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/aarch64-buildroot-linux-gnu/sysroot --enable-__cxa_atexit --with-gnu-ld --disable-libssp --disable-multilib --disable-decimal-float --enable-plugins --enable-lto --with-gmp=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-mpc=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-mpfr=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-pkgversion='Buildroot -g707f65bed4-dirty' --with-bugurl=http://bugs.buildroot.net/ --without-zstd --disable-libquadmath --disable-libquadmath-support --enable-tls --enable-threads --without-isl --without-cloog --with-abi=lp64 --with-cpu=cortex-a76.cortex-a55 --enable-languages=c,c++ --with-build-time-tools=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/aarch64-buildroot-linux-gnu/bin --enable-shared --enable-libgomp]
+        ignore line: [Thread model: posix]
+        ignore line: [Supported LTO compression algorithms: zlib]
+        ignore line: [gcc version 11.3.0 (Buildroot -g707f65bed4-dirty) ]
+        ignore line: [COLLECT_GCC_OPTIONS='-fstack-protector-strong' '-fPIE' '-pie' '-v' '-o' 'CMakeFiles/cmTC_c6da9.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mcpu=cortex-a76.cortex-a55' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_c6da9.dir/']
+        ignore line: [ /home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/cc1plus -quiet -v -iprefix /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/ -isysroot /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot -D_GNU_SOURCE /usr/share/cmake-3.31/Modules/CMakeCXXCompilerABI.cpp -quiet -dumpdir CMakeFiles/cmTC_c6da9.dir/ -dumpbase CMakeCXXCompilerABI.cpp.cpp -dumpbase-ext .cpp -mcpu=cortex-a76.cortex-a55 -mlittle-endian -mabi=lp64 -version -fstack-protector-strong -fPIE -o /tmp/cckKmjsc.s]
+        ignore line: [GNU C++17 (Buildroot -g707f65bed4-dirty) version 11.3.0 (aarch64-buildroot-linux-gnu)]
+        ignore line: [	compiled by GNU C version 10.3.0  GMP version 6.2.1  MPFR version 4.1.0  MPC version 1.2.1  isl version none]
+        ignore line: [warning: GMP header version 6.2.1 differs from library version 6.3.0.]
+        ignore line: [warning: MPFR header version 4.1.0 differs from library version 4.2.2.]
+        ignore line: [warning: MPC header version 1.2.1 differs from library version 1.3.1.]
+        ignore line: [GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072]
+        ignore line: [ignoring duplicate directory "/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/../../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include/c++/11.3.0"]
+        ignore line: [ignoring duplicate directory "/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/../../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include/c++/11.3.0/aarch64-buildroot-linux-gnu"]
+        ignore line: [ignoring duplicate directory "/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/../../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include/c++/11.3.0/backward"]
+        ignore line: [ignoring duplicate directory "/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/../../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include"]
+        ignore line: [ignoring nonexistent directory "/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/local/include"]
+        ignore line: [ignoring duplicate directory "/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/../../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include-fixed"]
+        ignore line: [ignoring duplicate directory "/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/../../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include"]
+        ignore line: [#include "..." search starts here:]
+        ignore line: [#include <...> search starts here:]
+        ignore line: [ /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include/c++/11.3.0]
+        ignore line: [ /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include/c++/11.3.0/aarch64-buildroot-linux-gnu]
+        ignore line: [ /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include/c++/11.3.0/backward]
+        ignore line: [ /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include]
+        ignore line: [ /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include-fixed]
+        ignore line: [ /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/include]
+        ignore line: [ /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include]
+        ignore line: [End of search list.]
+        ignore line: [GNU C++17 (Buildroot -g707f65bed4-dirty) version 11.3.0 (aarch64-buildroot-linux-gnu)]
+        ignore line: [	compiled by GNU C version 10.3.0  GMP version 6.2.1  MPFR version 4.1.0  MPC version 1.2.1  isl version none]
+        ignore line: [warning: GMP header version 6.2.1 differs from library version 6.3.0.]
+        ignore line: [warning: MPFR header version 4.1.0 differs from library version 4.2.2.]
+        ignore line: [warning: MPC header version 1.2.1 differs from library version 1.3.1.]
+        ignore line: [GGC heuristics: --param ggc-min-expand=100 --param ggc-min-heapsize=131072]
+        ignore line: [Compiler executable checksum: b1a6046cafd45c28e9c9fe38ef05cb22]
+        ignore line: [COLLECT_GCC_OPTIONS='-fstack-protector-strong' '-fPIE' '-pie' '-v' '-o' 'CMakeFiles/cmTC_c6da9.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mcpu=cortex-a76.cortex-a55' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_c6da9.dir/']
+        ignore line: [ /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/bin/as -v -EL -march=armv8.2-a+fp16+rcpc+dotprod -mabi=lp64 -o CMakeFiles/cmTC_c6da9.dir/CMakeCXXCompilerABI.cpp.o /tmp/cckKmjsc.s]
+        ignore line: [GNU assembler version 2.37 (aarch64-buildroot-linux-gnu) using BFD version (GNU Binutils) 2.37]
+        ignore line: [COMPILER_PATH=/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/:/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/bin/]
+        ignore line: [LIBRARY_PATH=/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/]
+        ignore line: [COLLECT_GCC_OPTIONS='-fstack-protector-strong' '-fPIE' '-pie' '-v' '-o' 'CMakeFiles/cmTC_c6da9.dir/CMakeCXXCompilerABI.cpp.o' '-c' '-shared-libgcc' '-mcpu=cortex-a76.cortex-a55' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'CMakeFiles/cmTC_c6da9.dir/CMakeCXXCompilerABI.cpp.']
+        ignore line: [Linking CXX executable cmTC_c6da9]
+        ignore line: [/usr/bin/cmake -E cmake_link_script CMakeFiles/cmTC_c6da9.dir/link.txt --verbose=1]
+        ignore line: [Using built-in specs.]
+        ignore line: [COLLECT_GCC=/home/megshark/3588_work/rk3588_toolchain/bin/aarch64-linux-g++.br_real]
+        ignore line: [COLLECT_LTO_WRAPPER=/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/lto-wrapper]
+        ignore line: [Target: aarch64-buildroot-linux-gnu]
+        ignore line: [Configured with: ./configure --prefix=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --sysconfdir=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/etc --enable-static --target=aarch64-buildroot-linux-gnu --with-sysroot=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/aarch64-buildroot-linux-gnu/sysroot --enable-__cxa_atexit --with-gnu-ld --disable-libssp --disable-multilib --disable-decimal-float --enable-plugins --enable-lto --with-gmp=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-mpc=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-mpfr=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host --with-pkgversion='Buildroot -g707f65bed4-dirty' --with-bugurl=http://bugs.buildroot.net/ --without-zstd --disable-libquadmath --disable-libquadmath-support --enable-tls --enable-threads --without-isl --without-cloog --with-abi=lp64 --with-cpu=cortex-a76.cortex-a55 --enable-languages=c,c++ --with-build-time-tools=/media/sailing/work/uav/RK3588/zm_rk3588/rk3588/buildroot/output/rockchip_rk3588_zmuav/host/aarch64-buildroot-linux-gnu/bin --enable-shared --enable-libgomp]
+        ignore line: [Thread model: posix]
+        ignore line: [Supported LTO compression algorithms: zlib]
+        ignore line: [gcc version 11.3.0 (Buildroot -g707f65bed4-dirty) ]
+        ignore line: [COMPILER_PATH=/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/:/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/bin/]
+        ignore line: [LIBRARY_PATH=/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/:/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/:/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/]
+        ignore line: [COLLECT_GCC_OPTIONS='-fstack-protector-strong' '-fPIE' '-pie' '-v' '-o' 'cmTC_c6da9' '-shared-libgcc' '-mcpu=cortex-a76.cortex-a55' '-mlittle-endian' '-mabi=lp64' '-dumpdir' 'cmTC_c6da9.']
+        link line: [ /home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/collect2 -plugin /home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/liblto_plugin.so -plugin-opt=/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/lto-wrapper -plugin-opt=-fresolution=/tmp/ccKeBetd.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --sysroot=/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot --eh-frame-hdr -dynamic-linker /lib/ld-linux-aarch64.so.1 -X -EL -maarch64linux -pie -o cmTC_c6da9 /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/Scrt1.o /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crti.o /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtbeginS.o -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0 -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib -z now -z relro -v CMakeFiles/cmTC_c6da9.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtendS.o /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crtn.o]
+          arg [/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/collect2] ==> ignore
+          arg [-plugin] ==> ignore
+          arg [/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/liblto_plugin.so] ==> ignore
+          arg [-plugin-opt=/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/lto-wrapper] ==> ignore
+          arg [-plugin-opt=-fresolution=/tmp/ccKeBetd.res] ==> ignore
+          arg [-plugin-opt=-pass-through=-lgcc_s] ==> ignore
+          arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
+          arg [-plugin-opt=-pass-through=-lc] ==> ignore
+          arg [-plugin-opt=-pass-through=-lgcc_s] ==> ignore
+          arg [-plugin-opt=-pass-through=-lgcc] ==> ignore
+          arg [--sysroot=/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot] ==> ignore
+          arg [--eh-frame-hdr] ==> ignore
+          arg [-dynamic-linker] ==> ignore
+          arg [/lib/ld-linux-aarch64.so.1] ==> ignore
+          arg [-X] ==> ignore
+          arg [-EL] ==> ignore
+          arg [-maarch64linux] ==> ignore
+          arg [-pie] ==> ignore
+          arg [-o] ==> ignore
+          arg [cmTC_c6da9] ==> ignore
+          arg [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/Scrt1.o] ==> obj [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/Scrt1.o]
+          arg [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crti.o] ==> obj [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crti.o]
+          arg [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtbeginS.o] ==> obj [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtbeginS.o]
+          arg [-L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0] ==> dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0]
+          arg [-L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc] ==> dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc]
+          arg [-L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/../lib64] ==> dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/../lib64]
+          arg [-L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/../lib64] ==> dir [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/../lib64]
+          arg [-L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64] ==> dir [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64]
+          arg [-L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib] ==> dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib]
+          arg [-L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib] ==> dir [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib]
+          arg [-L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib] ==> dir [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib]
+          arg [-znow] ==> ignore
+          arg [-zrelro] ==> ignore
+          arg [-v] ==> ignore
+          arg [CMakeFiles/cmTC_c6da9.dir/CMakeCXXCompilerABI.cpp.o] ==> ignore
+          arg [-lstdc++] ==> lib [stdc++]
+          arg [-lm] ==> lib [m]
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [-lgcc] ==> lib [gcc]
+          arg [-lc] ==> lib [c]
+          arg [-lgcc_s] ==> lib [gcc_s]
+          arg [-lgcc] ==> lib [gcc]
+          arg [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtendS.o] ==> obj [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtendS.o]
+          arg [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crtn.o] ==> obj [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crtn.o]
+        ignore line: [collect2 version 11.3.0]
+        ignore line: [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/bin/ld -plugin /home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/liblto_plugin.so -plugin-opt=/home/megshark/3588_work/rk3588_toolchain/bin/../libexec/gcc/aarch64-buildroot-linux-gnu/11.3.0/lto-wrapper -plugin-opt=-fresolution=/tmp/ccKeBetd.res -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc -plugin-opt=-pass-through=-lc -plugin-opt=-pass-through=-lgcc_s -plugin-opt=-pass-through=-lgcc --sysroot=/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot --eh-frame-hdr -dynamic-linker /lib/ld-linux-aarch64.so.1 -X -EL -maarch64linux -pie -o cmTC_c6da9 /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/Scrt1.o /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crti.o /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtbeginS.o -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0 -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64 -L/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib -L/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib -z now -z relro -v CMakeFiles/cmTC_c6da9.dir/CMakeCXXCompilerABI.cpp.o -lstdc++ -lm -lgcc_s -lgcc -lc -lgcc_s -lgcc /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtendS.o /home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crtn.o]
+        linker tool for 'CXX': /home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/bin/ld
+        collapse obj [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/Scrt1.o] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib64/Scrt1.o]
+        collapse obj [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crti.o] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib64/crti.o]
+        collapse obj [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtbeginS.o] ==> [/home/megshark/3588_work/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtbeginS.o]
+        collapse obj [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtendS.o] ==> [/home/megshark/3588_work/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtendS.o]
+        collapse obj [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64/crtn.o] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib64/crtn.o]
+        collapse library dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0] ==> [/home/megshark/3588_work/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0]
+        collapse library dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc] ==> [/home/megshark/3588_work/rk3588_toolchain/lib/gcc]
+        collapse library dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib/../lib64] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/lib64]
+        collapse library dir [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib/../lib64] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib64]
+        collapse library dir [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib/../lib64] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib64]
+        collapse library dir [/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/lib] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/lib]
+        collapse library dir [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib]
+        collapse library dir [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib] ==> [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib]
+        implicit libs: [stdc++;m;gcc_s;gcc;c;gcc_s;gcc]
+        implicit objs: [/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib64/Scrt1.o;/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib64/crti.o;/home/megshark/3588_work/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtbeginS.o;/home/megshark/3588_work/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/crtendS.o;/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib64/crtn.o]
+        implicit dirs: [/home/megshark/3588_work/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0;/home/megshark/3588_work/rk3588_toolchain/lib/gcc;/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/lib64;/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib64;/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib64;/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/lib;/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/lib;/home/megshark/3588_work/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/lib]
+        implicit fwks: []
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/Internal/CMakeDetermineLinkerId.cmake:40 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerABI.cmake:255 (cmake_determine_linker_id)"
+      - "/usr/share/cmake-3.31/Modules/CMakeTestCXXCompiler.cmake:26 (CMAKE_DETERMINE_COMPILER_ABI)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Running the CXX compiler's linker: "/home/megshark/3588_work/rk3588_toolchain/bin/../lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/../../../../aarch64-buildroot-linux-gnu/bin/ld" "-v"
+      GNU ld (GNU Binutils) 2.37
+...
+
+---
+events:
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineSystem.cmake:200 (message)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      The target system is: Linux -  - arm
+      The host system is: Linux - 5.15.167.4-microsoft-standard-WSL2 - x86_64
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: aarch64-linux-gcc 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: aarch64-linux-gcc 
+      Build flags: 
+      Id flags: -c 
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: aarch64-linux-gcc 
+      Build flags: 
+      Id flags: -Aa 
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: aarch64-linux-gcc 
+      Build flags: 
+      Id flags: -D__CLASSIC_C__ 
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: aarch64-linux-gcc 
+      Build flags: 
+      Id flags: --target=arm-arm-none-eabi;-mcpu=cortex-m3 
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: aarch64-linux-gcc 
+      Build flags: 
+      Id flags: -c;-I__does_not_exist__ 
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: aarch64-linux-gcc 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: aarch64-linux-gcc 
+      Build flags: 
+      Id flags: -c 
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: aarch64-linux-gcc 
+      Build flags: 
+      Id flags: -Aa 
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: aarch64-linux-gcc 
+      Build flags: 
+      Id flags: -D__CLASSIC_C__ 
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: aarch64-linux-gcc 
+      Build flags: 
+      Id flags: --target=arm-arm-none-eabi;-mcpu=cortex-m3 
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the C compiler identification source file "CMakeCCompilerId.c" failed.
+      Compiler: aarch64-linux-gcc 
+      Build flags: 
+      Id flags: -c;-I__does_not_exist__ 
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:1250 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:86 (CMAKE_DETERMINE_COMPILER_ID_VENDOR)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Checking whether the C compiler is IAR using "" did not match "IAR .+ Compiler":
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:1250 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:86 (CMAKE_DETERMINE_COMPILER_ID_VENDOR)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCCompiler.cmake:123 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Checking whether the C compiler is IAR using "" did not match "IAR .+ Compiler":
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: aarch64-linux-g++ 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: aarch64-linux-g++ 
+      Build flags: 
+      Id flags: -c 
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: aarch64-linux-g++ 
+      Build flags: 
+      Id flags: --c++ 
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: aarch64-linux-g++ 
+      Build flags: 
+      Id flags: --ec++ 
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: aarch64-linux-g++ 
+      Build flags: 
+      Id flags: --target=arm-arm-none-eabi;-mcpu=cortex-m3 
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: aarch64-linux-g++ 
+      Build flags: 
+      Id flags: -c;-I__does_not_exist__ 
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: aarch64-linux-g++ 
+      Build flags: 
+      Id flags:  
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: aarch64-linux-g++ 
+      Build flags: 
+      Id flags: -c 
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: aarch64-linux-g++ 
+      Build flags: 
+      Id flags: --c++ 
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: aarch64-linux-g++ 
+      Build flags: 
+      Id flags: --ec++ 
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: aarch64-linux-g++ 
+      Build flags: 
+      Id flags: --target=arm-arm-none-eabi;-mcpu=cortex-m3 
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:17 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:64 (__determine_compiler_id_test)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Compiling the CXX compiler identification source file "CMakeCXXCompilerId.cpp" failed.
+      Compiler: aarch64-linux-g++ 
+      Build flags: 
+      Id flags: -c;-I__does_not_exist__ 
+      
+      The output was:
+      no such file or directory
+      
+      
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:1250 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:86 (CMAKE_DETERMINE_COMPILER_ID_VENDOR)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Checking whether the CXX compiler is IAR using "" did not match "IAR .+ Compiler":
+  -
+    kind: "message-v1"
+    backtrace:
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:1250 (message)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCompilerId.cmake:86 (CMAKE_DETERMINE_COMPILER_ID_VENDOR)"
+      - "/usr/share/cmake-3.31/Modules/CMakeDetermineCXXCompiler.cmake:126 (CMAKE_DETERMINE_COMPILER_ID)"
+      - "CMakeLists.txt:15 (project)"
+    message: |
+      Checking whether the CXX compiler is IAR using "" did not match "IAR .+ Compiler":
+...
