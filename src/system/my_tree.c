@@ -85,7 +85,7 @@ int write_dirent_struct_file(char path[])
     return 0;
 }
 
-int trans_dirent_struct_file(int mode,int analysis_type)
+int trans_dirent_struct_file(int mode)
 {
     int ret,free_size = 0;
     char* buf = NULL;
@@ -94,7 +94,7 @@ int trans_dirent_struct_file(int mode,int analysis_type)
 		printf("(Error):%s Cannot open file %s\n",__func__,DIRENT_STRUCT_FILE_PATH);
 		return 1;
 	}
-    if(ret = axi_fifo_write_file_buf(tree_fp,mode,analysis_type)){
+    if(ret = axi_fifo_write_file_buf(tree_fp,mode)){
         printf("(Error):%s trans file message ret:%d\n",__func__,ret);
         return -1;
     }

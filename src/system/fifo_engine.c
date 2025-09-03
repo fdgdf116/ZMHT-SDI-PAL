@@ -34,7 +34,6 @@
 #include "a818_error.h"
 #include "my_tree.h"
 #include "xutils.h"
-#include "net_engine.h"
 #include "osd_engine.h"
 // #include "log.h"
 
@@ -126,6 +125,41 @@ unsigned char check_sum(unsigned char* buf, int len)
 }
 
 #include <sys/statfs.h>
+
+/*
+	函数: static void axififo_data_send(unsigned char mode, unsigned int* data,int len)
+	作用: axififo 发送任意长度数据函数
+	参数:
+		mode：帧类型
+		data:发送的数据
+	返回值:
+		无
+*/
+static int axififo_data_send(unsigned char mode, unsigned char* data,int len)
+{
+	int ret;
+	unsigned int send_size;
+	uint8_t* buff = (char*)malloc(len + 8);
+	uartlist_send_info_t* send_info = (uartlist_send_info_t*)buff;
+
+	send_info->head = htons(0xec91);
+	send_info->len = htonl(len);
+	send_info->mode = mode;
+	memcpy(&send_info->data,data,len);
+	*(buff + 7 + len) = check_sum((unsigned char*)&send_info->data,len);
+
+	send_size = 0;
+	while(1){
+		ret = stream_fifo_write_data(&g_axififo_info->fifo_reg,(uint8_t *)(buff + send_size),len + 8 - send_size);
+		if(ret == (len + 8 - send_size)){
+			break;
+		}
+		send_size += ret;
+		xt_nanosleep(0, 100);
+	}
+
+	return 0;
+}
 
 /*
 	函数: char read_zpk_upgrade_state(void)
@@ -260,8 +294,8 @@ static int axififo_frame_request_type1(unsigned char* frame_buff, unsigned int f
     pcie_chn_stack_configuration_reg_init(osd_info);
     return COMD_PROC_SUCCESS;
 }
-
-static int axififo_frame_request_type19(unsigned char* frame_buff, unsigned int frame_size)
+/* 帧类型17（图像生成配置） */
+static int axififo_frame_request_type17(unsigned char* frame_buff, unsigned int frame_size)
 {
     if(frame_size > (sizeof(cfg_info_t) + 1))
     {
@@ -277,16 +311,14 @@ static int axififo_frame_request_type19(unsigned char* frame_buff, unsigned int 
     decode_configuration_init(reg_val_info);
     return COMD_PROC_SUCCESS;
 }
-/*******************************用bar2配置**************************************/
-/* 帧类型2 (字符叠加配置) */
+/* 帧类型2 (图像采集配置) */
 static unsigned int axififo_frame_request_type2(unsigned char* frame_buff, unsigned int frame_size)
 {
     int ret = 0;
 
-    pcie_chn_stack_char(frame_buff,frame_size);
     return COMD_PROC_SUCCESS;
 }
-/* 帧类型3 (图像叠加帧类型) */
+/* 帧类型3 (图像叠加数据传输) */
 static unsigned int axififo_frame_request_type3(unsigned char* frame_buff, unsigned int frame_size)
 {
     int ret = 0;
@@ -336,7 +368,7 @@ int axififo_frame_request_type5(unsigned char* frame_buff, unsigned int frame_si
 }
 
 /* 帧类型6（获取文件列表） */
-int axififo_frame_request_type7(unsigned char* frame_buff, unsigned int frame_size,int analysis_type)
+int axififo_frame_request_type6(unsigned char* frame_buff, unsigned int frame_size)
 {
     int ret = 0;
     if(frame_buff[1]==0xfa&&frame_buff[2]==0x3c&&frame_buff[3]==0x55&&frame_buff[4]==0xaa)
@@ -346,7 +378,7 @@ int axififo_frame_request_type7(unsigned char* frame_buff, unsigned int frame_si
             perror("write_dirent_struct_file err!!!");
 			goto error;
 		}
-        ret = trans_dirent_struct_file(0x07,analysis_type);
+        ret = trans_dirent_struct_file(0x07);
         if(ret != 0){
             perror("trans_dirent_struct_file err!!!");
             goto error;
@@ -360,7 +392,7 @@ int axififo_frame_request_type7(unsigned char* frame_buff, unsigned int frame_si
 	    return COMD_PROC_FAILED;
 }
 /* 帧类型7（数据传输配置） */
-int axififo_frame_request_type8(unsigned char* frame_buff, unsigned int frame_size)
+int axififo_frame_request_type7(unsigned char* frame_buff, unsigned int frame_size)
 {
     int ret = 0;
     int len = ntohl(*(unsigned int *)(frame_buff+1));
@@ -390,29 +422,12 @@ int axififo_frame_request_type8(unsigned char* frame_buff, unsigned int frame_si
 	}
 	return COMD_PROC_SUCCESS;
 	error:
-		// axififo_send(frame_buff[0], COMD_PROC_FAILED);
 	    return COMD_PROC_FAILED;
 }
 
 /* 帧类型9（解码开始配置） */
-int axififo_frame_request_type10(unsigned char* frame_buff, unsigned int frame_size)
+int axififo_frame_request_type9(unsigned char* frame_buff, unsigned int frame_size)
 {
-#if 0
-    int ret = 0;
-    if(frame_buff[1]==0x90&&frame_buff[2]==0xeb&&frame_buff[3]==0x3c&&frame_buff[4]==0xfa)
-    {
-		ret = DecodeStart();
-		if(ret < 0){
-			goto error;
-		}
-	}else{
-		printf("[%s]error Tail\n",__func__);
-		goto error;
-	}
-    error:
-		// axififo_send(frame_buff[0], COMD_PROC_FAILED);
-        return COMD_PROC_FAILED;
-#else
     int ret = 0;
     int chn = frame_buff[1];
     printf("%s:chn%d\n",__func__,chn);
@@ -425,11 +440,10 @@ int axififo_frame_request_type10(unsigned char* frame_buff, unsigned int frame_s
     error:
 		// axififo_send(frame_buff[0], COMD_PROC_FAILED);
         return COMD_PROC_FAILED;
-#endif
 }
 
-/* 帧类型8（VDMA配置）*/
-int axififo_frame_request_type9(unsigned char* frame_buff, unsigned int frame_size)
+/* 帧类型8（fpgaVDMA配置） */
+int axififo_frame_request_type8(unsigned char* frame_buff, unsigned int frame_size)
 {
     int ret = 0;
     vdma_configuration_info_t * vdma_info = (vdma_configuration_info_t *)(frame_buff+1);
@@ -445,7 +459,7 @@ int axififo_frame_request_type9(unsigned char* frame_buff, unsigned int frame_si
 	    return COMD_PROC_FAILED;
 }
 /* 帧类型10（解码停止配置） */
-int axififo_frame_request_type11(unsigned char* frame_buff, unsigned int frame_size)
+int axififo_frame_request_type10(unsigned char* frame_buff, unsigned int frame_size)
 {
 #if 0
     int ret = 0;
@@ -570,8 +584,8 @@ int axififo_frame_request_type11(unsigned char* frame_buff, unsigned int frame_s
         return COMD_PROC_FAILED;
 #endif
 }
-
-int axififo_frame_request_type12(unsigned char* frame_buff, unsigned int frame_size,int analysis_type)
+/* 帧类型11（系统自检） */
+int axififo_frame_request_type11(unsigned char* frame_buff, unsigned int frame_size)
 {
     int ret = 0;
     int len = frame_size - 1;
@@ -625,8 +639,8 @@ int axififo_frame_request_type12(unsigned char* frame_buff, unsigned int frame_s
         free(send_buf);
         return COMD_PROC_FAILED;
 }
-
-int axififo_frame_request_type13(unsigned char* frame_buff, unsigned int frame_size)
+/* 帧类型12（叠加配置） */
+int axififo_frame_request_type12(unsigned char* frame_buff, unsigned int frame_size)
 {
     int ret = 0;
     int chn = frame_buff[1];
@@ -696,8 +710,8 @@ int axififo_frame_request_type13(unsigned char* frame_buff, unsigned int frame_s
         memset(osd_info,0x00,sizeof(osd_image_info_t));
         return COMD_PROC_FAILED;
 }
-
-int axififo_frame_request_type14(unsigned char* frame_buff, unsigned int frame_size)
+/* 帧类型13（以太网发送文件） */
+int axififo_frame_request_type13(unsigned char* frame_buff, unsigned int frame_size)
 {
     int ret = 0;
     if(frame_size > 1)
@@ -724,7 +738,7 @@ int axififo_frame_request_type14(unsigned char* frame_buff, unsigned int frame_s
         return COMD_PROC_FAILED;
 }
 
-int axififo_frame_request_type15(unsigned char* frame_buff, unsigned int frame_size)
+int axififo_frame_request_type13(unsigned char* frame_buff, unsigned int frame_size)
 {
     struct tm time_elements;
     struct timeval tv;
@@ -748,7 +762,7 @@ int axififo_frame_request_type15(unsigned char* frame_buff, unsigned int frame_s
         return COMD_PROC_FAILED;
 }
 
-int axififo_frame_request_type16(unsigned char* frame_buff, unsigned int frame_size)
+int axififo_frame_request_type14(unsigned char* frame_buff, unsigned int frame_size)
 {
     u_int8_t bank = 0;
     u_int8_t fiberate = 0;
@@ -987,8 +1001,8 @@ int axififo_frame_request_type16(unsigned char* frame_buff, unsigned int frame_s
     error:
         return COMD_PROC_FAILED;
 }
-
-static int axififo_frame_request_type20(unsigned char* frame_buff, unsigned int frame_size)
+/* 帧类型18（时序参数配置） */
+static int axififo_frame_request_type18(unsigned char* frame_buff, unsigned int frame_size)
 {
     temporal_parameters_t * temporal_par = (temporal_parameters_t *)(frame_buff+1);
     for(int i = 1;i < sizeof(temporal_parameters_t)/sizeof(u_int32_t); i++)
@@ -1074,7 +1088,7 @@ static void axififo_send(unsigned char mode, unsigned int data)
 }
 
 
-void axififo_frame_data_analyse(unsigned char* frame_buffer, unsigned int frame_size,int analysis_type)
+void axififo_frame_data_analyse(unsigned char* frame_buffer, unsigned int frame_size)
 {
     unsigned int cmd_ok;
     unsigned char swap1,swap2;
@@ -1082,17 +1096,17 @@ void axififo_frame_data_analyse(unsigned char* frame_buffer, unsigned int frame_
     cmd_ok = COMD_PROC_FAILED;
 
     switch(frame_buffer[0]){
-        case UARTLIST_REQUEST_TYPE1:/* 帧类型1 (叠加配置) */
+        case UARTLIST_REQUEST_TYPE1:/* 帧类型1 (fpga通道配置) */
             SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE1+++++\n");
             cmd_ok = axififo_frame_request_type1(frame_buffer, frame_size);
             break;
 
-        case UARTLIST_REQUEST_TYPE2:/* 帧类型2 (字符叠加配置) */
+        case UARTLIST_REQUEST_TYPE2:/* 帧类型2 (图像采集配置) */
             SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE2+++++\n");
             cmd_ok = axififo_frame_request_type2(frame_buffer, frame_size);
             break;
 
-        case UARTLIST_REQUEST_TYPE3:/* 帧类型3 (图像叠加帧类型) */
+        case UARTLIST_REQUEST_TYPE3:/* 帧类型3 (图像叠加数据传输) */
             SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE3+++++\n");
             cmd_ok = axififo_frame_request_type3(frame_buffer, frame_size);
             usleep(1000);
@@ -1108,61 +1122,53 @@ void axififo_frame_data_analyse(unsigned char* frame_buffer, unsigned int frame_
             cmd_ok = axififo_frame_request_type5(frame_buffer,frame_size);
             break;
 
-        case UARTLIST_REQUEST_TYPE7:/* 帧类型7（获取文件列表） */
-            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE7+++++\n");
-            cmd_ok = axififo_frame_request_type7(frame_buffer,frame_size,analysis_type);
+        case UARTLIST_REQUEST_TYPE6:/* 帧类型6（获取文件列表） */
+            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE6+++++\n");
+            cmd_ok = axififo_frame_request_type6(frame_buffer,frame_size);
             if(cmd_ok == 0)
                 return ;
             break; 
 
-        case UARTLIST_REQUEST_TYPE8:/* 帧类型8（数据传输配置） */
-            if(analysis_type)
-                break;
-            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE8+++++\n");
-            cmd_ok = axififo_frame_request_type8(frame_buffer,frame_size);
+        case UARTLIST_REQUEST_TYPE7:/* 帧类型7（数据传输配置） */
+            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE7+++++\n");
+            cmd_ok = axififo_frame_request_type7(frame_buffer,frame_size);
             break; 
 
-        case UARTLIST_REQUEST_TYPE9:/* 帧类型9（VDMA配置） */
+        case UARTLIST_REQUEST_TYPE8:/* 帧类型8（fpgaVDMA配置） */
+            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE8+++++\n");
+            cmd_ok = axififo_frame_request_type8(frame_buffer,frame_size);
+            break;
+
+        case UARTLIST_REQUEST_TYPE9:/* 帧类型9（解码开始配置）*/
             SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE9+++++\n");
             cmd_ok = axififo_frame_request_type9(frame_buffer,frame_size);
             break;
-
-        case UARTLIST_REQUEST_TYPE10:/* 帧类型10（解码开始配置）*/
-            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE10+++++\n");
-            cmd_ok = axififo_frame_request_type10(frame_buffer,frame_size);
-            break;
-        case UARTLIST_REQUEST_TYPE11:/* 帧类型11（解码停止配置） */
-            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE11+++++\n");        
+        case UARTLIST_REQUEST_TYPE10:/* 帧类型10（解码停止配置） */
+            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE10+++++\n");        
             cmd_ok = axififo_frame_request_type11(frame_buffer,frame_size);
             sleep(2);
             break;
-        case UARTLIST_REQUEST_TYPE12:/* 帧类型12（系统自检） */
-            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE12+++++\n");
-            cmd_ok = axififo_frame_request_type12(frame_buffer,frame_size,analysis_type);
+        case UARTLIST_REQUEST_TYPE11:/* 帧类型11（系统自检） */
+            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE11+++++\n");
+            cmd_ok = axififo_frame_request_type11(frame_buffer,frame_size);
             if(cmd_ok == 0)
                 return ;
             break;
-        case UARTLIST_REQUEST_TYPE13:/* 帧类型13（叠加配置） */
-            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE13+++++\n");
+        case UARTLIST_REQUEST_TYPE12:/* 帧类型12（叠加配置） */
+            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE12+++++\n");
+            cmd_ok = axififo_frame_request_type12(frame_buffer,frame_size);
+            break;
+        case UARTLIST_REQUEST_TYPE13:/* 帧类型13（设置板卡时间） */
+            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE13++++\n");
             cmd_ok = axififo_frame_request_type13(frame_buffer,frame_size);
             break;
-        case UARTLIST_REQUEST_TYPE14:/* 帧类型14（以太网发送文件） */
-            if(!analysis_type)
-                break;
+        case UARTLIST_REQUEST_TYPE14:/* 帧类型14（光纤速率配置） */
             SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE14++++\n");
             cmd_ok = axififo_frame_request_type14(frame_buffer,frame_size);
             break;
-        case UARTLIST_REQUEST_TYPE15:/* 帧类型15（设置板卡时间） */
-            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE15++++\n");
-            cmd_ok = axififo_frame_request_type15(frame_buffer,frame_size);
-            break;
-        case UARTLIST_REQUEST_TYPE16:/* 帧类型16（光纤速率配置） */
-            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE16++++\n");
-            cmd_ok = axififo_frame_request_type16(frame_buffer,frame_size);
-            break;
-        case UARTLIST_REQUEST_TYPE17:
+        case UARTLIST_REQUEST_TYPE15:/* 帧类型15（升级文件传输  ） */
             cmd_ok = COMD_PROC_SUCCESS;
-            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE16++++\n");
+            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE15++++\n");
             upgrade_num = frame_buffer[1] << 24 | frame_buffer[2] << 16 | frame_buffer[3] << 8 | frame_buffer[4];
             // upgrade_num = htonl(upgrade_num);
             if(!upgrade_num){
@@ -1210,27 +1216,24 @@ void axififo_frame_data_analyse(unsigned char* frame_buffer, unsigned int frame_
                 }
             }
             break;
-        case UARTLIST_REQUEST_TYPE18:
-            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE18++++\n");
+        case UARTLIST_REQUEST_TYPE16:/* 帧类型16（升级状态查询 ） */
+            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE16++++\n");
             cmd_ok = read_zpk_upgrade_state();
             break;
-        case UARTLIST_REQUEST_TYPE19:
-            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE19++++\n");
-            cmd_ok = axififo_frame_request_type19(frame_buffer, frame_size);
+        case UARTLIST_REQUEST_TYPE17:/* 帧类型17（图像生成配置） */
+            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE17++++\n");
+            cmd_ok = axififo_frame_request_type17(frame_buffer, frame_size);
             break;
-        case UARTLIST_REQUEST_TYPE20:/* 帧类型20（时序参数配置） */
-            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE20++++\n");
-            cmd_ok = axififo_frame_request_type20(frame_buffer,frame_size);
+        case UARTLIST_REQUEST_TYPE18:/* 帧类型18（时序参数配置） */
+            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE18++++\n");
+            cmd_ok = axififo_frame_request_type18(frame_buffer,frame_size);
             break;
         default: 
             SLOGI("set uartlist request type%d error \n", frame_buffer[0]);
             cmd_ok = RECV_PAK_ERROR;
             break;
     }
-    if(analysis_type)
-        net_send(frame_buffer[0], cmd_ok);
-    else
-        axififo_send(frame_buffer[0], cmd_ok);
+    axififo_send(frame_buffer[0], cmd_ok);
 }
 /******************************************************************************************/
 
@@ -1266,7 +1269,7 @@ static int axififo_recv_data_analysis(unsigned char *buffer, unsigned int length
 
                 sum = check_sum(frame_buff, frame_length);
                 if(sum == local_buffer[(i + frame_length + 6) % PCIE_AXIFIFO_BUF_SIZE_MAX]){
-                    axififo_frame_data_analyse(frame_buff, frame_length,0);
+                    axififo_frame_data_analyse(frame_buff, frame_length);
                 } else {
                     SLOGI("uartlist frame data sum error,len:%d sum(0x%x 0x%x) \n", frame_length, \
                         sum, local_buffer[(i + frame_length + 6) % PCIE_AXIFIFO_BUF_SIZE_MAX]);
@@ -1447,7 +1450,7 @@ int axi_fifo_write_buf(unsigned char *buffer, int length){
     len = stream_fifo_write_data(&g_axififo_info->fifo_reg,buffer,length);
     return len;
 }
-int axi_fifo_write_file_buf(FILE *tree_fp,int mode,int analysis_type){
+int axi_fifo_write_file_buf(FILE *tree_fp,int mode){
     int ret = 0;
     unsigned int len,free_size,ddr_len = 0;
     uartlist_send_info_t head;

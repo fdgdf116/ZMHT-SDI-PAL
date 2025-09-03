@@ -8,7 +8,7 @@ extern "C" {
 #define DIRENT_STRUCT_FILE_PATH "dirent_srtuct_file1.txt"
 /* #define DIRENT_STRUCT_FILE_BACK_PATH "/run/media/mmcblk0p4/dirent_srtuct_file1_back.txt" */
 int write_dirent_struct_file(char path[]);
-int trans_dirent_struct_file(int mode,int analysis_type);
+int trans_dirent_struct_file(int mode);
 
 #ifdef __cplusplus
 }
