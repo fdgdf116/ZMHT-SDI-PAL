@@ -41,6 +41,21 @@ void gpu_osd_to_queue(unsigned char chn, image_frame_info_t *frame_info)
 	ringbuffer_put(rb, (uint8_t *)&event_param, sizeof(event_param));
 }
 
+void gpu_mpp_to_queue(unsigned char chn, image_frame_info_t *frame_info)
+{
+	GPU_Frame_st* frame_stream = gpu_data_stream_get();
+	ring_buffer_t *rb = frame_stream->mpp_data_rb[chn];
+	image_frame_info_t event_param, tmp_param;
+
+	if (ringbuffer_is_full(rb)) {					
+		ringbuffer_get(rb, (uint8_t *)&tmp_param, sizeof(tmp_param));
+		SLOGI("[Debug] %s ringbuffer_is_full", __func__);
+	}
+
+	memcpy(&event_param,frame_info,sizeof(image_frame_info_t));
+	ringbuffer_put(rb, (uint8_t *)&event_param, sizeof(event_param));
+}
+
 /*******************************************************/
 int gpu_yuv_to_rgb(uint8_t* rgb_buffer, uint8_t* yuv_buffer, unsigned int width, unsigned hight)
 {
@@ -49,10 +64,17 @@ int gpu_yuv_to_rgb(uint8_t* rgb_buffer, uint8_t* yuv_buffer, unsigned int width,
 }
 
 
-int gpu_cooperate_encode_yuv(uint8_t* osd_buffer,uint8_t *rgb_buffer, uint8_t* yuv_buffer, unsigned int width, unsigned int height)
+int gpu_cooperate_encode_yuyv(uint8_t* osd_buffer,uint8_t *rgb_buffer, uint8_t* yuv_buffer, unsigned int width, unsigned int height)
 {
     GPU_Frame_st* frame_stream = gpu_data_stream_get();
     return frame_stream->htr.cooperate_encode_yuv(width, height, e_yuv_yuyv, (uint16_t*)osd_buffer, rgb_buffer, yuv_buffer, 0);
+    // return frame_stream->htr.cooperate_encode_yuv(width, height, e_yuv_nv61, (uint16_t*)osd_buffer, rgb_buffer, yuv_buffer, 0);
+}
+
+int gpu_cooperate_encode_nv12(uint8_t* osd_buffer,uint8_t *rgb_buffer, uint8_t* yuv_buffer, unsigned int width, unsigned int height)
+{
+    GPU_Frame_st* frame_stream = gpu_data_stream_get();
+    return frame_stream->htr.cooperate_encode_yuv(width, height, e_yuv_nv12, (uint16_t*)osd_buffer, rgb_buffer, yuv_buffer, 0);
     // return frame_stream->htr.cooperate_encode_yuv(width, height, e_yuv_nv61, (uint16_t*)osd_buffer, rgb_buffer, yuv_buffer, 0);
 }
 
@@ -67,6 +89,12 @@ void gpu_chn_ringbuffer_is_empty(unsigned char chn)
    
     GPU_Frame_st* frame_stream = gpu_data_stream_get();
     while(!ringbuffer_is_empty(frame_stream->osd_data_rb[chn])){
+        xt_nanosleep(0, 100);
+    }
+    while(!ringbuffer_is_empty(frame_stream->image_over_rb[chn])){
+        xt_nanosleep(0, 100);
+    }
+    while(!ringbuffer_is_empty(frame_stream->mpp_data_rb[chn])){
         xt_nanosleep(0, 100);
     }
 }
@@ -125,16 +153,27 @@ int gpu_lib_init(void)
             ret = A818_GUI_OSD_DATA_RB;
             goto err_2;
         }
-    }
-    for(chn = 0; chn < DATA_CHANNEL_NUM_MAX; chn++){
         g_gpu_frame_stream->image_over_rb[chn]= ringbuffer_create(RINGBUFFER_FRAME_MAX*sizeof(image_frame_info_t),sizeof(image_frame_info_t));
         if (!g_gpu_frame_stream->image_over_rb[chn]) {
             printf("ERROR] create osd data rb failed\n");
             ret = A818_GUI_OSD_DATA_RB;
             goto err_3;
         }
+		g_gpu_frame_stream->mpp_data_rb[chn]= ringbuffer_create(RINGBUFFER_FRAME_MAX*sizeof(image_frame_info_t), sizeof(image_frame_info_t));
+		if (!g_gpu_frame_stream->mpp_data_rb[chn]) {
+			printf("ERROR] create mpp data rb failed\n");
+			ret = A818_GUI_MPP_DATA_RB;
+			goto err_4;
+		}
     }
     return A818_SUCCESS;
+err_4:
+    for(chn = 0; chn < DATA_CHANNEL_NUM_MAX; chn++){
+        if(g_gpu_frame_stream->mpp_data_rb[chn]){
+            ringbuffer_destory(g_gpu_frame_stream->mpp_data_rb[chn]); 
+            g_gpu_frame_stream->mpp_data_rb[chn] = NULL ;
+        }
+    }
 err_3:
     for(chn = 0; chn < DATA_CHANNEL_NUM_MAX; chn++){
         if(g_gpu_frame_stream->image_over_rb[chn]){

@@ -32,6 +32,9 @@
 #include "rga_engine.h"
 #include "osd_engine.h"
 #include "gpu_interface.h"
+#include "crop_engine.h"
+#include "mpi_encode.h"
+#include "data_engine.h"
 
 #define ringbuffer_destory ringbuffer_deinit
 #define PCIE_READ_IMAGE_DATA_ADDRESS (0x00000000)
@@ -90,6 +93,19 @@
 #define FPGA_PCIE_DATA_HEAD_SIZE (64)
 #define PCIE_HEAD_CHN_OFFSET (17)
 
+#define PCIE_GET_DATA_HEAD(buffer) ({ \
+	unsigned char *bd_buffer = buffer;	            \
+	unsigned int val;               \
+	val = bd_buffer[0] << 24 | bd_buffer[1] << 16 | bd_buffer[2] << 8 | bd_buffer[3]; val;})
+
+#define SET_INTERNAL_IN_RESOLUTION(src_width, src_height, src_fps, set_row_width, set_interval) { 	             \
+	.width = src_width,   				                       \
+	.height = src_height,					                   \
+	.fps = src_fps, \
+	.row_width = set_row_width, \
+	.interval = set_interval, \
+}
+
 extern char ssd_baseaddr[];
 typedef struct {
 	uint8_t *pcie_data;
@@ -107,7 +123,7 @@ void* pcie_vdma_config_reg;
 void* fiber_rate_config_reg;
 int chn_num = 1;
 
-static cfg_info_t* cfg_info[DATA_CHANNEL_NUM_MAX] = {NULL};
+static cfg_info_t* cfg_info[MPP_DECODE_NTHREAD_MAX] = {NULL};
 cfg_info_t* GetCfgInfo(int chan0_sel_mode )
 {
     if(chan0_sel_mode < 0 || chan0_sel_mode >= DATA_CHANNEL_NUM_MAX || cfg_info[chan0_sel_mode] == NULL)
@@ -259,15 +275,22 @@ int decode_configuration_init(cfg_info_t* reg_val_info)
 {
     int ret = 0;
     unsigned int reg_offset;
-    // unsigned char chn;
-    cfg_info_t* cfg_info = GetCfgInfo(reg_val_info->channel_param.chan0_sel_mode);
+    if(reg_val_info->channel_param.chn < MPP_DECODE_NTHREAD_MAX)
+    {
+        printf("decode_configuration_init chn:%d err\n",reg_val_info->channel_param.chn);
+        return 1;
+    }
+    cfg_info_t* cfg_info = GetCfgInfo(reg_val_info->channel_param.chn%MPP_DECODE_NTHREAD_MAX);
     memcpy(cfg_info, reg_val_info, sizeof(cfg_info_t));
     sprintf(cfg_info->in_filename_chn, "%s%s", ssd_baseaddr, reg_val_info->in_filename_chn);
     sprintf(cfg_info->out_filename_chn, "%s%s", ssd_baseaddr, reg_val_info->out_filename_chn);
     channel_param_t channel_param = cfg_info->channel_param;
     data_stream_t* data_stream = data_stream_get();
-    image_chn_info_t* image_chn_info = data_stream->image_chn_info[reg_val_info->channel_param.chan0_sel_mode];
-    mpp_info_t* mpp_info = &image_chn_info->mpp_info;
+    image_chn_info_t* image_chn_info = data_stream->image_chn_info[reg_val_info->channel_param.chn];
+    mpp_decode_info_t* mpp_info = data_stream->mpp_decode_info[reg_val_info->channel_param.chn%MPP_DECODE_NTHREAD_MAX];
+    pcie_info_t* pcie_info = data_stream->pcie_info[reg_val_info->channel_param.chn%MPP_DECODE_NTHREAD_MAX];
+
+    mpp_info->mpp_chn = reg_val_info->channel_param.chn%MPP_DECODE_NTHREAD_MAX;
     MpiDecLoopData* loop_data = &mpp_info->dec_data;
     rga_param_t* rga_info = &image_chn_info->rga_info;
     data_stream_t* gs_data_stream = data_stream_get();
@@ -277,7 +300,6 @@ int decode_configuration_init(cfg_info_t* reg_val_info)
         printf("decoding!!!\n");
         return -1;
     }
-    mpp_info->mpp_chn = reg_val_info->channel_param.chan0_sel_mode;
     parse_stream_info(cfg_info->in_filename_chn,&mpp_info->decode_type,&mpp_info->fps,&mpp_info->width, &mpp_info->height);
     mpp_info->dec_data.fps = mpp_info->fps;
     loop_data->fp_input = fopen(cfg_info->in_filename_chn, "rb");
@@ -297,11 +319,13 @@ int decode_configuration_init(cfg_info_t* reg_val_info)
         }
     }
     
-    rga_info->out_color = channel_param.out_color;
+    rga_info->rga_chn = reg_val_info->channel_param.chn;
+    rga_info->out_color = 2;
     rga_info->image_w0 = channel_param.image_w0;
     rga_info->image_y0 = channel_param.image_y0;
     rga_info->rotate_type = cfg_info->channel_param.rotate;
     rga_info->resize = cfg_info->channel_param.resize;
+    rga_info->crop_flag = cfg_info->channel_param.crop;
     rga_info->src_width = mpp_info->width;
     rga_info->src_height = mpp_info->height;
     if( rga_info->rotate_type == IM_HAL_TRANSFORM_ROT_90 || rga_info->rotate_type == IM_HAL_TRANSFORM_ROT_270 )
@@ -316,8 +340,8 @@ int decode_configuration_init(cfg_info_t* reg_val_info)
     }
     if(rga_info->resize)
     {
-        rga_info->resize_width  = cfg_info->channel_param.image_length0;
-        rga_info->resize_height = cfg_info->channel_param.image_width0;
+        rga_info->resize_width  = cfg_info->channel_param.resize_width;
+        rga_info->resize_height = cfg_info->channel_param.resize_higth;
     }
     else
     {
@@ -341,52 +365,65 @@ int decode_configuration_init(cfg_info_t* reg_val_info)
     {
         rga_info->osd_height = rga_info->resize_height;
     }
-    rga_info->out_width = rga_info->resize_width;
-    rga_info->out_height = rga_info->resize_height;
+    if(rga_info->crop_flag == 1)
+    {
+        rga_info->out_width = cfg_info->channel_param.image_length0;
+        rga_info->out_height = cfg_info->channel_param.image_width0;
+    }
+    else
+    {
+        rga_info->out_width = rga_info->resize_width;
+        rga_info->out_height = rga_info->resize_height;        
+    }
     if((rga_info->out_width != rga_info->osd_width) || (rga_info->out_height != rga_info->osd_height))
     {
         rga_info->crop_flag = 1; //裁剪标志
     }
-    switch (rga_info->out_color)
+    else
     {
-    case 1: // RGB_888
-      rga_info->pixel_byte = 3;
-      break;
-    case 2: // YUYV
-      rga_info->pixel_byte = 2;
-      break;
-    default:
-      break;
+        rga_info->crop_flag = 0; //裁剪标志
     }
-    SLOGI("out_color:%d rotate_width:%d rotate_height:%d resize_width:%d resize_height:%d image_w0:%d image_y0:%d osd_width:%d osd_height:%d out_width:%d out_height:%d totate_type:%d resize:%d crop:%d pixel_byte:%d\n",
+    pcie_info->out_width = rga_info->out_width;
+    pcie_info->out_height = rga_info->out_height;
+
+    SLOGI("out_color:%d rotate_width:%d rotate_height:%d resize_width:%d resize_height:%d image_w0:%d image_y0:%d osd_width:%d osd_height:%d out_width:%d out_height:%d totate_type:%d resize:%d crop:%d pixel_byte:%f\n",
           rga_info->out_color, rga_info->rotate_width, rga_info->rotate_height,
           rga_info->resize_width, rga_info->resize_height, rga_info->image_w0, rga_info->image_y0,
           rga_info->osd_width, rga_info->osd_height, rga_info->out_width, rga_info->out_height,
           rga_info->rotate_type, rga_info->resize, rga_info->crop_flag, rga_info->pixel_byte);
 
-    ret = writePL_chn_init(mpp_info->mpp_chn);
+    ret = writePL_chn_init(rga_info->rga_chn);
     if(ret != 0) 
     {
         SLOGI("writePL_chn_init error \n");
         goto err_1;
     }
-    ret = gpu_osd_chn_image_init(mpp_info->mpp_chn);
+    ret = crop_chn_init(rga_info->rga_chn);
+    if(ret != 0) 
+    {
+        SLOGI("writePL_chn_init error \n");
+        goto err_2;
+    }
+    ret = gpu_osd_chn_image_init(rga_info->rga_chn);
 	if (ret != 0) {
 		SLOGI("gpu_osd_chn_image_init error \n");
-        goto err_2;
+        goto err_3;
 	}
-    ret = rga_chn_image_init(mpp_info->mpp_chn);
+    ret = rga_chn_image_init(rga_info->rga_chn);
     if (ret != 0) {
         SLOGI("rga_chn_image_init error \n");
-        goto err_3;
+        goto err_4;
     }
     return A818_SUCCESS;
+err_4:
+    rga_pthread_chn_destory(rga_info->rga_chn);
+    data_stream_chn_data_destory(rga_info->rga_chn);
 err_3:
-    rga_pthread_chn_destory(mpp_info->mpp_chn);
-    data_stream_chn_data_destory(mpp_info->mpp_chn);
+    gui_osd_overlapped_chn_destory(rga_info->rga_chn);
+    gpu_osd_chn_image_destory(rga_info->rga_chn);
 err_2:
-    gui_osd_overlapped_chn_destory(mpp_info->mpp_chn);
-    gpu_osd_chn_image_destory(mpp_info->mpp_chn);
+    crop_chn_destory(rga_info->rga_chn);
+    crop_chn_image_destory(rga_info->rga_chn);
 err_1:
     writePL_chn_destory(mpp_info->mpp_chn);
     return ret;    
@@ -694,11 +731,11 @@ void pcie_fpga_device_stop(void)
 {
     pcie_set_rk_enable(0);
     pcie_set_pc_enable(0);
-    pcie_fpga_reg_reset();
+    // pcie_fpga_reg_reset();
 
-    while(pcie_get_fpga2rk_vfifo_szie()){
-        usleep(1000);
-    }
+    // while(pcie_get_fpga2rk_vfifo_szie()){
+    //     usleep(1000);
+    // }
 
     while(!ringbuffer_is_empty(g_fpga_pcie->pcie_data_rb)){
         usleep(100);  
@@ -750,6 +787,433 @@ static void *pcie_read_data_thread(void* parameter)
         }
 
     }
+    return NULL;
+}
+
+/*奇偶行拼接*/
+void odd_transform_yuv(unsigned char* yuv_data, int chn)
+{
+	data_stream_t *data_stream = data_stream_get();
+	image_chn_info_t* image_chn_info = data_stream->image_chn_info[chn];
+	int src_width = image_chn_info->rga_info.src_width;
+	int src_height = image_chn_info->rga_info.src_height;
+
+	uint16_t row_len =  src_width * 2;
+    // 还原奇偶场数据
+    uint8_t* temp_row = (uint8_t*)malloc(row_len*sizeof(row_len));
+    // 建立一个映射，防止因为闭环导致出现未交换的行
+    uint8_t* visit_map = malloc(src_height*sizeof(uint8_t));
+	memset(visit_map, 0x00, src_height);
+	
+    uint32_t start = 1;
+    uint32_t current = start;
+    memcpy(temp_row, &yuv_data[current * row_len], row_len); // 保存第1行数据
+    visit_map[start] = 1;
+    
+    while(1)
+    {
+        uint32_t next = (current % 2) ? (current + src_height) / 2 : current / 2;
+        if (next == start)
+        {
+            // 先找到 start 对应的地址，完成这个闭环
+            uint16_t temp_target = start < src_height / 2 ? start * 2 : 2 * (start - src_height / 2) + 1;
+            memcpy(&yuv_data[row_len * temp_target], temp_row, row_len); // 保存第1行数据
+            visit_map[temp_target] = 1;
+	
+            // 检查是否有闭环
+            uint32_t unvisited = 0;
+            for (uint16_t i = 1; i < src_height - 1; ++i)
+                if (!visit_map[i])
+                {
+                    unvisited = i;
+                    break;
+                }
+            if (unvisited)
+            {
+                start = unvisited;
+                current = start;
+                memcpy(temp_row, &yuv_data[start * row_len], row_len); // 保存第1行数据
+                continue;
+            }
+            else
+                break;
+        }
+        else
+            visit_map[current] = 1;
+        // 数据向目标索引移动
+        memcpy(&yuv_data[current * row_len], &yuv_data[next * row_len], row_len);
+        current = next;
+    }
+	
+    // 释放内存
+    free(temp_row);
+	free(visit_map);
+}
+
+void pcie_fpga2rga_image_to_queue(unsigned char chn, image_frame_info_t *frame_info)
+{
+	image_frame_info_t event_param, tmp_param;
+	data_stream_t *data_stream = data_stream_get();
+	ring_buffer_t *rb = data_stream->chn_image[chn]->rga_data_rb;
+	
+	if (ringbuffer_is_full(rb)) {					
+		ringbuffer_get(rb, (uint8_t *)&tmp_param, sizeof(tmp_param));
+		SLOGI("[Debug] %s ringbuffer_is_full", __func__);
+	}
+
+	memcpy(&event_param,frame_info,sizeof(image_frame_info_t));
+			
+	ringbuffer_put(rb, (uint8_t *)&event_param, sizeof(event_param));
+}
+
+/*
+	函数: int pcie_chn_data_analysis(unsigned char chn, unsigned char* chn_buf_l)
+	作用: 高通道数据解析(基本上与低通道的解析是一致的，只是两者保存的一帧图的buffer是不一样的)
+	参数:
+	  chn:通道
+	  chn_buf_l：一行数据(5184)
+	返回值:
+	  正确返回0，失败返回其他
+*/
+int pcie_chn_data_analysis(unsigned char chn, unsigned char* chn_buf_l)
+{
+	ring_buffer_t *chn_rb;
+	uint32_t memcpy_offset; 
+	uint32_t memcpy_len;
+	uint8_t *chn_image_buf;
+	image_frame_info_t chn_frame_info;
+	gpu_image_info_t *gpu_image;
+	fpga_chn_image_info_t* chn_image;
+	GPU_Frame_st* gpu_frame_stream;
+	data_stream_t *data_stream = data_stream_get();
+	
+	gpu_frame_stream = gpu_data_stream_get();
+	if((!gpu_frame_stream)){
+		printf("[Debug] %s chn:%d get gpu_frame_stream error \n", __func__, chn);
+		return 1;
+	}
+
+	gpu_image = &gpu_frame_stream->gpu_image[chn];
+	if((!gpu_image)){
+		printf("[Debug] %s chn:%d get gpu_image error \n", __func__, chn);
+		return 2;
+	}
+
+	chn_image = data_stream->chn_image[chn];
+	if(!chn_image){
+		SLOGI("-1-CHN:%d malloc chn_image error \n", chn);
+		return 4;
+	}
+    chn_data_info_t* chn_data = &chn_image->chn_data;
+    if (!chn_data)
+    {
+        SLOGI("-1-CHN:%d malloc chn_data error \n", chn);
+		return 5;
+    } 
+    
+
+	chn_image_buf = (uint8_t*)chn_image->chn_data.yuv420_data[chn_data->rb_offset].vir_addr;
+	if((!chn_image_buf)){
+		printf("[Debug] %s chn:%d get chn_image_buf error \n", __func__, chn);
+		return 3;
+	}
+
+	/* 判断本行是不是图像的结束行，如果是结束行，则对数据进行拷贝 */
+	if((chn_image->chn_data.data_offset + (FPGA_ROW_DATA_SIZE - FPGA_PCIE_DATA_HEAD_SIZE)) >= chn_image->chn_data.frame_size){
+
+		memcpy_len = chn_data->frame_size - chn_data->data_offset; /* 剩余的进行拷贝 */
+		memcpy(chn_image_buf + chn_data->data_offset, (chn_buf_l + FPGA_PCIE_DATA_HEAD_SIZE),memcpy_len);
+        if(chn == 0)
+            odd_transform_yuv(chn_image_buf,chn);
+		// save_image_data(chn_image_buf,gpu_image->frame_size,"/userdata/chn_image_buf.raw");
+		chn_rb = GetInPutRingBufferPt(chn);
+		if(chn_rb){
+			if(!ringbuffer_is_full(chn_rb)){
+				chn_frame_info.frame_offset = chn_data->rb_offset;
+				//chn_frame_info.frame_index = gpu_image->rb_offset;
+				chn_frame_info.frame_size = chn_data->frame_size;
+				pcie_fpga2rga_image_to_queue(chn, &chn_frame_info);
+				chn_data->rb_offset += 1;
+				if(chn_data->rb_offset >= (chn_image->data_frame_max + 1)){
+					chn_data->rb_offset = 0;
+				}
+			}
+		} else {
+			SLOGI("[Debug] chn:%d ringbuffer is NULL \n", chn);
+		}
+
+		chn_data->data_offset = 0;
+
+		chn_image_buf = (uint8_t*)chn_image->chn_data.yuv420_data[chn_data->rb_offset].vir_addr;
+		if((!chn_image_buf)){
+			printf("[Debug] %s chn:%d get chn_image_buf error \n", __func__, chn);
+			return 4;
+		}
+
+		/* 判断整行判断这一行是不是正好结束 */
+		memcpy_offset = (memcpy_len + FPGA_PCIE_DATA_HEAD_SIZE);
+
+		if(memcpy_offset != FPGA_ROW_DATA_SIZE){
+			memcpy(chn_image_buf + chn_data->data_offset, (chn_buf_l + memcpy_offset), (FPGA_ROW_DATA_SIZE - memcpy_offset));
+			chn_data->data_offset += (FPGA_ROW_DATA_SIZE - memcpy_offset); /* 更新拷贝的数据的大小 */
+		}
+
+	} else {
+		memcpy(chn_image_buf + chn_data->data_offset, (chn_buf_l + FPGA_PCIE_DATA_HEAD_SIZE), (FPGA_ROW_DATA_SIZE - FPGA_PCIE_DATA_HEAD_SIZE));
+		chn_data->data_offset += (FPGA_ROW_DATA_SIZE - FPGA_PCIE_DATA_HEAD_SIZE); /* 更新拷贝的数据的大小 */
+	}
+
+	return 0;
+}
+
+/*
+	函数: static void *pcie_data_analysis_thread(void* parameter)
+	作用: 读取到的数据解析线程
+	参数:
+		线程参数
+	返回值:
+		线程返回值
+*/
+/*
+	说明:
+		fpga传递的数据是有协议的，协议为64 + 5120 = 5184，每个5184会打一次帧头，
+		因此按照5184的整数倍来读取数据，这样方便确认是不是丢数据。
+*/
+#if TEST
+static void *pcie_data_analysis_thread(void* parameter)
+{
+	u_int32_t ret;
+	struct timeval time;
+	uint8_t *pcie_buf;
+	unsigned int chn, frame_index;
+	chn = 0;
+	image_frame_info_t frame_info;
+	uint8_t *chn_buf_l;
+	ring_buffer_t *rb = g_fpga_pcie->pcie_data_rb;
+	unsigned int pcie_data_head = 0x499602d2;
+	uint8_t *chn_image_buf = NULL;
+	ring_buffer_t *chn_rb = NULL;
+	image_frame_info_t chn_frame_info;
+	data_stream_t *data_stream = data_stream_get();
+	fpga_chn_image_info_t* chn_image = data_stream->chn_image[chn];
+	GPU_Frame_st* gpu_frame_stream = gpu_data_stream_get();;
+	gpu_image_info_t *gpu_image = &gpu_frame_stream->gpu_image[chn];;
+
+	FILE* fp_datasrc = fopen("/userdata/output_720x576.yuyv","rb");
+	if(fp_datasrc == NULL)
+	{
+		SLOGI("fp_datasrc open fail!");
+		return NULL;
+	}
+
+	cpu_set_t mask;
+	CPU_ZERO(&mask);
+	// 限大核调度
+	CPU_SET(4, &mask), CPU_SET(5, &mask);
+	CPU_SET(6, &mask), CPU_SET(7, &mask);
+	pthread_setaffinity_np(pthread_self( ), sizeof(mask), &mask);
+
+	// chn_image_buf = (uint8_t*)malloc(gpu_image->frame_size);
+	while(1){
+		chn_image_buf = (uint8_t*)chn_image->chn_data.yuv422_data[gpu_image->rb_offset].vir_addr;
+		if(chn_image_buf == NULL)
+		{
+			continue;
+		}
+		ret = fread(chn_image_buf,1,gpu_image->frame_size,fp_datasrc);
+		fflush(fp_datasrc);
+		if(ret != gpu_image->frame_size)
+		{
+			SLOGI("fp_datasrc read over ret:%d frame_size:%d,come back\n",ret,gpu_image->frame_size);
+			rewind(fp_datasrc);
+			continue;
+		}
+		chn_rb = chn_image->chn_data_rb;
+		if(chn_rb){
+			if(!ringbuffer_is_full(chn_rb)){
+				chn_frame_info.frame_offset = gpu_image->rb_offset;
+				//chn_frame_info.frame_index = gpu_image->rb_offset;
+				chn_frame_info.frame_size = gpu_image->frame_size;
+				chn_frame_info.t0 = what_time_is_it_now();
+				pcie_fpga2rga_image_to_queue(chn, &chn_frame_info);
+				gpu_image->rb_offset += 1;
+				if(gpu_image->rb_offset >= (chn_image->data_frame_max + 1)){
+					gpu_image->rb_offset = 0;
+				}
+			}
+		} else {
+			SLOGI("[Debug] chn:%d ringbuffer is NULL \n", chn);
+		}
+		usleep(40000);
+	}
+err1:
+	fclose(fp_datasrc);
+	return NULL;
+}
+#else
+static void *pcie_data_analysis_thread(void* parameter)
+{
+	int ret;
+	struct timeval time;
+	uint8_t *pcie_buf;
+	unsigned int chn, frame_index;
+	image_frame_info_t frame_info;
+	uint8_t *chn_buf_l;
+	ring_buffer_t *rb = g_fpga_pcie->pcie_data_rb;
+	unsigned int pcie_data_head = 0x499602d2;
+
+	cpu_set_t mask;
+	CPU_ZERO(&mask);
+	// 限大核调度
+	CPU_SET(4, &mask), CPU_SET(5, &mask);
+	CPU_SET(6, &mask), CPU_SET(7, &mask);
+	pthread_setaffinity_np(pthread_self( ), sizeof(mask), &mask);
+
+	while(1){
+		while(ringbuffer_is_empty(rb)) {
+			time.tv_sec=0;
+			time.tv_usec=1;
+			select(0,NULL,NULL,NULL,&time);
+		}
+		ringbuffer_get(rb, (uint8_t *)&frame_info, sizeof(image_frame_info_t));
+
+		if(ringbuffer_is_full(rb)){
+			SLOGI("[%s] ringbuffer full \n", __func__);
+		}
+
+		pcie_buf = g_fpga_pcie->pcie_data + frame_info.frame_offset;
+
+		/*对每行数据进行解析*/
+		for(frame_index = 0; frame_index < FPGA_READ_DATA_ROW_MAX; frame_index++){
+			chn_buf_l = (pcie_buf + ((frame_index) * FPGA_ROW_DATA_SIZE));
+
+			if(PCIE_GET_DATA_HEAD(chn_buf_l) != pcie_data_head){ /*帧头错误，则跳过本帧解析*/
+				SLOGI("pcie index (0x%x != 0x%x )error \n", PCIE_GET_DATA_HEAD(chn_buf_l), pcie_data_head);
+				continue;
+			}
+
+			chn = chn_buf_l[PCIE_HEAD_CHN_OFFSET]; /* DATA_CHANNEL_OFFSET:通道偏移 */
+			if(chn >= DATA_CHANNEL_NUM_MAX){/* 帧序号超过最大的帧序号，则跳出本帧解析 */
+				SLOGI("get pcie data chn(%d - %d) error \n", chn, chn_buf_l[16]);
+				continue;
+			}
+
+			pcie_chn_data_analysis(chn, chn_buf_l);
+		}
+	}
+	return NULL;
+}
+#endif
+
+int pcie_mpp_data_send(unsigned char* mpp_data, unsigned int size)
+{
+    int ret = 0;
+    ret = dma_memory_mapped_write(mpp_data, PCIE_WRITE_IMAGE_DATA_ADDRESS,size, PCIE_H2C_0);
+    if(ret != size){
+        SLOGI("rk2fpga size:(%d-%d) data error \n", ret, size);
+    }
+
+    return ret;
+}
+
+
+/*帧头填充*/
+void mpp_data_assemble_frame(uint8_t* mpp_data, unsigned char src_chn, unsigned char chn, unsigned int frame_index)
+{
+    unsigned int framer_head = 0xfa3ce6d5;
+    mpi_encode_info_t* mpi_encode = mpi_encode_info_get();
+
+    mpp_data[0] = (framer_head >> 24) & 0xff;
+    mpp_data[1] = (framer_head >> 16) & 0xff;
+    mpp_data[2] = (framer_head >> 8) & 0xff;
+    mpp_data[3] = framer_head & 0xff;
+
+    mpp_data[4] = (MPP_OUTPUT_FRAME_SIZE >> 24) & 0xff;
+    mpp_data[5] = (MPP_OUTPUT_FRAME_SIZE >> 16) & 0xff;
+    mpp_data[6] = (MPP_OUTPUT_FRAME_SIZE >> 8) & 0xff;
+    mpp_data[7] = MPP_OUTPUT_FRAME_SIZE & 0xff;
+
+    mpp_data[8] = (frame_index >> 24) & 0xff;
+    mpp_data[9] = (frame_index >> 16) & 0xff;
+    mpp_data[10] = (frame_index >> 8) & 0xff;
+    mpp_data[11] = frame_index & 0xff;
+
+    mpp_data[16] = src_chn;
+    mpp_data[17] = chn;
+    
+}
+/*有效数据填充*/
+void mpp_data_frame_effective_length(uint8_t* mpp_data, unsigned int length)
+{
+    mpp_data[60] = (length >> 24) & 0xff;
+    mpp_data[61] = (length >> 16) & 0xff;
+    mpp_data[62] = (length >> 8) & 0xff;
+    mpp_data[63] = length & 0xff;
+}
+
+
+int pcie_send_mpp_data(int chn, image_frame_info_t *frame_info)
+{
+    int ret;
+    mpi_image_encode_info_t *image_encode;
+    mpi_encode_info_t* mpi_encode = mpi_encode_info_get();
+    uint8_t *buffer = align_write_mpp_buf_get(chn);
+    image_encode = &mpi_encode->image_encode[chn];
+
+    memset(buffer, 0x0, (MPP_OUTPUT_FRAME_SIZE + MPP_OUTPUT_HEAD_SIZE));
+    
+    mpp_data_assemble_frame(buffer, frame_info->chn, chn, frame_info->frame_index);
+    memcpy(buffer + MPP_OUTPUT_HEAD_SIZE, image_encode->encode_data + frame_info->frame_offset, frame_info->frame_size);
+    mpp_data_frame_effective_length(buffer, frame_info->frame_size);
+
+    ret = pcie_mpp_data_send(buffer, (MPP_OUTPUT_FRAME_SIZE + MPP_OUTPUT_HEAD_SIZE));
+    if(ret != (MPP_OUTPUT_FRAME_SIZE + MPP_OUTPUT_HEAD_SIZE)){
+        return 1;
+    }
+
+    SLOGI("rk2fpga chn:%d f_chn:%d index:%d offset:0x%x size:%d data ok \n", chn, frame_info->chn, frame_info->frame_index,frame_info->frame_offset, frame_info->frame_size);
+
+    return 0;
+}
+
+/*
+	函数: static void *pcie_mpp_send_thread(void* parameter)
+	作用: 编码数据发送线程
+	参数:
+		线程参数
+	返回值:
+		线程返回值
+*/
+static void *pcie_mpp_send_thread(void* parameter)
+{
+    int ret;
+    ring_buffer_t *rb;
+    image_frame_info_t frame_info;
+
+    mpi_image_encode_info_t *image_encode;
+    mpi_encode_info_t* mpi_encode = mpi_encode_info_get();
+
+    while(1){
+        /*遍历编码通道，有数据则通过PCIE发送出去*/
+        for(int chn = 0; chn < MPP_ENCODE_NTHREAD_MAX; chn++){
+            rb =mpi_encode->mpp_encode_rb[chn];
+            image_encode = &mpi_encode->image_encode[chn];
+            if(!ringbuffer_is_empty(rb)) {
+                if(ringbuffer_is_full(rb)){
+                    SLOGI("[%s] chn:%d ringbuffer full \n", __func__, chn);
+                }
+                ringbuffer_get(rb, (uint8_t *)&frame_info, sizeof(image_frame_info_t));
+                
+                ret = pcie_send_mpp_data(chn, &frame_info);
+                if(ret != 0){
+                    SLOGI("rk2fpga chn:%d offset:0x%x size:(%d) data error \n", chn, frame_info.frame_offset, frame_info.frame_size);
+                }
+            }
+        }
+        //usleep(100);
+        xt_nanosleep(0, (100));
+    }
+
     return NULL;
 }
 
@@ -890,43 +1354,63 @@ int pcie_fpga_data_init(void)
 		return A818_PCIE_DATA_MALLOC;
 	}
     //初始化cfg_info
-    for(int index=0; index < DATA_CHANNEL_NUM_MAX; index++){
+    for(int index=0; index < MPP_DECODE_NTHREAD_MAX; index++){
         cfg_info[index] = (cfg_info_t *)malloc(sizeof(cfg_info_t));
         memset(cfg_info[index], 0, sizeof(cfg_info_t));
-        cfg_info[index]->channel_param.chan0_sel_mode = index;
     }
 
-    g_fpga_pcie->pcie_data = align_read_buf_get();
-    // g_fpga_pcie->pcie_data_rb = ringbuffer_create(PCIE_DATA_STREAM_FRAME_MAX*sizeof(image_frame_info_t));
-    // if (!g_fpga_pcie->pcie_data_rb) {
-    //     printf("[ERROR] create pcie data rb buffer failed\n");
-    //     ret = A818_PCIE_DATA_RB;
-    //     goto err_1;
-    // }
+    ret = pcie_bar_open(1);
+    if(ret != 0){
+        printf("[ERROR] pcie bar2 mmap error \n");
+        return A818_PCIE_BAR_OPEN;
+    }
 
-    // g_fpga_pcie->pcie_reg = pcie_reg;
+	g_fpga_pcie->pcie_data = align_read_buf_get();
+	g_fpga_pcie->pcie_data_rb = ringbuffer_create(PCIE_DATA_STREAM_FRAME_MAX*sizeof(image_frame_info_t), sizeof(image_frame_info_t));
+	if (!g_fpga_pcie->pcie_data_rb) {
+		printf("[ERROR] create pcie data rb buffer failed\n");
+		ret = A818_PCIE_DATA_RB;
+		goto err_1;
+	}
 
-    // g_fpga_pcie->pcie_pc_reg = pcie_bar_mmap(FPGA_PCIE_PC_REG_PHY, FPGA_PCIE_REG_LEN);
-    // if(g_fpga_pcie->pcie_pc_reg == NULL){
-    //     printf("[ERROR] pcie reg bar mmap error \n");
-    //     ret = A818_PCIE_PC_REG_MMAP;
-    //     goto err_3;
-    // }
+	g_fpga_pcie->pcie_reg = pcie_reg;
 
-    // /* 初始化相关线程 */
-    // ret = pthread_create(&read_tid,NULL,&pcie_read_data_thread,NULL);;
-    // if (ret != 0) {
-    //     printf("[ERROR] Create pcie read data thread failed %d\n",__func__,ret);
-    //     ret = A818_PCIE_READ_THREAD;
-    //     goto err_4;
-    // }
+	g_fpga_pcie->pcie_pc_reg = pcie_bar_mmap(FPGA_PCIE_PC_REG_PHY, FPGA_PCIE_REG_LEN,1);
+	if(g_fpga_pcie->pcie_pc_reg == NULL){
+		printf("[ERROR] pcie reg bar mmap error \n");
+		ret = A818_PCIE_PC_REG_MMAP;
+		goto err_2;
+	}
 
-    // pcie_fpga_reg_reset();
+	/* 初始化相关线程 */
+	ret = pthread_create(&read_tid,NULL,&pcie_read_data_thread,NULL);
+	if (ret != 0) {
+		printf("[ERROR] Create pcie read data thread failed %d\n",__func__,ret);
+		ret = A818_PCIE_READ_THREAD;
+		goto err_3;
+	}
+
+	ret = pthread_create(&analysis_tid,NULL,&pcie_data_analysis_thread,NULL);
+	if (ret != 0) {
+		printf("[ERROR] Create pcie data analysis thread failed %d\n",__func__,ret);
+		ret = A818_PCIE_ANALYSIS_THREAD;
+		goto err_4;
+	}
+
+	ret = pthread_create(&send_tid,NULL,&pcie_mpp_send_thread,NULL);
+	if (ret != 0) {
+		printf("[ERROR] Create pcie data send thread failed %d\n",__func__,ret);
+		ret = A818_PCIE_SEND_THREAD;
+		goto err_5;
+	}
+
+	pcie_fpga_reg_reset();
     SLOGI("[%s] pcie init ok \n", __func__);
     usleep(200*1000);
 
     return A818_SUCCESS;
-
+err_5:
+	pthread_cancel(analysis_tid);
 err_4:
     pthread_cancel(read_tid);
 err_3:

@@ -54,20 +54,20 @@ RM = /usr/bin/cmake -E rm -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704
+CMAKE_SOURCE_DIR = /home/megshark/3588_work/SDI_PAL/rk_sdi_pal_pro
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704/build
+CMAKE_BINARY_DIR = /home/megshark/3588_work/SDI_PAL/rk_sdi_pal_pro/build
 
 #=============================================================================
 # Directory level rules for the build root directory
 
 # The main recursive "all" target.
-all: CMakeFiles/rk_rga_test.dir/all
+all: CMakeFiles/sdi-pal_pro.dir/all
 .PHONY : all
 
 # The main recursive "codegen" target.
-codegen: CMakeFiles/rk_rga_test.dir/codegen
+codegen: CMakeFiles/sdi-pal_pro.dir/codegen
 .PHONY : codegen
 
 # The main recursive "preinstall" target.
@@ -75,40 +75,40 @@ preinstall:
 .PHONY : preinstall
 
 # The main recursive "clean" target.
-clean: CMakeFiles/rk_rga_test.dir/clean
+clean: CMakeFiles/sdi-pal_pro.dir/clean
 .PHONY : clean
 
 #=============================================================================
-# Target rules for target CMakeFiles/rk_rga_test.dir
+# Target rules for target CMakeFiles/sdi-pal_pro.dir
 
 # All Build rule for target.
-CMakeFiles/rk_rga_test.dir/all:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/rk_rga_test.dir/build.make CMakeFiles/rk_rga_test.dir/depend
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/rk_rga_test.dir/build.make CMakeFiles/rk_rga_test.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704/build/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20 "Built target rk_rga_test"
-.PHONY : CMakeFiles/rk_rga_test.dir/all
+CMakeFiles/sdi-pal_pro.dir/all:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/sdi-pal_pro.dir/build.make CMakeFiles/sdi-pal_pro.dir/depend
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/sdi-pal_pro.dir/build.make CMakeFiles/sdi-pal_pro.dir/build
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/megshark/3588_work/SDI_PAL/rk_sdi_pal_pro/build/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26 "Built target sdi-pal_pro"
+.PHONY : CMakeFiles/sdi-pal_pro.dir/all
 
 # Build rule for subdir invocation for target.
-CMakeFiles/rk_rga_test.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704/build/CMakeFiles 20
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/rk_rga_test.dir/all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704/build/CMakeFiles 0
-.PHONY : CMakeFiles/rk_rga_test.dir/rule
+CMakeFiles/sdi-pal_pro.dir/rule: cmake_check_build_system
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/megshark/3588_work/SDI_PAL/rk_sdi_pal_pro/build/CMakeFiles 26
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/sdi-pal_pro.dir/all
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/megshark/3588_work/SDI_PAL/rk_sdi_pal_pro/build/CMakeFiles 0
+.PHONY : CMakeFiles/sdi-pal_pro.dir/rule
 
 # Convenience name for target.
-rk_rga_test: CMakeFiles/rk_rga_test.dir/rule
-.PHONY : rk_rga_test
+sdi-pal_pro: CMakeFiles/sdi-pal_pro.dir/rule
+.PHONY : sdi-pal_pro
 
 # codegen rule for target.
-CMakeFiles/rk_rga_test.dir/codegen:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/rk_rga_test.dir/build.make CMakeFiles/rk_rga_test.dir/codegen
-	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704/build/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20 "Finished codegen for target rk_rga_test"
-.PHONY : CMakeFiles/rk_rga_test.dir/codegen
+CMakeFiles/sdi-pal_pro.dir/codegen:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/sdi-pal_pro.dir/build.make CMakeFiles/sdi-pal_pro.dir/codegen
+	@$(CMAKE_COMMAND) -E cmake_echo_color "--switch=$(COLOR)" --progress-dir=/home/megshark/3588_work/SDI_PAL/rk_sdi_pal_pro/build/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26 "Finished codegen for target sdi-pal_pro"
+.PHONY : CMakeFiles/sdi-pal_pro.dir/codegen
 
 # clean rule for target.
-CMakeFiles/rk_rga_test.dir/clean:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/rk_rga_test.dir/build.make CMakeFiles/rk_rga_test.dir/clean
-.PHONY : CMakeFiles/rk_rga_test.dir/clean
+CMakeFiles/sdi-pal_pro.dir/clean:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/sdi-pal_pro.dir/build.make CMakeFiles/sdi-pal_pro.dir/clean
+.PHONY : CMakeFiles/sdi-pal_pro.dir/clean
 
 #=============================================================================
 # Special targets to cleanup operation of make.

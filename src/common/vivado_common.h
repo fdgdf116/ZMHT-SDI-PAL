@@ -59,7 +59,8 @@ enum data_stream_e {
 
     DATA_CHANNEL_NUM_MAX = 4, /* 4路处理链路 */
     DATA_RATIO_CHANNEL_MAX = 12, /* PCIE缩放通道的最大的值 */
-    MPP_ENCODE_NTHREAD_MAX = 4, /* mpp进行解码码的通道个数 */
+    MPP_DECODE_NTHREAD_MAX = 2, /* mpp进行解码的通道个数 */
+    MPP_ENCODE_NTHREAD_MAX = 2, /* mpp进行编码的通道个数 */
 
     NO_SIGNAL_BUF_MAX = 24,
     NO_SIGNAL_IMGAE_MAX = 5,
@@ -157,11 +158,13 @@ enum rk3588_upgrade_info_e {
 };
 
 typedef struct {
-    u_int16_t   chan0_sel_mode; /*处理通路*/
-    u_int16_t   chn;            /*绑定输出通道*/
+    u_int16_t   chn;            /*rga处理通路*/
     u_int16_t   out_color;      /*输出颜色选择*/
     u_int16_t   rotate;         /*旋转角度*/
-    u_int16_t   resize;         /*旋转角度*/
+    u_int16_t   resize;         /*是否缩放*/
+    u_int16_t   resize_width;  /*缩放宽*/
+    u_int16_t   resize_higth;   /*缩放高*/
+    u_int16_t   crop;         /*是否裁剪*/
     u_int16_t   image_length0;  /*图像长度*/
     u_int16_t   image_width0;   /*图像宽度*/
     u_int16_t   image_fps;      /*输出帧率*/

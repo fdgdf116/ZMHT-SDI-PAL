@@ -12,10 +12,10 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
 # 项目信息
-project(rk_rga_test)
+project(sdi-pal_pro)
 
 # 设置可执行文件目标
-set(TARGETS "rk_rga_test")
+set(TARGETS "sdi-pal_pro")
 
 set(CMAKE_CXX_STANDARD 14)
 
@@ -25,6 +25,7 @@ add_definitions(-D_GNU_SOURCE -DLINUX)
 
 include_directories(
 	${CMAKE_CURRENT_LIST_DIR}/include/
+	${CMAKE_CURRENT_LIST_DIR}/include/opencv4/
 
 	${CMAKE_CURRENT_LIST_DIR}/include/UCGUI/
 	${CMAKE_CURRENT_LIST_DIR}/include/UCGUI/Interface/
@@ -44,6 +45,9 @@ include_directories(
 	${CMAKE_CURRENT_LIST_DIR}/src/log/
 	${CMAKE_CURRENT_LIST_DIR}/src/rga/
 	${CMAKE_CURRENT_LIST_DIR}/src/mpp/
+	${CMAKE_CURRENT_LIST_DIR}/src/mpp/utils/
+	${CMAKE_CURRENT_LIST_DIR}/src/mpp/osal/inc	
+	${CMAKE_CURRENT_LIST_DIR}/src/mpp/base/
 	${CMAKE_CURRENT_LIST_DIR}/src/pcie/
 	${CMAKE_CURRENT_LIST_DIR}/src/fifo/
 
@@ -75,13 +79,14 @@ aux_source_directory(./src/log DIR_SRCS_LOG)
 aux_source_directory(./src/system DIR_SRCS_SYSTEM)
 aux_source_directory(./src/rga DIR_SRCS_RGA)
 aux_source_directory(./src/mpp DIR_SRCS_MPP)
+aux_source_directory(./src/mpp/utils DIR_SRCS_MPP_UTILS)
 aux_source_directory(./src/common DIR_SRCS_COMMON)
 aux_source_directory(./src/pcie DIR_SRCS_PCIE)
 aux_source_directory(./src/fifo DIR_SRCS_FIFO)
 aux_source_directory(./src/gpu DIR_SRCS_GPU)
 
 # 指定生成目标
-add_executable(${TARGETS} ${DIR_SRCS} ${DIR_SRCS_LOG} ${DIR_SRCS_SYSTEM} ${DIR_SRCS_RGA} ${DIR_SRCS_MPP} ${DIR_SRCS_COMMON} ${DIR_SRCS_PCIE} ${DIR_SRCS_FIFO} ${DIR_SRCS_GPU})
+add_executable(${TARGETS} ${DIR_SRCS} ${DIR_SRCS_LOG} ${DIR_SRCS_SYSTEM} ${DIR_SRCS_RGA} ${DIR_SRCS_MPP} ${DIR_SRCS_MPP_UTILS} ${DIR_SRCS_COMMON} ${DIR_SRCS_PCIE} ${DIR_SRCS_FIFO} ${DIR_SRCS_GPU})
 
 target_link_libraries(${TARGETS}      
 		opencv_core

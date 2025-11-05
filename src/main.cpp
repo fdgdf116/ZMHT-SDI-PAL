@@ -25,19 +25,19 @@
 #include "log.h"
 #include "pcie_reg_rw.h"
 #include "gpu_interface.h"
+#include "crop_engine.h"
+#include "mpi_encode.h"
 
 int rga_test_main();
 static void sig_handler(int sig)
 {
-    for(int chn = 0; chn < DATA_CHANNEL_NUM_MAX; chn++){
+    for(int chn = MPP_DECODE_NTHREAD_MAX; chn < DATA_CHANNEL_NUM_MAX; chn++){
         DecodeStop(chn);
-        rga_pthread_chn_destory(chn);
-        data_stream_chn_data_destory(chn);
-        gui_osd_overlapped_chn_destory(chn);
-        gpu_osd_chn_image_destory(chn);
-        writePL_chn_destory(chn);
     }
-    MpiDecDestroy();
+    for(int chn = 0; chn < MPP_ENCODE_NTHREAD_MAX; chn++){
+        EncodeStop(chn);
+    }
+    crop_stream_destory();
     data_stream_destory();
     gui_osd_destory();
     exit(0);
@@ -51,9 +51,6 @@ int main(int argc, char *argv[])
     signal(SIGINT, sig_handler);
     signal(SIGKILL, sig_handler);
     signal(SIGTERM, sig_handler);
-
-    rga_test_main();
-    int ret;
 
     ret = gpu_lib_init();
     if(ret != 0){
@@ -86,6 +83,19 @@ int main(int argc, char *argv[])
         printf("a818 osd init ok \n");
     }
 
+    ret = crop_stream_init();
+    if(ret != 0){
+        printf("crop stream init error ret = %d \n", ret);
+    }
+
+	ret = pcie_fpga_data_init();
+	if(ret != 0){
+		printf("pcie data init error ret = %d \n", ret);
+		goto err_6;
+	} else {
+		printf("fpga pcie data init ok \n");
+	}
+
     ret = pcie_bar_open(0);
     ret = axififo_data_init();/* fifo初始化 */
     if(ret != 0){
@@ -96,6 +106,8 @@ int main(int argc, char *argv[])
     while(1){
         sleep(1);
     }
+err_6:
+	mpp_encode_destory();
 err_4:
     gui_osd_destory();
     return ret;

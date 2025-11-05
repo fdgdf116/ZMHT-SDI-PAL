@@ -33,9 +33,10 @@ typedef struct {
     RGA_IMAGE_S yuv420_data[RINGBUFFER_FRAME_MAX+1];
     RGA_IMAGE_S rgb888_data;
     RGA_IMAGE_S rotate_data;
-    // RGA_IMAGE_S yuv422_data[RINGBUFFER_FRAME_MAX]; 
+    // RGA_IMAGE_S yuv422_data[RINGBUFFER_FRAME_MAX+1]; 
 }chn_data_info_t;
 typedef struct {
+    pthread_t pht_dec;               /* 解码线程句柄 */
     unsigned char mpp_chn;
     MppCodingType decode_type;
     u_int32_t fps;           /* 图像的帧率 */
@@ -44,11 +45,31 @@ typedef struct {
     u_int32_t height;
     int decode_state;
     MpiDecLoopData dec_data;
-}mpp_info_t ;
+}mpp_decode_info_t ;
 typedef struct {
+	unsigned char mpp_chn;       /*图像进行h264/h265压缩所在的通道*/
+	unsigned char frame_type;      /*输入图像的类型  rgb24 bggr rggb grbg gbrg gray8 gray10 gray12 gray14 gray16*/
+	unsigned char fps;           /* 图像的帧率 */
+	unsigned int width;          /* 本通道图像的宽 */
+	unsigned int height;         /* 本通道图像的高 */
+	unsigned char mpp_type;
+	unsigned int mpp_bps;
+	unsigned char position;         /*字符叠加位置*/
+	unsigned char out_type;
+	unsigned char extraction;		/*抽帧比*/
+	unsigned char rotate;         /*旋转类型0/1/2/4*/
+	unsigned char resize;         /*是否缩放*/
+	unsigned int resize_width;
+	unsigned int resize_height;
+	unsigned char crop;
+	unsigned int crop_width;
+	unsigned int crop_height;
+}mpp_encode_info_t;
+typedef struct {
+    u_int16_t rga_chn;
     u_int16_t rga_flag;
+    float pixel_byte;
     u_int16_t out_color;
-    u_int16_t pixel_byte;
     u_int16_t src_width;
     u_int16_t src_height;
     u_int16_t rotate_width;
@@ -66,19 +87,17 @@ typedef struct {
     u_int16_t crop_flag; /*裁剪标志*/
 }rga_param_t ;
 typedef struct {
+    pthread_t pht_up;
     u_int16_t send_flag;
-    u_int16_t crop_flag;
+    u_int16_t out_width;
+    u_int16_t out_height;
 }pcie_info_t ;
 typedef struct {
-    pthread_t pht_dec;               /* 解码线程句柄 */
     pthread_t pht_rga;
     pthread_t pht_osd;               /* 线程句柄 */
-    pthread_t pht_up;
     pthread_t pht_crop;
 
-    mpp_info_t mpp_info;
     rga_param_t rga_info;
-    pcie_info_t pcie_info;
     osd_image_info_t osd_info;
 }image_chn_info_t;
 typedef struct {
@@ -103,10 +122,12 @@ typedef struct {
 
 	image_chn_info_t* image_chn_info[DATA_CHANNEL_NUM_MAX];
 	fpga_chn_image_info_t *chn_image[DATA_CHANNEL_NUM_MAX];
+    mpp_decode_info_t* mpp_decode_info[MPP_DECODE_NTHREAD_MAX];
+    mpp_encode_info_t* mpp_encode_info[MPP_ENCODE_NTHREAD_MAX];
+    pcie_info_t* pcie_info[MPP_DECODE_NTHREAD_MAX];
 }data_stream_t;
 
 data_stream_t *data_stream_get(void);
-int rga_test_main();
 int RingBufferCreate(int width,int height);
 
 ring_buffer_t *GetInPutRingBufferPt(int chn);
@@ -116,6 +137,7 @@ ring_buffer_t *GetOutPutRingBufferPt(int chn);
 void MpiDecDestroy();
 int data_stream_init(void);
 void data_stream_destory(void);
+void data_stream_chn_ringbuffer_is_empty(unsigned char chn);
 void *thread_writePL(void *arg);
 int writePL_chn_init(unsigned char chn);
 int writePL_chn_destory(unsigned char chn);

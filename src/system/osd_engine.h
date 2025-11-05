@@ -39,7 +39,7 @@ void gui_osd_stitchbase_image(unsigned char chn);
 void chage_src_to_new(unsigned char *src, unsigned char *dec, int new_w, int new_h);
 void gui_osd_destory(void);
 osd_data_stream_t* GetOsdDataStream();
-// void gui_osd_ringbuffer_is_empty(void);
+void gui_osd_ringbuffer_is_empty(int chn);
 int gui_osd_overlapped_chn_init(unsigned char chn);
 void gui_osd_overlapped_chn_destory(unsigned char chn);
 int gpu_osd_chn_image_init(unsigned char chn);

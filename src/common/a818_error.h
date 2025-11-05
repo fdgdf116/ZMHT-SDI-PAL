@@ -81,5 +81,8 @@
 #define A818_FIFO_CMD_SUM_ERROR             (63)
 #define A818_FIFO_ENABLE_ERROR              (64)
 
-#define A818_FIFO_ERROR_CMD                 (0x5a)
+#define A818_CROP_DATA_BUFFER           (65)
+#define A818_CROP_DATA_RB               (66)
+#define A818_CROP_THREAD                (67)
+#define A818_CROP_FRAME_MALLOC          (68)
 #endif

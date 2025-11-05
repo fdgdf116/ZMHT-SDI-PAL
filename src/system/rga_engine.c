@@ -161,7 +161,10 @@ unsigned int rga_chn_image_init(unsigned char chn)
 
 	memset(&chn_image->chn_data, 0x0, sizeof(chn_image->chn_data));
 	chn_image->chn_data.data_offset = 0;
-	chn_image->chn_data.frame_size = 0;
+    if(chn < MPP_ENCODE_NTHREAD_MAX)
+        chn_image->chn_data.frame_size = w_stride*h_stride*2;
+    else
+        chn_image->chn_data.frame_size = w_stride*h_stride*1.5;
 	chn_image->chn_data.rb_offset = 0;
 
 	SLOGI("[DEBUG] %s chn:%d frame_size:%d (%d-%d-%d-%d-%d-%d)\n", __func__, chn, chn_image->chn_data.frame_size,rga_info->src_width,rga_info->src_height,\
@@ -202,55 +205,47 @@ unsigned int rga_chn_image_init(unsigned char chn)
         goto err_3;
     }
 
-    // buffer_len = get_rga_vir_buffer_len(RK_FORMAT_RGB_888, rga_info.rotate_width, rga_info.rotate_height);
-    // ret = rga_comm_create_image2(&chn_image->chn_data.tmp_data,data_stream->rga_vir_addr +  data_stream->rga_addr_offset,RK_FORMAT_RGB_888, \
-    //     rga_info.rotate_width,rga_info.rotate_height);
-    // if(ret != 0){
-    //     printf("[ERROR] int rga rotate_data[%d] buffer_len:%d error \n", index, buffer_len);
-    //     ret_val = A818_DATA_ROTATE_DATA;
-    //     ret_val |= (ret << 8);
-    //     goto err_4;
-    // }
-    // data_stream->rga_addr_offset += buffer_len;
-    // if(data_stream->rga_addr_offset >= data_stream->rga_addr_offset_max){
-    //     SLOGI("[ERROR] int rga rotate_data[%d] rga_addr_offset error \n", index);
-    //     ret_val = A818_DATA_RGA_ADDR_OFFSET;
-    //     goto err_4;
-    // }
     printf("data_frame_max:%d\n", chn_image->data_frame_max);
-	for(index = 0; index < chn_image->data_frame_max + 1; index++){
-        // buffer_len = get_rga_vir_buffer_len(RK_FORMAT_RGB_888, rga_info.resize_width%16 == 0 ? rga_info.resize_width : (rga_info.resize_width/16+1)*16,rga_info.resize_height);
-        // ret = rga_comm_create_image2(&chn_image->chn_data.resize_data[index],data_stream->rga_vir_addr +  data_stream->rga_addr_offset,RK_FORMAT_RGB_888, \
-        //     rga_info.resize_width,rga_info.resize_height, rga_info.resize_width%16 == 0 ? rga_info.resize_width : (rga_info.resize_width/16+1)*16, rga_info.resize_height);
-        // if(ret != 0){
-        //     printf("[ERROR] int rga rgb888_data[%d] error \n", index);
-        //     ret_val = A818_DATA_RGB_DATA;
-        //     ret_val |= (ret << 8);
-        //     goto err_5;
-        // }
-        // data_stream->rga_addr_offset += buffer_len;
-        // if(data_stream->rga_addr_offset >= data_stream->rga_addr_offset_max){
-        //     SLOGI("[ERROR] int rga rgb888_data[%d] buffer_len:%d rga_addr_offset error \n", index, buffer_len);
-        //     ret_val = A818_DATA_RGA_ADDR_OFFSET;
-        //     goto err_5;
-        // }
-
-		buffer_len = get_rga_vir_buffer_len(RK_FORMAT_YCbCr_420_SP, rga_info->src_width%16 == 0 ? rga_info->src_width : (rga_info->src_width/16 + 1)*16,rga_info->src_height%2 == 0 ? rga_info->src_height : (rga_info->src_height/2 + 1)*2);
-		ret = rga_comm_create_image2(&chn_image->chn_data.yuv420_data[index],chn_image->rga_vir_addr +  chn_image->rga_addr_offset,RK_FORMAT_YCbCr_420_SP, \
-			rga_info->src_width,rga_info->src_height, rga_info->src_width%16 == 0 ? rga_info->src_width : (rga_info->src_width/16 + 1)*16, rga_info->src_height%2 == 0 ? rga_info->src_height : (rga_info->src_height/2 + 1)*2);
-		if(ret != 0){
-			printf("[ERROR] int rga yuv422_data[%d] error \n", index);
-			ret_val = A818_DATA_YUV_DATA;
-			ret_val |= (ret << 8);
-			goto err_1;
-		}
-		chn_image->rga_addr_offset += buffer_len;
-		if(chn_image->rga_addr_offset >= chn_image->rga_addr_offset_max){
-			SLOGI("[ERROR] int rga yuv422_data[%d] buffer_len:%d rga_addr_offset error \n", index, buffer_len);
-			ret_val = A818_DATA_RGA_ADDR_OFFSET;
-			goto err_1;
-		}
-	}
+    if(chn < MPP_ENCODE_NTHREAD_MAX)
+    {
+        for(index = 0; index < chn_image->data_frame_max + 1; index++){
+            buffer_len = get_rga_vir_buffer_len(RK_FORMAT_YUYV_422, rga_info->src_width%16 == 0 ? rga_info->src_width : (rga_info->src_width/16 + 1)*16,rga_info->src_height%2 == 0 ? rga_info->src_height : (rga_info->src_height/2 + 1)*2);
+            ret = rga_comm_create_image2(&chn_image->chn_data.yuv420_data[index],chn_image->rga_vir_addr +  chn_image->rga_addr_offset,RK_FORMAT_YUYV_422, \
+                rga_info->src_width,rga_info->src_height, rga_info->src_width%16 == 0 ? rga_info->src_width : (rga_info->src_width/16 + 1)*16, rga_info->src_height%2 == 0 ? rga_info->src_height : (rga_info->src_height/2 + 1)*2);
+            if(ret != 0){
+                printf("[ERROR] int rga yuv422_data[%d] error \n", index);
+                ret_val = A818_DATA_YUV_DATA;
+                ret_val |= (ret << 8);
+                goto err_1;
+            }
+            chn_image->rga_addr_offset += buffer_len;
+            if(chn_image->rga_addr_offset >= chn_image->rga_addr_offset_max){
+                SLOGI("[ERROR] int rga yuv422_data[%d] buffer_len:%d rga_addr_offset error \n", index, buffer_len);
+                ret_val = A818_DATA_RGA_ADDR_OFFSET;
+                goto err_1;
+            }
+        }
+    }
+    else
+    {
+        for(index = 0; index < chn_image->data_frame_max + 1; index++){
+            buffer_len = get_rga_vir_buffer_len(RK_FORMAT_YCbCr_420_SP, rga_info->src_width%16 == 0 ? rga_info->src_width : (rga_info->src_width/16 + 1)*16,rga_info->src_height%2 == 0 ? rga_info->src_height : (rga_info->src_height/2 + 1)*2);
+            ret = rga_comm_create_image2(&chn_image->chn_data.yuv420_data[index],chn_image->rga_vir_addr +  chn_image->rga_addr_offset,RK_FORMAT_YCbCr_420_SP, \
+                rga_info->src_width,rga_info->src_height, rga_info->src_width%16 == 0 ? rga_info->src_width : (rga_info->src_width/16 + 1)*16, rga_info->src_height%2 == 0 ? rga_info->src_height : (rga_info->src_height/2 + 1)*2);
+            if(ret != 0){
+                printf("[ERROR] int rga yuv422_data[%d] error \n", index);
+                ret_val = A818_DATA_YUV_DATA;
+                ret_val |= (ret << 8);
+                goto err_1;
+            }
+            chn_image->rga_addr_offset += buffer_len;
+            if(chn_image->rga_addr_offset >= chn_image->rga_addr_offset_max){
+                SLOGI("[ERROR] int rga yuv422_data[%d] buffer_len:%d rga_addr_offset error \n", index, buffer_len);
+                ret_val = A818_DATA_RGA_ADDR_OFFSET;
+                goto err_1;
+            }
+        }
+    }
 	usleep(200*1000);
     image_chn_info->rga_info.rga_flag = 0;
     ret = pthread_create(&image_chn_info->pht_rga, NULL, &rga_deal, &chn_image->chn);

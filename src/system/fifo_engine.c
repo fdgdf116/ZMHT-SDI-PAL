@@ -23,6 +23,7 @@
 
 #include "vivado_common.h"
 #include "mpi_decode.h"
+#include "mpi_encode.h"
 #include "pcie_reg_rw.h"
 #include "pcie_engine.h"
 #include "data_engine.h"
@@ -35,7 +36,7 @@
 #include "my_tree.h"
 #include "xutils.h"
 #include "osd_engine.h"
-// #include "log.h"
+#include "crop_engine.h"
 
 #define TEST 0
 #define SLOGI printf
@@ -246,10 +247,96 @@ void convert_to_timeval(struct tm *time_elements, struct timeval *tv) {
     // tv->tv_usec = time_elements.tm_sec * 1000000; // 将秒转换为微秒
 }
 
+static void mpp_encode_cmd_init(MpiEncAppArgs *encode_cmd, mpp_image_info_t *mpp_info)
+{
+	encode_cmd->width = mpp_info->width; 
+	encode_cmd->height = mpp_info->height;
+
+	// encode_cmd->format = MPP_FMT_RGB888;/*之前的编码颜色格式为yuv422sp*/
+	// if(mpp_info->mpp_chn == 0)
+		encode_cmd->format = MPP_FMT_YUV420SP;
+	// else if (mpp_info->mpp_chn == 1)
+	// 	encode_cmd->format = MPP_FMT_YUV400;
+	// else
+	// {
+	// 	printf("[Debug] %s mpp_chn error \n", __func__);
+	// 	return;
+	// }
+	
+	if(mpp_info->mpp_type == 1){
+		encode_cmd->type = MPP_VIDEO_CodingHEVC; /**< H.265/HEVC */
+	} else if(mpp_info->mpp_type == 0){
+		encode_cmd->type = MPP_VIDEO_CodingAVC;  /**< H.264/AVC */
+	}else if(mpp_info->mpp_type == 2){
+		encode_cmd->type = MPP_VIDEO_CodingMJPEG; /**< MJPEG */
+	}
+	
+	encode_cmd->fps_in_num = mpp_info->fps;
+	encode_cmd->fps_out_num = mpp_info->fps;
+	encode_cmd->bps_target = mpp_info->mpp_bps * 1024;
+}
+
+/*
+	函数: static int request_type4_mpp_init(fpga_chn_image_info_t* chn_image)
+	作用: 帧类型4编码相关的初始化
+	参数:
+		chn_image:通道结构体
+	返回值:
+		正确返回0，失败返回其他
+*/
+static int request_type2_mpp_init(int chn)
+{
+	int ret;
+	MpiEncAppArgs encode_cmd;
+    data_stream_t * data_stream = data_stream_get();
+    mpp_encode_info_t* mpp_info = data_stream->mpp_encode_info[chn];
+
+	/*mpp相关的资源初始化*/
+	mpp_encode_cmd_init(&encode_cmd, mpp_info);
+	ret = mpp_encode_chn_init(mpp_info->mpp_chn, 0, &encode_cmd);
+	if (ret != 0) {
+		SLOGI("encode frame chn init error \n");
+		return ret;
+	}
+
+	return 0;
+}
+
+/*
+	函数: void request_type2_mpp_destory(fpga_chn_image_info_t* chn_image)
+	作用: 帧类型4编码相关的释放
+	参数:
+		chn_image:通道结构体
+	返回值:
+		无
+*/
+static void request_type2_mpp_destory(int chn)
+{
+	mpp_encode_chn_destory(chn%MPP_ENCODE_NTHREAD_MAX);
+}
+
+int EncodeStart(int chn){
+    int ret = rga_chn_image_init(chn);
+    if (ret != 0) {
+        SLOGI("rga_chn_image_init error \n");
+        goto err_4;
+    }
+    if(g_axififo_info->rk_enable) {
+        pcie_set_rk_enable(1);
+    }
+    if(g_axififo_info->pc_enable) {
+        pcie_set_pc_enable(1);
+    }
+    return 0;
+err_4:
+    rga_pthread_chn_destory(chn);
+    data_stream_chn_data_destory(chn);
+    return 1;
+}
+
 int DecodeStart(int chn){
     data_stream_t* data_stream = data_stream_get();
-    image_chn_info_t* image_chn_info = data_stream->image_chn_info[chn];
-    mpp_info_t* mpp_info = &image_chn_info->mpp_info;
+    mpp_decode_info_t* mpp_info = data_stream->mpp_decode_info[chn%MPP_DECODE_NTHREAD_MAX];
 
     if(!mpp_info->decode_state)
     {
@@ -260,7 +347,7 @@ int DecodeStart(int chn){
 
 #if 1
     printf("DecodeStart chn:%d\n",chn);
-    ret = mpi_dec_chn_init(chn);
+    ret = mpi_dec_chn_init(mpp_info->mpp_chn);
     if(ret != MPP_OK)
         return -1;
     return ret;
@@ -269,15 +356,81 @@ int DecodeStart(int chn){
 
 void DecodeStop(int chn){
     data_stream_t* data_stream = data_stream_get();
-    image_chn_info_t *image_chn_info = data_stream->image_chn_info[chn];
+    mpp_decode_info_t *mpp_info = data_stream->mpp_decode_info[chn%MPP_DECODE_NTHREAD_MAX];
 
-    if(image_chn_info->mpp_info.decode_state)
+    if(mpp_info->decode_state)
     {
         printf("no decoding!!!\n");
         return;
     }
-    image_chn_info->mpp_info.decode_state = 1;
+    mpp_info->decode_state = 1;
+    MpiDecodeDestroy(chn);
+    rga_pthread_chn_destory(chn);
+    data_stream_chn_data_destory(chn);
+    gui_osd_overlapped_chn_destory(chn);
+    gpu_osd_chn_image_destory(chn);
+    crop_chn_destory(chn);
+    crop_chn_image_destory(chn);
+    writePL_chn_destory(chn);
     printf("DecodeStop finished!!!\n");
+}
+
+/***********************************************************************/
+/**************************axififo_frame_request_type9******************/
+/*
+	函数: void clean_system_buff_cache(void)
+	作用: 释放系统缓存
+	参数:
+		无
+	返回值:
+		无
+*/
+void clean_system_buff_cache(void)
+{
+	char cmd[128];
+	sprintf(cmd, "echo %d > /proc/sys/vm/drop_caches", 1);
+	system(cmd);
+	usleep(200*1000);
+
+	sprintf(cmd, "echo %d > /proc/sys/vm/drop_caches", 2);
+	system(cmd);
+	usleep(200*1000);
+
+	sprintf(cmd, "echo %d > /proc/sys/vm/drop_caches", 3);
+	system(cmd);
+	usleep(200*1000);
+	SLOGI("[Debug] %s ok \n", __func__);
+}
+
+void EncodeStop(int chn)
+{
+	fpga_chn_image_info_t* chn_image;
+	data_stream_t *data_stream = data_stream_get();
+	mpi_encode_info_t* mpi_encode = mpi_encode_info_get();
+
+	pcie_fpga_device_stop();
+	sleep(1);
+
+    rga_pthread_chn_destory(chn);
+    data_stream_chn_data_destory(chn);
+    gui_osd_overlapped_chn_destory(chn);
+    gpu_osd_chn_image_destory(chn);
+    crop_chn_destory(chn);
+    crop_chn_image_destory(chn);
+
+    /*释放申请的编码资源*/
+    mpp_encode_chn_destory(chn);
+	SLOGI("[Debug] %s mpp_encode_chn_destory ok \n", __func__);
+	usleep(100*1000);
+
+	g_axififo_info->rk_enable = 0;
+	g_axififo_info->pc_enable = 0;
+
+	mpi_encode->encode_size_max = MPP_OUTPUT_FRAME_SIZE;
+
+	memset(&data_stream->image_chn_info[chn]->osd_info, 0x0, sizeof(osd_image_info_t));
+	clean_system_buff_cache();
+	pcie_fpga_reg_reset();
 }
 
 /********************通用参数寄存器，用bar0配置**************************************/
@@ -314,9 +467,180 @@ static int axififo_frame_request_type17(unsigned char* frame_buff, unsigned int 
 /* 帧类型2 (图像采集配置) */
 static unsigned int axififo_frame_request_type2(unsigned char* frame_buff, unsigned int frame_size)
 {
-    int ret = 0;
+	int ret;
+	unsigned char chn;
+	unsigned char mpp_type, pc_type;
+	data_stream_t *data_stream = data_stream_get();
+	if(!data_stream){
+		printf("[Debug] %s data_stream error \n", __func__);
+		return 1;
+	}
 
-    return COMD_PROC_SUCCESS;
+	chn = frame_buff[1];
+    if(chn >= MPP_DECODE_NTHREAD_MAX)
+    {
+        printf("axififo_frame_request_type2 chn:%d err\n",chn);
+        return 1;
+    }
+	fpga_chn_image_info_t* chn_image = data_stream->chn_image[chn];
+	if(!chn_image){
+		printf("[Debug] %s chn_image error chn:%d\n", __func__,chn);
+		return 1;
+	}
+    image_chn_info_t*  image_chn_info = data_stream->image_chn_info[chn];
+	if(!image_chn_info){
+		printf("[Debug] %s image_chn_info error chn:%d\n", __func__,chn);
+		return 1;
+	}
+    mpp_encode_info_t* mpp_info = data_stream->mpp_encode_info[chn%MPP_ENCODE_NTHREAD_MAX];
+	memcpy(mpp_info, (frame_buff + 1), (frame_size - 1));
+	mpp_info->mpp_chn = chn%MPP_ENCODE_NTHREAD_MAX;
+    rga_param_t* rga_info = &image_chn_info->rga_info;
+#if TEST
+#else
+	mpp_info->width = ntohl(mpp_info->width);
+	mpp_info->height = ntohl(mpp_info->height);
+	mpp_info->mpp_bps = ntohl(mpp_info->mpp_bps);
+	mpp_info->resize_width = ntohl(mpp_info->resize_width);
+	mpp_info->resize_height = ntohl(mpp_info->resize_height);
+	mpp_info->crop_width = ntohl(mpp_info->crop_width);
+	mpp_info->crop_height = ntohl(mpp_info->crop_height);
+#endif
+    rga_info->rga_chn = chn;
+    rga_info->pixel_byte = 2;
+    rga_info->out_color = 2;
+	rga_info->rotate_type = mpp_info->rotate;
+    rga_info->resize = mpp_info->resize;
+	rga_info->crop_flag = mpp_info->crop;
+    rga_info->src_width = mpp_info->width;
+    rga_info->src_height = mpp_info->height;
+
+    if( rga_info->rotate_type == IM_HAL_TRANSFORM_ROT_90 || rga_info->rotate_type == IM_HAL_TRANSFORM_ROT_270 )
+    {
+        rga_info->rotate_width = rga_info->src_height;
+        rga_info->rotate_height = rga_info->src_width;
+    }
+    else
+    {
+        rga_info->rotate_width = rga_info->src_width;
+        rga_info->rotate_height = rga_info->src_height;
+    }
+    if(rga_info->resize)
+    {
+        rga_info->resize_width  = mpp_info->resize_width;
+        rga_info->resize_height = mpp_info->resize_height;
+    }
+    else
+    {
+        rga_info->resize_width  = rga_info->rotate_width;
+        rga_info->resize_height = rga_info->rotate_height;
+    }
+
+    if(rga_info->resize_width % 32)
+    {
+        rga_info->osd_width = (rga_info->resize_width/32 + 1)*32;
+    }
+    else
+    {
+        rga_info->osd_width = rga_info->resize_width;
+    }
+    if(rga_info->resize_height % 2)
+    {
+        rga_info->osd_height = (rga_info->resize_height/2 + 1)*2;
+    }
+    else
+    {
+        rga_info->osd_height = rga_info->resize_height;
+    }
+    if(rga_info->crop_flag == 1)
+    {
+        rga_info->out_width = mpp_info->crop_width;
+        rga_info->out_height = mpp_info->crop_height;
+    }
+    else
+    {
+        rga_info->out_width = rga_info->resize_width;
+        rga_info->out_height = rga_info->resize_height;        
+    }
+    if((rga_info->out_width != rga_info->osd_width) || (rga_info->out_height != rga_info->osd_height))
+    {
+        rga_info->crop_flag = 1; //裁剪标志
+    }
+    else
+    {
+        rga_info->crop_flag = 0; //裁剪标志
+    }
+    mpp_info->width = rga_info->out_width;
+    mpp_info->height = rga_info->out_height;
+
+    SLOGI("out_color:%d rotate_width:%d rotate_height:%d resize_width:%d resize_height:%d image_w0:%d image_y0:%d osd_width:%d osd_height:%d out_width:%d out_height:%d totate_type:%d resize:%d crop:%d pixel_byte:%d\n",
+          rga_info->out_color, rga_info->rotate_width, rga_info->rotate_height,
+          rga_info->resize_width, rga_info->resize_height, rga_info->image_w0, rga_info->image_y0,
+          rga_info->osd_width, rga_info->osd_height, rga_info->out_width, rga_info->out_height,
+          rga_info->rotate_type, rga_info->resize, rga_info->crop_flag, rga_info->pixel_byte);
+
+	/*判断输出的类型*/
+	switch(mpp_info->out_type){
+		case NULL_OUT_TYPE:
+			mpp_type = 0;
+			pc_type = 0;
+		break;
+		case MPP_OUT_TYPE:
+			mpp_type = 1;
+			pc_type = 0;
+		break;
+
+		case PC_OUT_TYPE:
+			mpp_type = 0;
+			pc_type = 1;
+		break;
+
+		case MPP_PC_OUT_TYPE:
+			mpp_type = 1;
+			pc_type = 1;
+		break;
+		default:
+			mpp_type = 0;
+			pc_type = 0;
+			return 1;
+	}
+	SLOGI("[DEBUG] mpp_type:%d pc_type%d chn:(%d-%d) \n", mpp_type, pc_type, chn, mpp_info->mpp_chn);
+	/*是否是编码输出*/
+	if(mpp_type){
+        ret = crop_chn_image_init(rga_info->rga_chn);
+        if(ret != 0) 
+        {
+            SLOGI("writePL_chn_init error \n");
+            goto err_2;
+        }
+        ret = gpu_osd_chn_image_init(rga_info->rga_chn);
+        if (ret != 0) {
+            SLOGI("gpu_osd_chn_image_init error \n");
+            goto err_3;
+        }
+
+		/*如果编码输出，初始化编码资源*/
+        ret = request_type2_mpp_init(rga_info->rga_chn);
+        if(ret != 0){
+            SLOGI("request_type2_mpp_init ERROR \n");
+            goto err_4;
+        }
+        usleep(10*1000);
+
+		printf("rgb rk_enable\n");
+		g_axififo_info->rk_enable = 1;
+	}
+	return COMD_PROC_SUCCESS;
+
+err_4:
+    request_type2_mpp_destory(rga_info->rga_chn);
+err_3:
+    gui_osd_overlapped_chn_destory(rga_info->rga_chn);
+    gpu_osd_chn_image_destory(rga_info->rga_chn);
+err_2:
+    crop_chn_destory(rga_info->rga_chn);
+    crop_chn_image_destory(rga_info->rga_chn);
+	return COMD_PROC_FAILED;
 }
 /* 帧类型3 (图像叠加数据传输) */
 static unsigned int axififo_frame_request_type3(unsigned char* frame_buff, unsigned int frame_size)
@@ -431,10 +755,20 @@ int axififo_frame_request_type9(unsigned char* frame_buff, unsigned int frame_si
     int ret = 0;
     int chn = frame_buff[1];
     printf("%s:chn%d\n",__func__,chn);
-    ret = DecodeStart(chn);
-	if(ret < 0){
-		goto error;
-	}
+    if(chn >= MPP_DECODE_NTHREAD_MAX)
+    {
+        ret = DecodeStart(chn);
+        if(ret < 0){
+            goto error;
+        }
+    }
+    else
+    {
+        ret = EncodeStart(chn);
+        if(ret < 0){
+            goto error;
+        }
+    }
     usleep(100000);
     return COMD_PROC_SUCCESS;
     error:
@@ -480,105 +814,16 @@ int axififo_frame_request_type10(unsigned char* frame_buff, unsigned int frame_s
     int ret = 0;
     int reg_offset ;
     int chn = frame_buff[1];
-    data_stream_t* data_stream = data_stream_get();
-    image_chn_info_t* image_chn_info = data_stream->image_chn_info[chn];
-    fpga_chn_image_info_t *chn_image = data_stream->chn_image[chn];
-    mpp_info_t mpp_info = image_chn_info->mpp_info;
-    rga_param_t rga_info = image_chn_info->rga_info;
-    uint8_t *reset_buf = align_chn_reset_buf_get();
-    data_stream_t* gs_data_stream = data_stream_get();
-    cfg_info_t* cfg_info = GetCfgInfo(chn);
-    channel_param_t channel_param = cfg_info->channel_param;
 
-    DecodeStop(chn);
-    // usleep(100000);
-
-    rga_pthread_chn_destory(chn);
-    data_stream_chn_data_destory(chn);
-    gui_osd_overlapped_chn_destory(chn);
-    gpu_osd_chn_image_destory(chn);
-    writePL_chn_destory(chn);
-    MpiDecodeDestroy(chn);
-
-    if(rga_info.out_color == 1)
+    if(chn >= MPP_DECODE_NTHREAD_MAX)
     {
-       memset(reset_buf,0x00,VIDEO_FRAME_HEIGHT_4k * VIDEO_FRAME_WIDTH_4k * 3);
-        for(int i = 0; i < 4; i++){
-            pcie_dec_send(reset_buf, 4096*4096*3, chn);
-        }
+        DecodeStop(chn);
     }
-    else if(rga_info.out_color == 2)
+    else
     {
-        for(int i = 0; i < (VIDEO_FRAME_HEIGHT_4k * VIDEO_FRAME_WIDTH_4k * 2); i++){
-            if((i%2) == 0){
-                reset_buf[i] = 16;
-            } else {
-                reset_buf[i] = 128;
-            }
-        }
-        for(int i = 0; i < 4; i++){
-            pcie_dec_send(reset_buf, 4096*4096*2, chn);
-        }
+        EncodeStop(chn);
     }
 
-    for(int i = 0;i<DATA_RATIO_CHANNEL_MAX;i++)
-    {
-        if((channel_param.chn >> i) & 0x01)
-        {
-            reg_offset = i * 0x04;
-            pcie_bar_write_reg(pcie_common_param_reg, (0x26c+reg_offset),0);
-            printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (0x26c+reg_offset),0);
-            usleep(1000);
-        }
-    }
-    // usleep(100000);
-
-    for(int i = 0;i<DATA_RATIO_CHANNEL_MAX;i++)
-    {
-        if((channel_param.chn >> i) & 0x01)
-        {
-            reg_offset = i * 0x04;
-            pcie_bar_write_reg(pcie_common_param_reg, (0x640+reg_offset),0);
-            printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (0x640+reg_offset),0);
-            usleep(1000);
-        }
-    }
-
-    for(int i = 0;i<DATA_RATIO_CHANNEL_MAX;i++)
-    {
-        if((channel_param.chn >> i) & 0x01)
-        {
-            reg_offset = i * 0x10000;
-            pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x00), 0x1008a);
-            printf("offset:0x%x value:0x%x\n",0x00400000 + (0x00+reg_offset),0x1008a);
-            usleep(1000);
-            pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x30), 0x1008a);
-            printf("offset:0x%x value:0x%x\n",0x00400000 + (0x30+reg_offset),0x1008a);
-            usleep(1000);
-        }
-    }
-    for(int i = 0;i<DATA_RATIO_CHANNEL_MAX;i++)
-    {
-        if((channel_param.chn >> i) & 0x01)
-        {
-            reg_offset = i * 0x10000;
-            pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x00), 0x1008c);
-            printf("offset:0x%x value:0x%x\n",0x00400000 + (0x00+reg_offset),0x1008c);
-            usleep(1000);
-            pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x30), 0x1008c);
-            printf("offset:0x%x value:0x%x\n",0x00400000 + (0x30+reg_offset),0x1008c);
-            usleep(1000);
-        }
-    }
-
-    reg_offset = chn * 0x04;
-    pcie_bar_write_reg(pcie_common_param_reg, (0x18+reg_offset),1);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (0x18+reg_offset),1);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, (0x18+reg_offset),0);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (0x18+reg_offset),0);
-    usleep(1000);
-    
     return COMD_PROC_SUCCESS;
     error:
         return COMD_PROC_FAILED;
@@ -621,18 +866,11 @@ int axififo_frame_request_type11(unsigned char* frame_buff, unsigned int frame_s
     memcpy(send_buf,&head,7);
     memcpy(send_buf+7,value_offset,len);
     *(send_buf+len+7) = check_sum(send_buf+6, frame_size);
-    if(analysis_type)
-    {
-        ret = SendFully(send_buf,len+8);
-        if(ret)
-            goto error;
-    }
-    else
-    {
-        send_size = stream_fifo_write_data(&g_axififo_info->fifo_reg,send_buf,len+8);
-        if(send_size != len+8)
-            goto error;
-    }
+
+    send_size = stream_fifo_write_data(&g_axififo_info->fifo_reg,send_buf,len+8);
+    if(send_size != len+8)
+        goto error;
+
     free(send_buf);
     return ret;
     error:
@@ -708,33 +946,6 @@ int axififo_frame_request_type12(unsigned char* frame_buff, unsigned int frame_s
     return COMD_PROC_SUCCESS;
     error:
         memset(osd_info,0x00,sizeof(osd_image_info_t));
-        return COMD_PROC_FAILED;
-}
-/* 帧类型13（以太网发送文件） */
-int axififo_frame_request_type13(unsigned char* frame_buff, unsigned int frame_size)
-{
-    int ret = 0;
-    if(frame_size > 1)
-    {
-        ret = fwrite(frame_buff+1,1,frame_size-1,fp);
-        if(ret != frame_size-1){
-            perror("fwrite");
-            goto error;
-        }
-    }
-    else if(frame_size == 1)
-    {
-        if(fp != NULL)
-        {
-            fflush(fp);
-            fclose(fp);
-        }
-        else
-            goto error;
-    }
-
-    return COMD_PROC_SUCCESS;
-    error:
         return COMD_PROC_FAILED;
 }
 
@@ -1139,13 +1350,13 @@ void axififo_frame_data_analyse(unsigned char* frame_buffer, unsigned int frame_
             cmd_ok = axififo_frame_request_type8(frame_buffer,frame_size);
             break;
 
-        case UARTLIST_REQUEST_TYPE9:/* 帧类型9（解码开始配置）*/
+        case UARTLIST_REQUEST_TYPE9:/* 帧类型9（编解码开始配置）*/
             SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE9+++++\n");
             cmd_ok = axififo_frame_request_type9(frame_buffer,frame_size);
             break;
-        case UARTLIST_REQUEST_TYPE10:/* 帧类型10（解码停止配置） */
+        case UARTLIST_REQUEST_TYPE10:/* 帧类型10（编解码停止配置） */
             SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE10+++++\n");        
-            cmd_ok = axififo_frame_request_type11(frame_buffer,frame_size);
+            cmd_ok = axififo_frame_request_type10(frame_buffer,frame_size);
             sleep(2);
             break;
         case UARTLIST_REQUEST_TYPE11:/* 帧类型11（系统自检） */
@@ -1465,23 +1676,18 @@ int axi_fifo_write_file_buf(FILE *tree_fp,int mode){
     memcpy(buf,&head,7);
     free_size = fread(buf+7,sizeof(char),free_size,tree_fp);
     *(buf+free_size+7) = check_sum((unsigned char*)buf+6, free_size+1);
-    if(analysis_type)
-    {
-        ret = SendFully(buf,free_size+8);
-    }
-    else
-    {
-        len = dma_memory_mapped_write(buf+7,0,free_size,PCIE_H2C_0);
-        printf("send len:%d,freesize:%d\n",len,free_size);
-        if(len != (free_size))
-            goto err;
-        ddr_len = htonl(len);
-        head.len = htonl(4);
-        memcpy(buf,&head,7);
-        memcpy(buf+7,&ddr_len,4);
-        *(buf+4+7) = check_sum((unsigned char*)buf+6, 5);
-        stream_fifo_write_data(&g_axififo_info->fifo_reg, buf , 12);
-    }
+
+    len = dma_memory_mapped_write(buf+7,0,free_size,PCIE_H2C_0);
+    printf("send len:%d,freesize:%d\n",len,free_size);
+    if(len != (free_size))
+        goto err;
+    ddr_len = htonl(len);
+    head.len = htonl(4);
+    memcpy(buf,&head,7);
+    memcpy(buf+7,&ddr_len,4);
+    *(buf+4+7) = check_sum((unsigned char*)buf+6, 5);
+    stream_fifo_write_data(&g_axififo_info->fifo_reg, buf , 12);
+
     free(buf);
     return ret;
 err:

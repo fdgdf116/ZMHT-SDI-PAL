@@ -19,6 +19,7 @@ int axi_fifo_write_buf(unsigned char *buffer, int length);
 int axi_fifo_write_file_buf(FILE *tree_fp,int mode);
 unsigned char check_sum(unsigned char* buf, int len);
 void DecodeStop(int chn);
+void EncodeStop(int chn);
 
 void axififo_frame_data_analyse(unsigned char* frame_buffer, unsigned int frame_size);
 #ifdef __cplusplus

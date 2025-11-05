@@ -30,14 +30,38 @@
 #include "gpu_interface.h"
 #include "osd_engine.h"
 #include "data_engine.h"
-#include "net_engine.h"
 #include "fps_calc.h"
+#include "crop_engine.h"
 
 extern void* pcie_common_param_reg;
 static data_stream_t *gs_data_stream = NULL;
 data_stream_t *data_stream_get(void)
 {
 	return gs_data_stream;
+}
+
+/*
+	函数: void data_stream_chn_ringbuffer_is_empty(unsigned char chn)
+	作用: 判断本通道的ring buffer是否被使用完成
+	参数:
+		小图通道
+	返回值:
+		无
+*/
+void data_stream_chn_ringbuffer_is_empty(unsigned char chn)
+{
+	data_stream_t *data_stream = data_stream_get();
+	fpga_chn_image_info_t* chn_image = data_stream->chn_image[chn];
+
+	while(!ringbuffer_is_empty(chn_image->rga_data_rb)){
+		xt_nanosleep(0, 100);
+	}
+	while(!ringbuffer_is_empty(chn_image->resize_data_rb)){
+		xt_nanosleep(0, 100);
+	}
+	while(!ringbuffer_is_empty(chn_image->pcie_data_rb)){
+		xt_nanosleep(0, 100);
+	}
 }
 
 ring_buffer_t *GetInPutRingBufferPt(int chn){
@@ -56,90 +80,6 @@ ring_buffer_t *GetOutPutRingBufferPt(int chn){
     return chn_image->pcie_data_rb;
 }
 
-void *thread_crop(void *arg){
-    pthread_detach(pthread_self());
-    // pthread_mutex_lock(&mutex);
-    image_frame_info_t frame_info;
-    image_frame_info_t event_param = {0};
-    uint8_t *send_buf = NULL; 
-    unsigned int fifo_num;
-    struct timeval time;
-    int chn = *(int*)arg;
-    struct timeval t1, t2;
-    send_buf = align_write_buf_get(chn);
-    data_stream_t* data_stream = data_stream_get();
-    image_chn_info_t* image_chn_info = data_stream->image_chn_info[chn];
-    rga_param_t* rga_info = &image_chn_info->rga_info;
-    GPU_Frame_st* gpu_frame_stream = gpu_data_stream_get();
-	gpu_image_info_t *gpu_image = &gpu_frame_stream->gpu_image[chn];
-
-	uint8_t* out_yuv_addr = NULL;
-    ring_buffer_t *rb_t = GetOutPutRingBufferPt(chn);
-    ring_buffer_t *rb_in = gpu_frame_stream->image_over_rb[chn];
-    printf("chn:[%d] %s start\n", chn, __func__);
-    //计算每个通道的pcie发送耗时
-    gettimeofday(&t1, NULL);
-    while(!image_chn_info->pcie_info.crop_flag){
-        while(ringbuffer_is_empty(rb_in)){
-            time.tv_sec=0;
-            time.tv_usec=(1000);
-            select(0,NULL,NULL,NULL,&time);
-            if(image_chn_info->pcie_info.crop_flag)
-                goto stop;
-        }
-        while(ringbuffer_is_full(rb_t)){
-            time.tv_sec=0;
-            time.tv_usec=(1000);
-            select(0,NULL,NULL,NULL,&time);
-            if(image_chn_info->pcie_info.crop_flag)
-                goto stop;
-        }
-        ringbuffer_get(rb_in, (uint8_t *)&frame_info, sizeof(image_frame_info_t));
-        if(gpu_image->crop_rb_offset >= gpu_image->data_frame_max + 1){
-            gpu_image->crop_rb_offset = 0;
-		}
-        out_yuv_addr = gpu_image->out_yuv_buffer[frame_info.frame_offset];
-        if(out_yuv_addr == NULL)
-        {
-            SLOGI("[ERROR] %s chn:%d frame_offset:%d out_yuv_addr is NULL\n", __func__, chn, frame_info.frame_offset);
-            continue;
-        }
-        if(rga_info->out_color == 1)
-        {
-            for(int i = 0; i < rga_info->out_height ; i++)
-            {
-                memcpy(send_buf + gpu_image->crop_rb_offset*rga_info->out_width*rga_info->out_height*3 + rga_info->out_width * i * 3, out_yuv_addr + rga_info->osd_width * i * 3,rga_info->out_width * 3);
-            }
-            event_param.frame_size = rga_info->out_width * rga_info->out_height *3;
-        }
-        else if(rga_info->out_color == 2)
-        {
-            for(int i = 0; i < rga_info->out_height ; i++)
-            {
-                memcpy(send_buf + gpu_image->crop_rb_offset*rga_info->out_width*rga_info->out_height*2 + rga_info->out_width * i * 2, out_yuv_addr + rga_info->osd_width * i * 2,rga_info->out_width*2);
-            }
-            event_param.frame_size = rga_info->out_width * rga_info->out_height*2;
-        }
-        else
-        {
-            printf("chn[%d] thread_crop out_color error!!!\n",chn);
-        }
-        if(!ringbuffer_is_full(rb_t)){
-            event_param.frame_offset = gpu_image->crop_rb_offset;
-            event_param.chn = chn;
-            ringbuffer_put(rb_t, (uint8_t *)&event_param, sizeof(event_param));
-            gpu_image->crop_rb_offset += 1;
-        }
-        else
-        {
-            SLOGI("[Debug] %s ringbuffer_is_full\n", __func__);
-        }
-    }
-stop:
-    printf("chn[%d] crop finish!!!\n",chn);
-    return NULL;
-}
-
 void *thread_writePL(void *arg){
     pthread_detach(pthread_self());
     // pthread_mutex_lock(&mutex);
@@ -154,9 +94,9 @@ void *thread_writePL(void *arg){
     send_buf = align_write_buf_get(chn);
     rb_t = GetOutPutRingBufferPt(chn);
     data_stream_t* data_stream = data_stream_get();
-    image_chn_info_t* image_chn_info = data_stream->image_chn_info[chn];
-    rga_param_t rga_info = image_chn_info->rga_info;
-    MpiDecLoopData* data = &image_chn_info->mpp_info.dec_data;
+    pcie_info_t* pcie_info = &data_stream->pcie_info[chn];
+    mpp_decode_info_t* mpp_info = data_stream->mpp_decode_info[chn];
+    MpiDecLoopData* data = &mpp_info->dec_data;
     printf("chn:[%d] %s start\n", chn, __func__);
     //计算每个通道的pcie发送耗时
     gettimeofday(&t1, NULL);
@@ -168,13 +108,13 @@ void *thread_writePL(void *arg){
     //         send_tmp[j*rga_info.out_width*2 + i*2] = i;
     //     }
     // }
-    while(!image_chn_info->pcie_info.send_flag){
+    while(!pcie_info->send_flag){
         while(ringbuffer_is_empty(rb_t)){
             // pcie_dec_send(send_buf + frame_info.frame_size*frame_info.frame_offset,frame_info.frame_size,chn);
             time.tv_sec=0;
             time.tv_usec=(1000);
             select(0,NULL,NULL,NULL,&time);
-            if(image_chn_info->pcie_info.send_flag)
+            if(pcie_info->send_flag)
                 goto stop;
         }
         fifo_num = (pcie_bar_read_reg(pcie_common_param_reg,0x7d0+chn*4) * 32);
@@ -194,7 +134,7 @@ void *thread_writePL(void *arg){
             fwrite(send_buf + frame_info.frame_offset*frame_info.frame_size,frame_info.frame_size,1,data->fp_output);
         }
 
-        if(rga_info.out_height < 4096){
+        if(pcie_info->out_height < 4096){
             if(data->fps <= 35)
             {
                 time.tv_sec=0;
@@ -222,57 +162,41 @@ int writePL_chn_destory(unsigned char chn)
 {
     struct timeval time_val;
     data_stream_t *data_stream = data_stream_get();
-    GPU_Frame_st* gpu_frame_stream = gpu_data_stream_get();
     fpga_chn_image_info_t* chn_image = data_stream->chn_image[chn];
-    image_chn_info_t* image_chn_info = data_stream->image_chn_info[chn];
+    pcie_info_t* pcie_info = data_stream->pcie_info[chn%MPP_DECODE_NTHREAD_MAX];
     ring_buffer_t* pcie_data_rb = chn_image->pcie_data_rb;
-    ring_buffer_t* image_over_rb = gpu_frame_stream->image_over_rb[chn];
-    GPU_Frame_st* frame_stream = gpu_data_stream_get();
-    gpu_image_info_t *gpu_image = &frame_stream->gpu_image[chn];
+	Crop_Frame_st* crop_stream = crop_data_stream_get();
+	crop_image_info_t *crop_image = &crop_stream->crop_image[chn];
 
-    while(!ringbuffer_is_empty(image_over_rb)){
-        // printf("InPutRingBuffer is_empty\n");
-        time_val.tv_sec=0;
-        time_val.tv_usec=(1000);
-        select(0,NULL,NULL,NULL,&time_val);
-    }
     while(!ringbuffer_is_empty(pcie_data_rb)){
         // printf("InPutRingBuffer is_empty\n");
         time_val.tv_sec=0;
         time_val.tv_usec=(1000);
         select(0,NULL,NULL,NULL,&time_val);
     }
-    if(!image_chn_info->pcie_info.crop_flag){
-        image_chn_info->pcie_info.crop_flag = 1;
-        printf("chn[%d] crop thread destoryed\n",chn);
-    }
-    if(!image_chn_info->pcie_info.send_flag){
-        image_chn_info->pcie_info.send_flag = 1;
+    if(!pcie_info->send_flag){
+        pcie_info->send_flag = 1;
         printf("chn[%d] writePL thread destoryed\n",chn);
     }
-    for(int index = 0; index < gpu_image->data_frame_max + 1; index++)
-    {
-        if(gpu_image->out_yuv_buffer[index]){
-            free(gpu_image->out_yuv_buffer[index]);
-            gpu_image->out_yuv_buffer[index] = NULL;
-        }
-    }
+	for(int index = 0; index < crop_image->data_frame_max+1; index++)
+	{
+		if(crop_image->crop_yuv_buffer[index]){
+			free(crop_image->crop_yuv_buffer[index]);
+			crop_image->crop_yuv_buffer[index] = NULL;
+		}
+	}
     return 0;
 }
 
 int writePL_chn_init(unsigned char chn)
 {
     data_stream_t* data_stream = data_stream_get();
-    image_chn_info_t* image_chn_info = data_stream->image_chn_info[chn];
-    image_chn_info->pcie_info.send_flag = 0;
-    image_chn_info->pcie_info.crop_flag = 0;
+    mpp_decode_info_t* mpp_decode_info = data_stream->mpp_decode_info[chn%MPP_DECODE_NTHREAD_MAX];
+    pcie_info_t* pcie_info = data_stream->pcie_info[chn%MPP_DECODE_NTHREAD_MAX];
+
+    pcie_info->send_flag = 0;
     int ret = 0;
-    ret = pthread_create(&image_chn_info->pht_up,NULL,thread_writePL,&image_chn_info->mpp_info.mpp_chn);
-    if(ret != 0){
-        printf("[%s]Create WritePL thread failed\n",__func__);
-        return -1;
-    }
-    ret = pthread_create(&image_chn_info->pht_crop,NULL,thread_crop,&image_chn_info->mpp_info.mpp_chn);
+    ret = pthread_create(&pcie_info->pht_up,NULL,thread_writePL,&mpp_decode_info->mpp_chn);
     if(ret != 0){
         printf("[%s]Create WritePL thread failed\n",__func__);
         return -1;
@@ -281,7 +205,7 @@ int writePL_chn_init(unsigned char chn)
 }
 
 void MpiDecDestroy(){
-    for(int chn = 0;chn < DATA_CHANNEL_NUM_MAX;chn++)
+    for(int chn = MPP_DECODE_NTHREAD_MAX;chn < DATA_CHANNEL_NUM_MAX;chn++)
     {
         MpiDecodeDestroy(chn);
     }
@@ -308,12 +232,12 @@ int data_stream_init(void)
  
         gs_data_stream->image_chn_info[chn] = (image_chn_info_t*)malloc(sizeof(image_chn_info_t));
         if(!gs_data_stream->image_chn_info[chn]){
-            printf("[ERROR] chn:%d malloc image_chn_info failed \n", chn);
+            printf("[ERROR] chn:%d malloc image_chn _info failed \n", chn);
             ret = -1;
             goto err_1; 
         }
         memset(gs_data_stream->image_chn_info[chn], 0x0, sizeof(image_chn_info_t));
-        gs_data_stream->image_chn_info[chn]->mpp_info.decode_state = 1;
+        gs_data_stream->mpp_decode_info[chn%MPP_DECODE_NTHREAD_MAX]->decode_state = 1;
 
         gs_data_stream->chn_image[chn]->rga_data_rb = ringbuffer_create(RINGBUFFER_FRAME_MAX*sizeof(image_frame_info_t),sizeof(image_frame_info_t));
         if (!gs_data_stream->chn_image[chn]->rga_data_rb) {

@@ -36,6 +36,7 @@ typedef struct {
 typedef struct {
     ring_buffer_t *osd_data_rb[DATA_CHANNEL_NUM_MAX]; /*osd 编码的ring_buffer*/
     ring_buffer_t *image_over_rb[DATA_CHANNEL_NUM_MAX]; /*osd 编码的ring_buffer*/
+    ring_buffer_t *mpp_data_rb[MPP_ENCODE_NTHREAD_MAX]; /*mpp 编码的ring_buffer*/
     gpu_image_info_t gpu_image[DATA_CHANNEL_NUM_MAX]; /*GPU相关图像的存储*/
 
     void* hetero_hdr;
@@ -52,7 +53,8 @@ int gpu_yuv_to_rgb(uint8_t* rgb_buffer, uint8_t* yuv_buffer, unsigned int width,
 
 //int gpu_buf_osd(void* gpu_osd, void *gpu_addr,unsigned int width, unsigned int height);
 int gpu_cooperate_overlap_osd(uint8_t* osd_buffer,uint8_t *rgb_buffer, uint8_t* out_rgb, unsigned int width, unsigned int height);
-int gpu_cooperate_encode_yuv(uint8_t* osd_buffer,uint8_t *rgb_buffer, uint8_t* yuv_buffer, unsigned int width, unsigned int height);
+int gpu_cooperate_encode_yuyv(uint8_t* osd_buffer,uint8_t *rgb_buffer, uint8_t* yuv_buffer, unsigned int width, unsigned int height);
+int gpu_cooperate_encode_nv12(uint8_t* osd_buffer,uint8_t *rgb_buffer, uint8_t* yuv_buffer, unsigned int width, unsigned int height);
 void gpu_chn_ringbuffer_is_empty(unsigned char chn);
 int gpu_lib_init(void);
 void gpu_lib_destory(void);

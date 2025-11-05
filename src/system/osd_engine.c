@@ -10,9 +10,9 @@
 #include "xutils.h"
 #include "a818_error.h"
 #include "mpi_decode.h"
+#include "crop_engine.h"
 
 #define ringbuffer_destory ringbuffer_deinit
-#define OSD_DEBUG 0
 
 static osd_data_stream_t *gs_osd_stream = NULL;
 osd_data_stream_t* GetOsdDataStream()
@@ -99,20 +99,23 @@ void gui_osd_src_image(unsigned char chn)
     data_stream_t* data_stream = data_stream_get();
     image_chn_info_t* image_chn_info = data_stream->image_chn_info[chn];
     fpga_chn_image_info_t *chn_image = data_stream->chn_image[chn];
-    mpp_info_t mpp_info = image_chn_info->mpp_info;
-    rga_param_t rga_info = image_chn_info->rga_info;
 
+    rga_param_t rga_info = image_chn_info->rga_info;
+    osd_image_info_t* osd_info = &image_chn_info->osd_info;
 
 		/*获取通道的宽、高、以及帧率*/
 		chn_width = rga_info.out_width;
 		chn_height = rga_info.out_height;
-		chn_fps = mpp_info.fps;
+    if(chn < MPP_ENCODE_NTHREAD_MAX)
+		  chn_fps = data_stream->mpp_encode_info[chn%MPP_ENCODE_NTHREAD_MAX]->fps;
+    else
+      chn_fps = data_stream->mpp_decode_info[chn%MPP_ENCODE_NTHREAD_MAX]->fps;
 
 		/*获取到对应通道的画布的位置*/
-		y_start = mpp_info.mpp_chn * VIDEO_OSD_HIGHT;
+		y_start = rga_info.rga_chn * VIDEO_OSD_HIGHT;
 
 		/*根据叠加的位置获取到叠加的起始点坐标*/
-		switch(mpp_info.position){
+		switch(osd_info->time_position){
 			case 0:
 				position_x = 0;
 				position_y = y_start;
@@ -160,7 +163,7 @@ void gui_osd_src_image(unsigned char chn)
 		/*进行叠加时针标*/
 		GUI_SetPenSize(2);
 		memset(buf, 0x0, sizeof(buf));
-		sprintf(buf,"chn%d_%dx%d@%d", (mpp_info.mpp_chn), \
+		sprintf(buf,"chn%d_%dx%d@%d", (rga_info.rga_chn), \
 			chn_width, chn_height , chn_fps);
 		GUI_DispStringAt(buf, position_x, position_y);
 
@@ -271,7 +274,7 @@ void gui_osd_stitchbase_image(unsigned char chn)
   image_chn_info_t* image_chn_info = data_stream->image_chn_info[chn];
   osd_image_info_t * osd_info = &image_chn_info->osd_info;
   rga_param_t * rga_info = &image_chn_info->rga_info;
-  y_start = image_chn_info->mpp_info.mpp_chn * VIDEO_OSD_HIGHT;
+  y_start = rga_info->rga_chn * VIDEO_OSD_HIGHT;
 
   x = osd_info->x;
   y = osd_info->y + y_start;
@@ -348,6 +351,7 @@ static void* image_over_thread(void* parameter)
 	GPU_Frame_st* gpu_frame_stream = gpu_data_stream_get();
 	gpu_image_info_t *gpu_image = &gpu_frame_stream->gpu_image[osd_chn];
 	data_stream_t *data_stream = data_stream_get();
+	Crop_Frame_st* crop_stream = crop_data_stream_get();
   fpga_chn_image_info_t* chn_image = data_stream->chn_image[osd_chn];
   image_chn_info_t* image_chn_info = data_stream->image_chn_info[osd_chn];
   osd_image_info_t* osd_info = &image_chn_info->osd_info;
@@ -357,9 +361,8 @@ static void* image_over_thread(void* parameter)
 	image_frame_info_t osd_frame_info = {0};
 	image_frame_info_t event_param = {0};
 	void *out_gui_osd_addr = NULL;
-  uint8_t *send_buf = align_write_buf_get(osd_chn);
 
-  ring_buffer_t* image_over_rb = gpu_frame_stream->image_over_rb[osd_chn];
+  ring_buffer_t* image_over_rb = crop_stream->crop_data_rb[osd_chn];;
 	ring_buffer_t* osd_data_rb = gpu_frame_stream->osd_data_rb[osd_chn];
 	uint8_t* in_rgb_addr = NULL;
 	uint8_t* out_yuv_addr = NULL;
@@ -416,17 +419,25 @@ static void* image_over_thread(void* parameter)
     {
       if(osd_info->osd_type)
       {
-        gpu_cooperate_encode_yuv(out_gui_osd_addr, in_rgb_addr, out_yuv_addr, width, height);
+        gpu_cooperate_encode_yuyv(out_gui_osd_addr, in_rgb_addr, out_yuv_addr, width, height);
       }
       else
       {
-        gpu_cooperate_encode_yuv(0, in_rgb_addr, out_yuv_addr, width, height);
+        gpu_cooperate_encode_yuyv(0, in_rgb_addr, out_yuv_addr, width, height);
       }
       event_param.frame_size = width*height*2;
     }
-    else
+    else if(rga_info.out_color == 3)
     {
-      printf("[ERROR] %s %d rga_info.out_color is not support\n", __func__, __LINE__);
+      if(osd_info->osd_type)
+      {
+        gpu_cooperate_encode_nv12(out_gui_osd_addr, in_rgb_addr, out_yuv_addr, width, height);
+      }
+      else
+      {
+        gpu_cooperate_encode_nv12(0, in_rgb_addr, out_yuv_addr, width, height);
+      }
+      event_param.frame_size = width*height*1.5;
     }
 #if OSD_DEBUG
     gettimeofday(&end, NULL);
@@ -441,7 +452,7 @@ static void* image_over_thread(void* parameter)
     // {
     //   save_image_data(out_yuv_addr,width*height,"/tmp/osd_buf.raw");
     // }
-		/*放到编码的ring buffer中，后续进行编码输出*/
+		/*放到编码的ring buffer中，后续进行裁剪*/
     if(!ringbuffer_is_full(image_over_rb)){
       event_param.frame_offset = gpu_image->osd_rb_offset;
       event_param.chn = osd_chn;
@@ -511,56 +522,24 @@ static void* gui_paint_on_canvas_thread(void* parameter)
 		*/
     image_over_data = gpu_image->in_rgb_buffer[frame_info.frame_offset].vir_addr;
 		if( osd_info->osd_type){
-#if OSD_DEBUG
-      gettimeofday(&start, NULL);
-#endif
       if((osd_info->osd_type >> Image_Over) & 0x01)
       {
           for(int i = 0; i < image_chn_info->rga_info.image_y0; i++){
               memcpy(image_over_data + osd_info->image_y0*over_width*3 + osd_info->image_x0*3 + i * over_width * 3, gpu_image->over_image + image_chn_info->rga_info.image_w0*i*3, image_chn_info->rga_info.image_w0*3);
           }
       }
-#if OSD_DEBUG
-      gettimeofday(&end, NULL);
-      usec1 = 1000000 * (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec);
-      printf("canvas image over .... cost time %ld us\n", usec1);
-#endif
       if((osd_info->osd_type >> Time_Osd) & 0x01)
       {
         /*在画布上画时针标*/
-#if OSD_DEBUG
-        gettimeofday(&start, NULL);
-#endif
         gui_osd_src_image(over_chn);
-#if OSD_DEBUG
-        gettimeofday(&end, NULL);
-        usec1 = 1000000 * (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec);
-        printf("canvas time_osd .... cost time %ld us\n", usec1);
-#endif
       }
       if(((osd_info->osd_type >> Char_Osd) & 0x01) || ((osd_info->osd_type >> Shape_Osd) & 0x01))
       {
-#if OSD_DEBUG
-        gettimeofday(&start, NULL);
-#endif
         gui_osd_stitchbase_image(over_chn);
-#if OSD_DEBUG
-        gettimeofday(&end, NULL);
-        usec1 = 1000000 * (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec);
-        printf("canvas char_sharpe_osd .... cost time %ld us\n", usec1);
-#endif
       }
       out_gui_osd_addr = gpu_image->gui_osd_buffer[frame_info.frame_offset%(DATA_STREAM_FRAME_MAX + 1)];
       /*裁剪出需要的画布*/
-#if OSD_DEBUG
-      gettimeofday(&start, NULL);
-#endif
       chage_src_to_new(gui_osd_data, out_gui_osd_addr, over_width, over_height);
-#if OSD_DEBUG
-      gettimeofday(&end, NULL);
-      usec1 = 1000000 * (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec);
-      printf("chage_src_to_new .... cost time %ld us\n", usec1);
-#endif
       // save_image_data(out_gui_osd_addr, over_width * over_height * 2, "/tmp/gui_osd.raw");
       /*放到编码的ring buffer中，后续进行编码输出*/
       if(!ringbuffer_is_full(osd_data_rb)){
@@ -652,7 +631,6 @@ int gpu_osd_chn_image_init(unsigned char chn)
     int index = 0;
     data_stream_t* data_stream = data_stream_get();
     image_chn_info_t* image_chn_info = data_stream->image_chn_info[chn];
-    mpp_info_t mpp_info = image_chn_info->mpp_info;
     rga_param_t rga_info = image_chn_info->rga_info;
     osd_image_info_t osd_info = image_chn_info->osd_info;
 
@@ -673,7 +651,7 @@ int gpu_osd_chn_image_init(unsigned char chn)
     // }
     /**************************************************************/
 
-    gpu_image->rga_addr_offset_max = (2*(gpu_image->data_frame_max + 1)*3*osd_width* osd_height + 4096);
+    gpu_image->rga_addr_offset_max = (4*(gpu_image->data_frame_max + 1)*3*osd_width* osd_height + 4096);
     gpu_image->rga_addr_offset = 0;
     gpu_image->rga_vir_addr = (unsigned char*)malloc(gpu_image->rga_addr_offset_max);
     if(!gpu_image->rga_vir_addr){
@@ -729,7 +707,7 @@ int gpu_osd_chn_image_init(unsigned char chn)
     // gpu_image->rb_offset = 0;
     // gpu_image->data_offset = 0;
 
-	ret = gui_osd_overlapped_chn_init(mpp_info.mpp_chn);
+	ret = gui_osd_overlapped_chn_init(chn);
 	if(ret != 0){
 		SLOGI("gui_osd_overlapped_chn_init error \n");
 		goto err_2;
@@ -805,32 +783,26 @@ void gui_osd_overlapped_chn_destory(unsigned char chn)
   ring_buffer_t* osd_data_rb = gpu_frame_stream->osd_data_rb[chn];
 	ring_buffer_t* resize_data_rb = chn_image->resize_data_rb;
 
-  printf("chn:%d %s line:%d test\n", chn, __func__, __LINE__);
   while(!ringbuffer_is_empty(resize_data_rb)){
     // printf("InPutRingBuffer is_empty\n");
     time_val.tv_sec=0;
     time_val.tv_usec=(1000);
     select(0,NULL,NULL,NULL,&time_val);
   }
-  printf("chn:%d %s line:%d test\n", chn, __func__, __LINE__);
   while(!ringbuffer_is_empty(osd_data_rb)){
     // printf("InPutRingBuffer is_empty\n");
     time_val.tv_sec=0;
     time_val.tv_usec=(1000);
     select(0,NULL,NULL,NULL,&time_val);
   }
-  printf("chn:%d %s line:%d test\n", chn, __func__, __LINE__);
   if(!gs_osd_stream->chn_info[chn].osd_flag){
     //pthread_cancel(gs_osd_stream->chn_info[chn].osd_tid);
     gs_osd_stream->chn_info[chn].osd_flag = 1;
-    SLOGI("[Debug] %s line:%d chn:%d \n", __func__, __LINE__, chn);
     xt_nanosleep(0, 1000*1000);
   }
-  printf("chn:%d %s line:%d test\n", chn, __func__, __LINE__);
   if(!gs_osd_stream->chn_info[chn].over_flag){
     //pthread_cancel(gs_osd_stream->chn_info[chn].osd_tid);
     gs_osd_stream->chn_info[chn].over_flag = 1;
-    SLOGI("[Debug] %s line:%d chn:%d \n", __func__, __LINE__, chn);
     xt_nanosleep(0, 1000*1000);
   }
 }
@@ -846,15 +818,11 @@ void osd_ringbuffer_destory(void)
 }
 
 
-void gui_osd_ringbuffer_is_empty(void)
+void gui_osd_ringbuffer_is_empty(int chn)
 {
-  int chn;
-
   image_frame_info_t frame_info = {0};
-  for(chn = 0; chn < DATA_CHANNEL_NUM_MAX;chn++){
-    while(!ringbuffer_is_empty(gs_osd_stream->chn_info[chn].osd_rb)){
-      xt_nanosleep(0, 100); 
-    }
+  while(!ringbuffer_is_empty(gs_osd_stream->chn_info[chn].osd_rb)){
+    xt_nanosleep(0, 100); 
   }
 }
 

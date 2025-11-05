@@ -58,7 +58,7 @@ void SetInputFilename(unsigned char *name){
     data_stream_t* data_stream = data_stream_get();
     image_chn_info_t* image_chn_info = data_stream->image_chn_info[chn];
     fpga_chn_image_info_t *chn_image = data_stream->chn_image[chn];
-    mpp_info_t mpp_info = image_chn_info->mpp_info;
+    mpp_decode_info_t* mpp_info = data_stream->mpp_decode_info[chn%MPP_ENCODE_NTHREAD_MAX];
 
     if ( NULL == frame)
         return ;
@@ -82,7 +82,7 @@ void SetInputFilename(unsigned char *name){
             RK_U32 i;
             RK_U8 *base_y = base;
             RK_U8 *base_c = base + h_stride * v_stride;
-            while((!mpp_info.decode_state) && ringbuffer_is_full(rb_t)){
+            while((!mpp_info->decode_state) && ringbuffer_is_full(rb_t)){
                 // printf("InPutRingBuffer is_full\n");
                 time.tv_sec=0;
                 time.tv_usec=(1000);
@@ -132,6 +132,7 @@ static int decode_simple(MpiDecLoopData *data)
     int chn = data->chn;
     data_stream_t* data_stream = data_stream_get();
     image_chn_info_t* image_chn_info = data_stream->image_chn_info[chn];
+    mpp_decode_info_t* mpp_info = data_stream->mpp_decode_info[chn%MPP_ENCODE_NTHREAD_MAX];
 
     MppPacket packet = data->packet;
     MppFrame  frame  = NULL;
@@ -207,7 +208,7 @@ static int decode_simple(MpiDecLoopData *data)
                     if (!err_info){
                         DumpYUYVtoFile(frame,chn);
 					}
-                    if(image_chn_info->mpp_info.decode_state){
+                    if(mpp_info->decode_state){
                         printf("decode_chn[%d] stop!\n",chn);
                         mpp_frame_deinit(&frame);
                         frame = NULL;
@@ -271,7 +272,7 @@ void *thread_decode(void *arg){
     data_stream_t* data_stream = data_stream_get();
     image_chn_info_t* image_chn_info = data_stream->image_chn_info[chn];
     fpga_chn_image_info_t *chn_image = data_stream->chn_image[chn];
-    mpp_info_t* mpp_info = &image_chn_info->mpp_info;
+    mpp_decode_info_t* mpp_info = data_stream->mpp_decode_info[chn%MPP_ENCODE_NTHREAD_MAX];
     MpiDecLoopData * data = &mpp_info->dec_data;
     printf("chn:%d %s %d mpi_data:%p\n",chn,__func__,__LINE__, data);
     /* 获取文件大小 */
@@ -303,9 +304,7 @@ int mpi_dec_chn_init(int chn)
     RK_U32 need_split   = 1;
 
     data_stream_t* data_stream = data_stream_get();
-    image_chn_info_t* image_chn_info = data_stream->image_chn_info[chn];
-    fpga_chn_image_info_t *chn_image = data_stream->chn_image[chn];
-    mpp_info_t* mpp_info = &image_chn_info->mpp_info;
+    mpp_decode_info_t* mpp_info = data_stream->mpp_decode_info[chn];
 
     MpiDecLoopData * data = &mpp_info->dec_data;
     
@@ -362,9 +361,8 @@ int mpi_dec_chn_init(int chn)
         goto MPP_TEST_OUT;
     }
 
-    mpp_info->mpp_chn = chn;
     mpp_info->decode_state = 0;
-    mpp_info->decode_state = pthread_create(&image_chn_info->pht_dec, NULL, thread_decode, &mpp_info->mpp_chn);
+    mpp_info->decode_state = pthread_create(&mpp_info->pht_dec, NULL, thread_decode, &mpp_info->mpp_chn);
     if (mpp_info->decode_state) {
         printf("failed to create thread for input ret %d\n", ret);
         ret = -1;
@@ -380,8 +378,7 @@ MPP_TEST_OUT:
 void MpiDecodeDestroy(int chn){
     // pthread_cancel(pht_dec[chn]);
     data_stream_t* data_stream = data_stream_get();
-    image_chn_info_t* image_chn_info = data_stream->image_chn_info[chn];
-    mpp_info_t* mpp_info = &image_chn_info->mpp_info;
+    mpp_decode_info_t* mpp_info = data_stream->mpp_decode_info[chn%MPP_ENCODE_NTHREAD_MAX];
     MpiDecLoopData* mpi_data = &mpp_info->dec_data;
     printf("chn:%d %s %d mpi_data:%p\n",chn,__func__,__LINE__, mpi_data);
     if (mpi_data->packet) {

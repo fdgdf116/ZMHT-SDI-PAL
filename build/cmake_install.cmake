@@ -1,4 +1,4 @@
-# Install script for directory: /home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704
+# Install script for directory: /home/megshark/3588_work/SDI_PAL/rk_sdi_pal_pro
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,7 +45,7 @@ endif()
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
 if(CMAKE_INSTALL_LOCAL_ONLY)
-  file(WRITE "/home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704/build/install_local_manifest.txt"
+  file(WRITE "/home/megshark/3588_work/SDI_PAL/rk_sdi_pal_pro/build/install_local_manifest.txt"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
 endif()
 if(CMAKE_INSTALL_COMPONENT)
@@ -61,6 +61,6 @@ else()
 endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
-  file(WRITE "/home/megshark/3588_work/A818_SRC/rk_a818_pro_change_0704/build/${CMAKE_INSTALL_MANIFEST}"
+  file(WRITE "/home/megshark/3588_work/SDI_PAL/rk_sdi_pal_pro/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
 endif()

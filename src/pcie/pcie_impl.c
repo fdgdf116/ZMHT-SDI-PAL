@@ -34,6 +34,7 @@ struct pcie_impl_info {
 };
 
 static const uint32_t s_pcie_buf_size_max = (80*1024*1024);
+ static const uint32_t s_pcie_mpp_w_buf_size_max = (1024*1024);
 static const uint32_t s_pcie_w_buf_size_max = (5120*5120*3*(RINGBUFFER_FRAME_MAX+1));
 
 static const char *xdma_c2h_dev = "/dev/xdma0_c2h_0";
@@ -42,6 +43,7 @@ static struct pcie_impl_info *g_pcie_info = NULL;
 
 static uint8_t *align_buf_r = NULL;
 static uint8_t *align_buf_w[DATA_CHANNEL_NUM_MAX] = {NULL};
+ static uint8_t *align_buf_mpp_w[MPP_ENCODE_NTHREAD_MAX] = {NULL};
 static pthread_mutex_t send_mutex;
 
 
@@ -97,6 +99,15 @@ int pcie_impl_init(void)
 			goto out;
 		}
 	}
+
+	 for(index = 0; index < MPP_ENCODE_NTHREAD_MAX; index++){
+		 posix_memalign((void **)&align_buf_mpp_w[index], 4096 /*alignment */ , s_pcie_mpp_w_buf_size_max + 4096);
+		 if (!align_buf_w) {
+			 fprintf(stderr, "OOM %lu.\n", s_pcie_mpp_w_buf_size_max + 4096);
+			 ret = -1;
+			 goto out;
+		 }
+	 }
 
 	posix_memalign((void **)&align_chn_reset_buf, 4096 /*alignment */ , s_pcie_w_buf_size_max + 4096);
 	if (!align_chn_reset_buf) {
@@ -187,10 +198,15 @@ uint8_t *align_read_buf_get(void)
 	return align_buf_r;
 }
 
-uint8_t *align_write_buf_get(unsigned char index)
-{
-	return align_buf_w[index];
-}
+ uint8_t *align_write_buf_get(unsigned char index)
+ {
+	 return align_buf_w[index];
+ }
+ 
+ uint8_t *align_write_mpp_buf_get(unsigned char index)
+ {
+	 return align_buf_mpp_w[index];
+ }
 
 ssize_t dma_memory_mapped_read(uint8_t *buf, uint64_t dma_addr, uint64_t size, pcie_c2h_t ch)
 {
