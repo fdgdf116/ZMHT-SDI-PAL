@@ -117,7 +117,7 @@ void *thread_writePL(void *arg){
             if(pcie_info->send_flag)
                 goto stop;
         }
-        fifo_num = (pcie_bar_read_reg(pcie_common_param_reg,0x7d0+chn*4) * 32);
+        fifo_num = (pcie_bar_read_reg(pcie_common_param_reg,0x2c+chn*4) * 32);
         if(fifo_num > (32*1024*1024))
         {
             time.tv_sec=0;
@@ -151,7 +151,7 @@ void *thread_writePL(void *arg){
             time.tv_usec=(970000);
         }
         select(0,NULL,NULL,NULL,&time);
-        // save_image_data(send_buf,resize_width[chn]*resize_height[chn]*2,"/userdata/sda1/pcie_send.raw");
+        // save_image_data(send_buf,resize_width[chn]*resize_height[chn]*2,"/tmp/pcie_send.raw");
     }
 stop:
     printf("chn[%d] writePL finish!!!\n",chn);
@@ -222,6 +222,7 @@ int data_stream_init(void)
 
     /* 初始化各个需要拼接通道的 ringbuffer, 这个是不需要跟着停止释放的 */
     for(chn = 0; chn < DATA_CHANNEL_NUM_MAX;chn++){
+        printf("[%s %d] test\n",__func__,__LINE__);
         gs_data_stream->chn_image[chn] = (fpga_chn_image_info_t*)malloc(sizeof(fpga_chn_image_info_t));
         if(!gs_data_stream->chn_image[chn]){
             printf("[ERROR] chn:%d malloc chn image failed \n", chn);
@@ -237,7 +238,36 @@ int data_stream_init(void)
             goto err_1; 
         }
         memset(gs_data_stream->image_chn_info[chn], 0x0, sizeof(image_chn_info_t));
-        gs_data_stream->mpp_decode_info[chn%MPP_DECODE_NTHREAD_MAX]->decode_state = 1;
+
+        if(chn < MPP_ENCODE_NTHREAD_MAX)
+        {
+            gs_data_stream->mpp_encode_info[chn%MPP_ENCODE_NTHREAD_MAX] = (mpp_encode_info_t*)malloc(sizeof(mpp_encode_info_t));
+            if(!gs_data_stream->mpp_encode_info[chn%MPP_ENCODE_NTHREAD_MAX]){
+                printf("[ERROR] chn:%d malloc image_chn _info failed \n", chn);
+                ret = -1;
+                goto err_1; 
+            }
+            memset(gs_data_stream->mpp_encode_info[chn%MPP_ENCODE_NTHREAD_MAX], 0x0, sizeof(mpp_encode_info_t));   
+        }
+        else
+        {
+            gs_data_stream->mpp_decode_info[chn%MPP_DECODE_NTHREAD_MAX] = (mpp_decode_info_t*)malloc(sizeof(mpp_decode_info_t));
+            if(!gs_data_stream->mpp_decode_info[chn%MPP_DECODE_NTHREAD_MAX]){
+                printf("[ERROR] chn:%d malloc image_chn _info failed \n", chn);
+                ret = -1;
+                goto err_1; 
+            }
+            memset(gs_data_stream->mpp_decode_info[chn%MPP_DECODE_NTHREAD_MAX], 0x0, sizeof(mpp_decode_info_t)); 
+            gs_data_stream->mpp_decode_info[chn%MPP_DECODE_NTHREAD_MAX]->decode_state = 1;
+
+            gs_data_stream->pcie_info[chn%MPP_DECODE_NTHREAD_MAX] = (pcie_info_t*)malloc(sizeof(pcie_info_t));
+            if(!gs_data_stream->pcie_info[chn%MPP_DECODE_NTHREAD_MAX]){
+                printf("[ERROR] chn:%d malloc pcie_info failed \n", chn);
+                ret = -1;
+                goto err_1; 
+            }
+            memset(gs_data_stream->pcie_info[chn%MPP_DECODE_NTHREAD_MAX], 0x0, sizeof(pcie_info_t));   
+        }
 
         gs_data_stream->chn_image[chn]->rga_data_rb = ringbuffer_create(RINGBUFFER_FRAME_MAX*sizeof(image_frame_info_t),sizeof(image_frame_info_t));
         if (!gs_data_stream->chn_image[chn]->rga_data_rb) {
@@ -274,6 +304,10 @@ void data_stream_destory(void)
         data_stream_t* data_stream = data_stream_get();
         image_chn_info_t *image_chn_info = data_stream->image_chn_info[chn];
         fpga_chn_image_info_t *chn_image = data_stream->chn_image[chn];
+        mpp_decode_info_t* mpp_decode_info = data_stream->mpp_decode_info[chn%MPP_DECODE_NTHREAD_MAX];
+        mpp_encode_info_t* mpp_encode_info = data_stream->mpp_encode_info[chn%MPP_ENCODE_NTHREAD_MAX];
+        pcie_info_t* pcie_info = data_stream->pcie_info[chn%MPP_DECODE_NTHREAD_MAX];
+
         if(chn_image){
 
             if(chn_image->rga_data_rb){
@@ -287,6 +321,21 @@ void data_stream_destory(void)
             }
             free(chn_image);
             chn_image = NULL;
+        }
+        if(mpp_decode_info)
+        {
+            free(mpp_decode_info);
+            mpp_decode_info = NULL;
+        }
+        if(mpp_encode_info)
+        {
+            free(mpp_encode_info);
+            mpp_encode_info = NULL;
+        }
+        if(pcie_info)
+        {
+            free(pcie_info);
+            pcie_info = NULL;
         }
         if(image_chn_info)
         {

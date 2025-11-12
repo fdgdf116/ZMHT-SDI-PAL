@@ -37,18 +37,24 @@
 #include "data_engine.h"
 
 #define ringbuffer_destory ringbuffer_deinit
-#define PCIE_READ_IMAGE_DATA_ADDRESS (0x00000000)
-#define PCIE_WRITE_IMAGE_DATA_ADDRESS (0x100000000)
+#define PCIE_READ_IMAGE_DATA_ADDRESS (0x400000000)
+#define PCIE_WRITE_IMAGE_DATA_ADDRESS (0x700000000)
 
 
-#define FPGA2RK_VFIFO_SIZE_OFFSET (0x100)
+#define FPGA2RK_VFIFO_SIZE_OFFSET (0x28)
 #define RK2FPGA_VFIFO_SIZE_OFFSET (0x104)
 
 #define FPGA_READ_DATA_ROW_MAX (200)
-// #define FPGA_READ_ONE_DATA_MAX (FPGA_ROW_DATA_SIZE * FPGA_READ_DATA_ROW_MAX)
-#define FPGA_READ_ONE_DATA_MAX (1*1024*1024)
+#define FPGA_READ_ONE_DATA_MAX (FPGA_ROW_DATA_SIZE * FPGA_READ_DATA_ROW_MAX)
+// #define FPGA_READ_ONE_DATA_MAX (1*1024*1024)
 
-#define FPGA_PCIE_RESET_OFFSET (0x3c)
+#define FPGA_SYSTEM_RESETN (0x4)
+#define MULTIPLEX_CHN_EN (0x14)
+#define MULTIPLEX_RECV_EN (0x18)
+#define IN_SOURCE_EN (0x1c)
+#define FPGA_VFIFO_RESET_OFFSET (0x3c)
+
+// #define FPGA_PCIE_RESET_OFFSET (0x3c)
 #define FPGA_PCIE_ENABLE_OFFSET (0x40)
 #define FPGA_PCIE_CHN_OFFSET (0x400)
 
@@ -111,7 +117,7 @@ typedef struct {
 	uint8_t *pcie_data;
     ring_buffer_t *pcie_data_rb;
     void* pcie_reg;
-    void* pcie_pc_reg;
+    // void* pcie_pc_reg;
 } pcie_fpga_info_t;
 
 static pcie_fpga_info_t *g_fpga_pcie;
@@ -145,22 +151,26 @@ uint8_t * GetPcieData(){
 }
 void pcie_fpga_reg_reset(void)
 {
-    unsigned int reg_offset;
+    // pcie_bar_write_reg(g_fpga_pcie->pcie_reg, FPGA_PCIE_ENABLE_OFFSET, 0);
+    // pcie_bar_write_reg(g_fpga_pcie->pcie_pc_reg, FPGA_PCIE_ENABLE_OFFSET, 0);
+    // usleep(100*1000);
+    // for(int chn = 0; chn < 24; chn++) {
+    //     reg_offset = ((chn + 1) * FPGA_PCIE_CHN_OFFSET);
+    //     pcie_bar_write_reg(g_fpga_pcie->pcie_reg, (reg_offset + FPGA_SET_CHN_ENABLE_OFFSET), 0);
+    //     pcie_bar_write_reg(g_fpga_pcie->pcie_pc_reg, (reg_offset + FPGA_SET_CHN_ENABLE_OFFSET), 0);
+    //     usleep(1000);
+    // }
 
-    pcie_bar_write_reg(g_fpga_pcie->pcie_reg, FPGA_PCIE_ENABLE_OFFSET, 0);
-    pcie_bar_write_reg(g_fpga_pcie->pcie_pc_reg, FPGA_PCIE_ENABLE_OFFSET, 0);
-    usleep(100*1000);
-    for(int chn = 0; chn < 24; chn++) {
-        reg_offset = ((chn + 1) * FPGA_PCIE_CHN_OFFSET);
-        pcie_bar_write_reg(g_fpga_pcie->pcie_reg, (reg_offset + FPGA_SET_CHN_ENABLE_OFFSET), 0);
-        pcie_bar_write_reg(g_fpga_pcie->pcie_pc_reg, (reg_offset + FPGA_SET_CHN_ENABLE_OFFSET), 0);
-        usleep(1000);
-    }
+    // pcie_bar_write_reg(g_fpga_pcie->pcie_reg, FPGA_PCIE_RESET_OFFSET, 0);
+    // usleep(500*1000);
+    // pcie_bar_write_reg(g_fpga_pcie->pcie_reg, FPGA_PCIE_RESET_OFFSET, 1);
+    // usleep(500*1000);
 
-    pcie_bar_write_reg(g_fpga_pcie->pcie_reg, FPGA_PCIE_RESET_OFFSET, 0);
-    usleep(500*1000);
-    pcie_bar_write_reg(g_fpga_pcie->pcie_reg, FPGA_PCIE_RESET_OFFSET, 1);
-    usleep(500*1000);
+    //系统复位
+    pcie_bar_write_reg(g_fpga_pcie->pcie_reg, FPGA_SYSTEM_RESETN, 0);
+    usleep(1000);
+    pcie_bar_write_reg(g_fpga_pcie->pcie_reg, FPGA_SYSTEM_RESETN, 1);
+    usleep(1000);
 
     SLOGI("[%s] pcie reset end \n", __func__);
 }
@@ -175,100 +185,100 @@ void pcie_close_chn_enable(unsigned int chn)
 
 void pcie_chn_stack_configuration_reg_init(stack_configuration_info_t* reg_val_info)
 {
-    unsigned int reg_offset;
-    unsigned char chn;
+    // unsigned int reg_offset;
+    // unsigned char chn;
 
-    chn = reg_val_info->chn;
-    // chn -= PCIE_SRC_START_CHANNEL;
-    reg_offset = (chn  * 0x4);
+    // chn = reg_val_info->chn;
+    // // chn -= PCIE_SRC_START_CHANNEL;
+    // reg_offset = (chn  * 0x4);
 
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (0x640+reg_offset),1);
-    pcie_bar_write_reg(pcie_common_param_reg, (0x640+reg_offset),1);
-    usleep(1000);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (0x640+reg_offset),1);
+    // pcie_bar_write_reg(pcie_common_param_reg, (0x640+reg_offset),1);
+    // usleep(1000);
 
-    pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x2c), reg_val_info->draw_mode0);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (reg_offset + 0x2c),reg_val_info->draw_mode0);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x5c), reg_val_info->center_point_x0);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (reg_offset + 0x5c),reg_val_info->center_point_x0);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x8c), reg_val_info->center_point_y0);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (reg_offset + 0x8c),reg_val_info->character_point_y0);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0xbc), reg_val_info->center_point_r0);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (reg_offset + 0xbc),reg_val_info->center_point_r0);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0xec), reg_val_info->center_point_s0);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (reg_offset + 0xec),reg_val_info->center_point_s0);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x11c), reg_val_info->center_point_l0);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (reg_offset + 0x11c),reg_val_info->center_point_l0);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x14c), reg_val_info->center_point_w0);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (reg_offset + 0x14c),reg_val_info->center_point_w0);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x17c), reg_val_info->image_length0);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (reg_offset + 0x17c),reg_val_info->image_length0);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x1ac), reg_val_info->image_width0);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (reg_offset + 0x1ac),reg_val_info->image_width0);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x1dc), reg_val_info->chan0_sel_mode);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (reg_offset + 0x1dc),reg_val_info->chan0_sel_mode);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x20c), reg_val_info->image_fill_length0);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x20c),reg_val_info->image_fill_length0);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x23c), reg_val_info->image_fill_width0);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x23c),reg_val_info->image_fill_width0);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x26c), reg_val_info->image_cut_length0);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x26c),reg_val_info->image_cut_length0);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x29c), reg_val_info->image_out_format);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x29c),reg_val_info->image_out_format);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x2cc), reg_val_info->draw_line_width0);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x2cc),reg_val_info->draw_line_width0);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x2fc), reg_val_info->character_point_x0);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x2fc),reg_val_info->character_point_x0);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x32c), reg_val_info->character_point_y0);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x32c),reg_val_info->character_point_y0);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x35c), reg_val_info->image_point_x0);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x35c),reg_val_info->image_point_x0);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x38c), reg_val_info->image_point_y0);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x38c),reg_val_info->image_point_y0);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x3bc), reg_val_info->yuv422_crcb_sel0);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x3bc),reg_val_info->yuv422_crcb_sel0);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x3ec), reg_val_info->chan0_video_mode);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x3ec),reg_val_info->chan0_video_mode);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x41c), reg_val_info->image_length1);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x41c),reg_val_info->image_length1);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x44c), reg_val_info->image_width1);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x44c),reg_val_info->image_width1);
-    usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x2c), reg_val_info->draw_mode0);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (reg_offset + 0x2c),reg_val_info->draw_mode0);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x5c), reg_val_info->center_point_x0);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (reg_offset + 0x5c),reg_val_info->center_point_x0);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x8c), reg_val_info->center_point_y0);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (reg_offset + 0x8c),reg_val_info->character_point_y0);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0xbc), reg_val_info->center_point_r0);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (reg_offset + 0xbc),reg_val_info->center_point_r0);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0xec), reg_val_info->center_point_s0);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (reg_offset + 0xec),reg_val_info->center_point_s0);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x11c), reg_val_info->center_point_l0);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (reg_offset + 0x11c),reg_val_info->center_point_l0);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x14c), reg_val_info->center_point_w0);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (reg_offset + 0x14c),reg_val_info->center_point_w0);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x17c), reg_val_info->image_length0);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (reg_offset + 0x17c),reg_val_info->image_length0);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x1ac), reg_val_info->image_width0);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (reg_offset + 0x1ac),reg_val_info->image_width0);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x1dc), reg_val_info->chan0_sel_mode);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (reg_offset + 0x1dc),reg_val_info->chan0_sel_mode);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x20c), reg_val_info->image_fill_length0);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x20c),reg_val_info->image_fill_length0);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x23c), reg_val_info->image_fill_width0);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x23c),reg_val_info->image_fill_width0);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x26c), reg_val_info->image_cut_length0);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x26c),reg_val_info->image_cut_length0);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x29c), reg_val_info->image_out_format);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x29c),reg_val_info->image_out_format);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x2cc), reg_val_info->draw_line_width0);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x2cc),reg_val_info->draw_line_width0);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x2fc), reg_val_info->character_point_x0);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x2fc),reg_val_info->character_point_x0);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x32c), reg_val_info->character_point_y0);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x32c),reg_val_info->character_point_y0);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x35c), reg_val_info->image_point_x0);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x35c),reg_val_info->image_point_x0);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x38c), reg_val_info->image_point_y0);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x38c),reg_val_info->image_point_y0);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x3bc), reg_val_info->yuv422_crcb_sel0);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x3bc),reg_val_info->yuv422_crcb_sel0);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x3ec), reg_val_info->chan0_video_mode);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x3ec),reg_val_info->chan0_video_mode);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x41c), reg_val_info->image_length1);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x41c),reg_val_info->image_length1);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, (reg_offset + 0x44c), reg_val_info->image_width1);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+(reg_offset + 0x44c),reg_val_info->image_width1);
+    // usleep(1000);
 
-    for(int index = 0;index < DATA_CHANNEL_NUM_MAX;index++)
-    {
-        if((reg_val_info->chan0_sel_mode >> index) & 0x01)
-        {
-            reg_offset = index*0x04;
-            pcie_bar_write_reg(pcie_common_param_reg, (0x18+reg_offset),1);
-            printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (0x18+reg_offset),1);
-            usleep(1000);
-            pcie_bar_write_reg(pcie_common_param_reg, (0x18+reg_offset),0);
-            printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (0x18+reg_offset),0);
-            usleep(1000);
-        }
-    }
+    // for(int index = 0;index < DATA_CHANNEL_NUM_MAX;index++)
+    // {
+    //     if((reg_val_info->chan0_sel_mode >> index) & 0x01)
+    //     {
+    //         reg_offset = index*0x04;
+    //         pcie_bar_write_reg(pcie_common_param_reg, (0x18+reg_offset),1);
+    //         printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (0x18+reg_offset),1);
+    //         usleep(1000);
+    //         pcie_bar_write_reg(pcie_common_param_reg, (0x18+reg_offset),0);
+    //         printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + (0x18+reg_offset),0);
+    //         usleep(1000);
+    //     }
+    // }
 }
 
 int decode_configuration_init(cfg_info_t* reg_val_info)
@@ -283,7 +293,7 @@ int decode_configuration_init(cfg_info_t* reg_val_info)
     cfg_info_t* cfg_info = GetCfgInfo(reg_val_info->channel_param.chn%MPP_DECODE_NTHREAD_MAX);
     memcpy(cfg_info, reg_val_info, sizeof(cfg_info_t));
     sprintf(cfg_info->in_filename_chn, "%s%s", ssd_baseaddr, reg_val_info->in_filename_chn);
-    sprintf(cfg_info->out_filename_chn, "%s%s", ssd_baseaddr, reg_val_info->out_filename_chn);
+    sprintf(cfg_info->out_filename_chn, "%s%s", "/tmp/", reg_val_info->out_filename_chn);
     channel_param_t channel_param = cfg_info->channel_param;
     data_stream_t* data_stream = data_stream_get();
     image_chn_info_t* image_chn_info = data_stream->image_chn_info[reg_val_info->channel_param.chn];
@@ -292,6 +302,7 @@ int decode_configuration_init(cfg_info_t* reg_val_info)
 
     mpp_info->mpp_chn = reg_val_info->channel_param.chn%MPP_DECODE_NTHREAD_MAX;
     MpiDecLoopData* loop_data = &mpp_info->dec_data;
+    loop_data->chn = reg_val_info->channel_param.chn;
     rga_param_t* rga_info = &image_chn_info->rga_info;
     data_stream_t* gs_data_stream = data_stream_get();
 
@@ -301,7 +312,7 @@ int decode_configuration_init(cfg_info_t* reg_val_info)
         return -1;
     }
     parse_stream_info(cfg_info->in_filename_chn,&mpp_info->decode_type,&mpp_info->fps,&mpp_info->width, &mpp_info->height);
-    mpp_info->dec_data.fps = mpp_info->fps;
+    loop_data->fps = mpp_info->fps;
     loop_data->fp_input = fopen(cfg_info->in_filename_chn, "rb");
     if (loop_data->fp_input == NULL) {
         SLOGI("open input file %s failed\n", cfg_info->in_filename_chn);
@@ -430,62 +441,62 @@ err_1:
 }
 
 void pcie_VdmaConfigInit(vdma_configuration_info_t *vdma_configuration_info){
-    unsigned int reg_offset;
-    unsigned char chn;
+    // unsigned int reg_offset;
+    // unsigned char chn;
 
-    chn = vdma_configuration_info->chn;
-    // chn -= PCIE_SRC_START_CHANNEL;
-    reg_offset = (chn  * 0x10000);
-    // SLOGI("[Debug] %s reg offset:0x%x src_width:%d src_height:%d \n", __func__, reg_offset, reg_val_info->src_width, reg_val_info->src_height);
+    // chn = vdma_configuration_info->chn;
+    // // chn -= PCIE_SRC_START_CHANNEL;
+    // reg_offset = (chn  * 0x10000);
+    // // SLOGI("[Debug] %s reg offset:0x%x src_width:%d src_height:%d \n", __func__, reg_offset, reg_val_info->src_width, reg_val_info->src_height);
 
-    pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x00), vdma_configuration_info->VDMA_MM2S_DMACR);
-    printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0x00),vdma_configuration_info->VDMA_MM2S_DMACR);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x04), vdma_configuration_info->VDMA_MM2S_DMASR);
-    printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0x04),vdma_configuration_info->VDMA_MM2S_DMASR);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x54), vdma_configuration_info->VDMA_MM2S_HSIZE);
-    printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0x54),vdma_configuration_info->VDMA_MM2S_HSIZE);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x58), vdma_configuration_info->VDMA_MM2S_DLYSTRIDE);
-    printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0x58),vdma_configuration_info->VDMA_MM2S_DLYSTRIDE);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x5c), vdma_configuration_info->VDMA_MM2S_START_ADDR1);
-    printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0x5c),vdma_configuration_info->VDMA_MM2S_START_ADDR1);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x60), vdma_configuration_info->VDMA_MM2S_START_ADDR2);
-    printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0x60),vdma_configuration_info->VDMA_MM2S_START_ADDR2);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x64), vdma_configuration_info->VDMA_MM2S_START_ADDR3);
-    printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0x64),vdma_configuration_info->VDMA_MM2S_START_ADDR3);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x30), vdma_configuration_info->VDMA_S2MM_DMACR);
-    printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0x30),vdma_configuration_info->VDMA_S2MM_DMACR);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x34), vdma_configuration_info->VDMA_S2MM_DMASR);
-    printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0x34),vdma_configuration_info->VDMA_S2MM_DMASR);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0xa4), vdma_configuration_info->VDMA_S2MM_HSIZE);
-    printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0xa4),vdma_configuration_info->VDMA_S2MM_HSIZE);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0xa8), vdma_configuration_info->VDMA_S2MM_DLYSTRIDE);
-    printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0xa8),vdma_configuration_info->VDMA_S2MM_DLYSTRIDE);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0xac), vdma_configuration_info->VDMA_S2MM_START_ADDR1);
-    printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0xac),vdma_configuration_info->VDMA_S2MM_START_ADDR1);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0xb0), vdma_configuration_info->VDMA_S2MM_START_ADDR2);
-    printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0xb0),vdma_configuration_info->VDMA_S2MM_START_ADDR2);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0xb4), vdma_configuration_info->VDMA_S2MM_START_ADDR3);
-    printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0xb4),vdma_configuration_info->VDMA_S2MM_START_ADDR3);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x50), vdma_configuration_info->VDMA_MM2S_VSIZE);
-    printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0x50),vdma_configuration_info->VDMA_MM2S_VSIZE);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0xa0), vdma_configuration_info->VDMA_S2MM_VSIZE);
-    printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0xa0),vdma_configuration_info->VDMA_S2MM_VSIZE);
-    usleep(100000);
+    // pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x00), vdma_configuration_info->VDMA_MM2S_DMACR);
+    // printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0x00),vdma_configuration_info->VDMA_MM2S_DMACR);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x04), vdma_configuration_info->VDMA_MM2S_DMASR);
+    // printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0x04),vdma_configuration_info->VDMA_MM2S_DMASR);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x54), vdma_configuration_info->VDMA_MM2S_HSIZE);
+    // printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0x54),vdma_configuration_info->VDMA_MM2S_HSIZE);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x58), vdma_configuration_info->VDMA_MM2S_DLYSTRIDE);
+    // printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0x58),vdma_configuration_info->VDMA_MM2S_DLYSTRIDE);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x5c), vdma_configuration_info->VDMA_MM2S_START_ADDR1);
+    // printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0x5c),vdma_configuration_info->VDMA_MM2S_START_ADDR1);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x60), vdma_configuration_info->VDMA_MM2S_START_ADDR2);
+    // printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0x60),vdma_configuration_info->VDMA_MM2S_START_ADDR2);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x64), vdma_configuration_info->VDMA_MM2S_START_ADDR3);
+    // printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0x64),vdma_configuration_info->VDMA_MM2S_START_ADDR3);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x30), vdma_configuration_info->VDMA_S2MM_DMACR);
+    // printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0x30),vdma_configuration_info->VDMA_S2MM_DMACR);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x34), vdma_configuration_info->VDMA_S2MM_DMASR);
+    // printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0x34),vdma_configuration_info->VDMA_S2MM_DMASR);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0xa4), vdma_configuration_info->VDMA_S2MM_HSIZE);
+    // printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0xa4),vdma_configuration_info->VDMA_S2MM_HSIZE);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0xa8), vdma_configuration_info->VDMA_S2MM_DLYSTRIDE);
+    // printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0xa8),vdma_configuration_info->VDMA_S2MM_DLYSTRIDE);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0xac), vdma_configuration_info->VDMA_S2MM_START_ADDR1);
+    // printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0xac),vdma_configuration_info->VDMA_S2MM_START_ADDR1);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0xb0), vdma_configuration_info->VDMA_S2MM_START_ADDR2);
+    // printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0xb0),vdma_configuration_info->VDMA_S2MM_START_ADDR2);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0xb4), vdma_configuration_info->VDMA_S2MM_START_ADDR3);
+    // printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0xb4),vdma_configuration_info->VDMA_S2MM_START_ADDR3);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0x50), vdma_configuration_info->VDMA_MM2S_VSIZE);
+    // printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0x50),vdma_configuration_info->VDMA_MM2S_VSIZE);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_vdma_config_reg, (reg_offset + 0xa0), vdma_configuration_info->VDMA_S2MM_VSIZE);
+    // printf("offset:%x write:%x\n",FPGA_PCIE_VDMA_CONFIG_REG_PHY+(reg_offset + 0xa0),vdma_configuration_info->VDMA_S2MM_VSIZE);
+    // usleep(100000);
 }
 
 void pcie_chn_stack_char(unsigned char* reg_val_info, unsigned int frame_size)
@@ -507,7 +518,7 @@ void pcie_chn_stack_char(unsigned char* reg_val_info, unsigned int frame_size)
     {
         image_chn_info->osd_info.data_size = ret;
         memcpy(image_chn_info->osd_info.data, pcie_buf, ret);
-        // save_image_data(pcie_buf,ret,"/userdata/sda1/cvtcolor_char.raw");
+        // save_image_data(pcie_buf,ret,"/tmp/cvtcolor_char.raw");
         // pcie_write_buf(pcie_stack_char_reg, reg_offset, pcie_buf,ret);   
     }
     else
@@ -605,7 +616,7 @@ void pcie_chn_stack_image(unsigned char* reg_val_info, unsigned int frame_size)
     if(ret == rga_info->image_w0 * rga_info->image_y0 *3)
     {
         memcpy(gpu_image->over_image, pcie_buf, rga_info->image_w0 * rga_info->image_y0 *3);
-        // save_image_data(gpu_image->over_image,ret,"/userdata/sda1/cvtcolor_image.raw");
+        // save_image_data(gpu_image->over_image,ret,"/tmp/cvtcolor_image.raw");
         // pcie_write_buf(pcie_stack_image_reg,reg_offset,pcie_buf,ret);
     }
     else
@@ -685,27 +696,58 @@ int pcie_chn_stack_image_test_r()
     return 0;
 }
 
-void pcie_get_selftest_val(selftest_val_info_t* info)
-{
-   info->board_type = htonl(pcie_bar_read_reg(g_fpga_pcie->pcie_reg, 0x80));
-   info->series_number = htonl(pcie_bar_read_reg(g_fpga_pcie->pcie_reg, 0x84));
-   info->version1 = htonl(pcie_bar_read_reg(g_fpga_pcie->pcie_reg, 0x88));
-   info->version2 = htonl(pcie_bar_read_reg(g_fpga_pcie->pcie_reg, 0x8c));
-   info->link = htonl(pcie_bar_read_reg(g_fpga_pcie->pcie_reg, 0x90));
-   info->pc_link = pcie_bar_read_reg(g_fpga_pcie->pcie_reg, 0x94);
-   info->rk_link = pcie_bar_read_reg(g_fpga_pcie->pcie_reg, 0x98);
+// void pcie_get_selftest_val(selftest_val_info_t* info)
+// {
+//    info->board_type = htonl(pcie_bar_read_reg(g_fpga_pcie->pcie_reg, 0x80));
+//    info->series_number = htonl(pcie_bar_read_reg(g_fpga_pcie->pcie_reg, 0x84));
+//    info->version1 = htonl(pcie_bar_read_reg(g_fpga_pcie->pcie_reg, 0x88));
+//    info->version2 = htonl(pcie_bar_read_reg(g_fpga_pcie->pcie_reg, 0x8c));
+//    info->link = htonl(pcie_bar_read_reg(g_fpga_pcie->pcie_reg, 0x90));
+//    info->pc_link = pcie_bar_read_reg(g_fpga_pcie->pcie_reg, 0x94);
+//    info->rk_link = pcie_bar_read_reg(g_fpga_pcie->pcie_reg, 0x98);
 
+// }
+
+int pcie_set_rk_enable()
+{
+    //vfifo复位
+    pcie_bar_write_reg(g_fpga_pcie->pcie_reg, FPGA_VFIFO_RESET_OFFSET, 1);
+    usleep(1000);
+    pcie_bar_write_reg(g_fpga_pcie->pcie_reg, FPGA_VFIFO_RESET_OFFSET, 0);
+    usleep(1000);
+    //接收通道使能
+    pcie_bar_write_reg(g_fpga_pcie->pcie_reg, MULTIPLEX_CHN_EN, 1);
+    usleep(1000);
+    //接收使能
+    pcie_bar_write_reg(g_fpga_pcie->pcie_reg, MULTIPLEX_RECV_EN, 1);
+    usleep(1000);
+    //内源使能
+    pcie_bar_write_reg(g_fpga_pcie->pcie_reg, IN_SOURCE_EN, 1);
+    usleep(1000);
 }
 
-void pcie_set_rk_enable(unsigned char val)
+int pcie_set_rk_disable()
 {
-    pcie_bar_write_reg(g_fpga_pcie->pcie_reg, FPGA_PCIE_ENABLE_OFFSET, val);
+    //接收通道使能
+    pcie_bar_write_reg(g_fpga_pcie->pcie_reg, MULTIPLEX_CHN_EN, 0);
+    usleep(1000);
+    //接收使能
+    pcie_bar_write_reg(g_fpga_pcie->pcie_reg, MULTIPLEX_RECV_EN, 0);
+    usleep(1000);
+    //内源使能
+    pcie_bar_write_reg(g_fpga_pcie->pcie_reg, IN_SOURCE_EN, 0);
+    usleep(1000);
+    //vfifo复位
+    pcie_bar_write_reg(g_fpga_pcie->pcie_reg, FPGA_VFIFO_RESET_OFFSET, 1);
+    usleep(1000);
+    pcie_bar_write_reg(g_fpga_pcie->pcie_reg, FPGA_VFIFO_RESET_OFFSET, 0);
+    usleep(1000);
 }
 
-void pcie_set_pc_enable(unsigned char val)
-{
-    pcie_bar_write_reg(g_fpga_pcie->pcie_pc_reg, FPGA_PCIE_ENABLE_OFFSET, val);
-}
+// void pcie_set_pc_enable(unsigned char val)
+// {
+//     pcie_bar_write_reg(g_fpga_pcie->pcie_pc_reg, FPGA_PCIE_ENABLE_OFFSET, val);
+// }
 
 unsigned int pcie_get_fpga2rk_vfifo_szie(void)
 {
@@ -729,8 +771,8 @@ static void pcie_data_to_queue(image_frame_info_t *frame_info, ring_buffer_t *rb
 
 void pcie_fpga_device_stop(void)
 {
-    pcie_set_rk_enable(0);
-    pcie_set_pc_enable(0);
+    pcie_set_rk_disable();
+    // pcie_set_pc_enable(0);
     // pcie_fpga_reg_reset();
 
     // while(pcie_get_fpga2rk_vfifo_szie()){
@@ -768,6 +810,7 @@ static void *pcie_read_data_thread(void* parameter)
             
             ret = dma_memory_mapped_read(pcie_buf + pcie_buf_offset,PCIE_READ_IMAGE_DATA_ADDRESS, frame_size,PCIE_C2H_0);
             if(ret == frame_size){
+                // save_image_data(pcie_buf + pcie_buf_offset, ret, "/tmp/pcie_data.raw");
                 frame_info.frame_offset = pcie_buf_offset;
                 //frame_info.frame_index=pcie_read_frame;
                 if(ringbuffer_is_full(rb)){
@@ -925,7 +968,7 @@ int pcie_chn_data_analysis(unsigned char chn, unsigned char* chn_buf_l)
 		memcpy(chn_image_buf + chn_data->data_offset, (chn_buf_l + FPGA_PCIE_DATA_HEAD_SIZE),memcpy_len);
         if(chn == 0)
             odd_transform_yuv(chn_image_buf,chn);
-		// save_image_data(chn_image_buf,gpu_image->frame_size,"/userdata/chn_image_buf.raw");
+		// save_image_data(chn_image_buf,chn_data->frame_size,"/tmp/chn_image_buf.raw");
 		chn_rb = GetInPutRingBufferPt(chn);
 		if(chn_rb){
 			if(!ringbuffer_is_full(chn_rb)){
@@ -979,7 +1022,7 @@ int pcie_chn_data_analysis(unsigned char chn, unsigned char* chn_buf_l)
 		fpga传递的数据是有协议的，协议为64 + 5120 = 5184，每个5184会打一次帧头，
 		因此按照5184的整数倍来读取数据，这样方便确认是不是丢数据。
 */
-#if TEST
+#if 0
 static void *pcie_data_analysis_thread(void* parameter)
 {
 	u_int32_t ret;
@@ -1086,6 +1129,7 @@ static void *pcie_data_analysis_thread(void* parameter)
 		/*对每行数据进行解析*/
 		for(frame_index = 0; frame_index < FPGA_READ_DATA_ROW_MAX; frame_index++){
 			chn_buf_l = (pcie_buf + ((frame_index) * FPGA_ROW_DATA_SIZE));
+            // save_image_data(chn_buf_l, FPGA_ROW_DATA_SIZE , "/tmp/chn_buf_l.raw");
 
 			if(PCIE_GET_DATA_HEAD(chn_buf_l) != pcie_data_head){ /*帧头错误，则跳过本帧解析*/
 				SLOGI("pcie index (0x%x != 0x%x )error \n", PCIE_GET_DATA_HEAD(chn_buf_l), pcie_data_head);
@@ -1093,7 +1137,7 @@ static void *pcie_data_analysis_thread(void* parameter)
 			}
 
 			chn = chn_buf_l[PCIE_HEAD_CHN_OFFSET]; /* DATA_CHANNEL_OFFSET:通道偏移 */
-			if(chn >= DATA_CHANNEL_NUM_MAX){/* 帧序号超过最大的帧序号，则跳出本帧解析 */
+			if(chn >= MPP_ENCODE_NTHREAD_MAX){/* 帧序号超过最大的帧序号，则跳出本帧解析 */
 				SLOGI("get pcie data chn(%d - %d) error \n", chn, chn_buf_l[16]);
 				continue;
 			}
@@ -1171,7 +1215,7 @@ int pcie_send_mpp_data(int chn, image_frame_info_t *frame_info)
         return 1;
     }
 
-    SLOGI("rk2fpga chn:%d f_chn:%d index:%d offset:0x%x size:%d data ok \n", chn, frame_info->chn, frame_info->frame_index,frame_info->frame_offset, frame_info->frame_size);
+    // SLOGI("rk2fpga chn:%d f_chn:%d index:%d offset:0x%x size:%d data ok \n", chn, frame_info->chn, frame_info->frame_index,frame_info->frame_offset, frame_info->frame_size);
 
     return 0;
 }
@@ -1265,7 +1309,7 @@ int fpga_pcie_device_open(void)
 {
     int ret;
 
-    ret = pcie_bar_open(0);
+    ret = pcie_bar_open(1);
     if(ret != 0){
         printf("[ERROR] pcie bar0 mmap error \n");
         return A818_PCIE_BAR_OPEN;
@@ -1285,45 +1329,45 @@ int fpga_pcie_device_open(void)
     //     goto err_2;
     // }
 
-    pcie_common_param_reg = pcie_bar_mmap(FPGA_PCIE_COMMON_PARM_REG_PHY, FPGA_PCIE_REG_LEN , 0);
+    pcie_common_param_reg = pcie_bar_mmap(FPGA_PCIE_COMMON_PARM_REG_PHY, FPGA_PCIE_REG_LEN , 1);
     if(pcie_common_param_reg == NULL){
         printf("[ERROR] pcie reg bar mmap error \n");
         ret = A818_PCIE_REG_MMAP;
         goto err_2;
     }
 
-    ret = pcie_bar_open(2);
-    if(ret != 0){
-        printf("[ERROR] pcie bar2 mmap error \n");
-        return A818_PCIE_BAR_OPEN;
-    }
-    pcie_stack_char_reg =  pcie_bar_mmap(FPGA_PCIE_STACK_CHAR_REG_PHY, FPGA_PCIE_STACK_CHAR_REG_LEN , 2);
-    if(pcie_stack_char_reg == NULL){
-        printf("[ERROR] pcie reg bar mmap error \n");
-        ret = A818_PCIE_REG_MMAP;
-        goto err_2;
-    }
+    // ret = pcie_bar_open(2);
+    // if(ret != 0){
+    //     printf("[ERROR] pcie bar2 mmap error \n");
+    //     return A818_PCIE_BAR_OPEN;
+    // }
+    // pcie_stack_char_reg =  pcie_bar_mmap(FPGA_PCIE_STACK_CHAR_REG_PHY, FPGA_PCIE_STACK_CHAR_REG_LEN , 2);
+    // if(pcie_stack_char_reg == NULL){
+    //     printf("[ERROR] pcie reg bar mmap error \n");
+    //     ret = A818_PCIE_REG_MMAP;
+    //     goto err_2;
+    // }
 
-    pcie_stack_image_reg =  pcie_bar_mmap(FPGA_PCIE_STACK_IMAGE_REG_PHY, FPGA_PCIE_STACK_IMAGE_REG_LEN, 2);
-    if(pcie_stack_image_reg == NULL){
-        printf("[ERROR] pcie reg bar mmap error \n");
-        ret = A818_PCIE_REG_MMAP;
-        goto err_2;
-    }
+    // pcie_stack_image_reg =  pcie_bar_mmap(FPGA_PCIE_STACK_IMAGE_REG_PHY, FPGA_PCIE_STACK_IMAGE_REG_LEN, 2);
+    // if(pcie_stack_image_reg == NULL){
+    //     printf("[ERROR] pcie reg bar mmap error \n");
+    //     ret = A818_PCIE_REG_MMAP;
+    //     goto err_2;
+    // }
 
-    pcie_vdma_config_reg =  pcie_bar_mmap(FPGA_PCIE_VDMA_CONFIG_REG_PHY, FPGA_PCIE_VDMA_CONFIG_REG_LEN , 2);
-    if(pcie_vdma_config_reg == NULL){
-        printf("[ERROR] pcie reg bar mmap error \n");
-        ret = A818_PCIE_REG_MMAP;
-        goto err_2;
-    }
+    // pcie_vdma_config_reg =  pcie_bar_mmap(FPGA_PCIE_VDMA_CONFIG_REG_PHY, FPGA_PCIE_VDMA_CONFIG_REG_LEN , 2);
+    // if(pcie_vdma_config_reg == NULL){
+    //     printf("[ERROR] pcie reg bar mmap error \n");
+    //     ret = A818_PCIE_REG_MMAP;
+    //     goto err_2;
+    // }
 
-    fiber_rate_config_reg =  pcie_bar_mmap(FIBER_RATE_CONFIG_REG_PHY, FIBER_RATE_CONFIG_REG_LEN , 2);
-    if(fiber_rate_config_reg == NULL){
-        printf("[ERROR] pcie reg bar mmap error \n");
-        ret = A818_PCIE_REG_MMAP;
-        goto err_2;
-    }
+    // fiber_rate_config_reg =  pcie_bar_mmap(FIBER_RATE_CONFIG_REG_PHY, FIBER_RATE_CONFIG_REG_LEN , 2);
+    // if(fiber_rate_config_reg == NULL){
+    //     printf("[ERROR] pcie reg bar mmap error \n");
+    //     ret = A818_PCIE_REG_MMAP;
+    //     goto err_2;
+    // }
 
     // set_pcie_timestamp_addr(pcie_reg);
 
@@ -1359,12 +1403,6 @@ int pcie_fpga_data_init(void)
         memset(cfg_info[index], 0, sizeof(cfg_info_t));
     }
 
-    ret = pcie_bar_open(1);
-    if(ret != 0){
-        printf("[ERROR] pcie bar2 mmap error \n");
-        return A818_PCIE_BAR_OPEN;
-    }
-
 	g_fpga_pcie->pcie_data = align_read_buf_get();
 	g_fpga_pcie->pcie_data_rb = ringbuffer_create(PCIE_DATA_STREAM_FRAME_MAX*sizeof(image_frame_info_t), sizeof(image_frame_info_t));
 	if (!g_fpga_pcie->pcie_data_rb) {
@@ -1373,14 +1411,14 @@ int pcie_fpga_data_init(void)
 		goto err_1;
 	}
 
-	g_fpga_pcie->pcie_reg = pcie_reg;
+	g_fpga_pcie->pcie_reg = pcie_common_param_reg;
 
-	g_fpga_pcie->pcie_pc_reg = pcie_bar_mmap(FPGA_PCIE_PC_REG_PHY, FPGA_PCIE_REG_LEN,1);
-	if(g_fpga_pcie->pcie_pc_reg == NULL){
-		printf("[ERROR] pcie reg bar mmap error \n");
-		ret = A818_PCIE_PC_REG_MMAP;
-		goto err_2;
-	}
+	// g_fpga_pcie->pcie_pc_reg = pcie_bar_mmap(FPGA_PCIE_PC_REG_PHY, FPGA_PCIE_REG_LEN,1);
+	// if(g_fpga_pcie->pcie_pc_reg == NULL){
+	// 	printf("[ERROR] pcie reg bar mmap error \n");
+	// 	ret = A818_PCIE_PC_REG_MMAP;
+	// 	goto err_2;
+	// }
 
 	/* 初始化相关线程 */
 	ret = pthread_create(&read_tid,NULL,&pcie_read_data_thread,NULL);
@@ -1404,7 +1442,7 @@ int pcie_fpga_data_init(void)
 		goto err_5;
 	}
 
-	pcie_fpga_reg_reset();
+	// pcie_fpga_reg_reset();
     SLOGI("[%s] pcie init ok \n", __func__);
     usleep(200*1000);
 
@@ -1414,7 +1452,7 @@ err_5:
 err_4:
     pthread_cancel(read_tid);
 err_3:
-    pcie_bar_munmap(g_fpga_pcie->pcie_pc_reg, FPGA_PCIE_REG_LEN);  
+    // pcie_bar_munmap(g_fpga_pcie->pcie_pc_reg, FPGA_PCIE_REG_LEN);  
 err_2:
     ringbuffer_destory(g_fpga_pcie->pcie_data_rb);
 err_1:
@@ -1426,8 +1464,8 @@ err_1:
 void pcie_fpga_data_destory(void)
 {
     if(g_fpga_pcie){
-        pcie_set_rk_enable(0);
-        pcie_set_pc_enable(0);
+        pcie_set_rk_disable();
+        // pcie_set_pc_enable(0);
         ringbuffer_destory(g_fpga_pcie->pcie_data_rb);
         free(g_fpga_pcie);
         g_fpga_pcie = NULL;

@@ -65,7 +65,7 @@ void* rga_deal(void* arg){
             rb_out = gpu_frame_stream->osd_data_rb[chn];
         }
         while(ringbuffer_is_full(rb_out)){
-            // printf("OutPutRingBuffer is_full\n");
+            printf("OutPutRingBuffer is_full\n");
             time_val.tv_sec=0;
             time_val.tv_usec=(1000);
             select(0,NULL,NULL,NULL,&time_val);
@@ -164,7 +164,7 @@ unsigned int rga_chn_image_init(unsigned char chn)
     if(chn < MPP_ENCODE_NTHREAD_MAX)
         chn_image->chn_data.frame_size = w_stride*h_stride*2;
     else
-        chn_image->chn_data.frame_size = w_stride*h_stride*1.5;
+        chn_image->chn_data.frame_size = w_stride*h_stride*3/2;
 	chn_image->chn_data.rb_offset = 0;
 
 	SLOGI("[DEBUG] %s chn:%d frame_size:%d (%d-%d-%d-%d-%d-%d)\n", __func__, chn, chn_image->chn_data.frame_size,rga_info->src_width,rga_info->src_height,\
@@ -245,8 +245,9 @@ unsigned int rga_chn_image_init(unsigned char chn)
                 goto err_1;
             }
         }
+        printf("chn:%d yuv420_data finished index:%d\n", chn, index);
     }
-	usleep(200*1000);
+	// usleep(200*1000);
     image_chn_info->rga_info.rga_flag = 0;
     ret = pthread_create(&image_chn_info->pht_rga, NULL, &rga_deal, &chn_image->chn);
     if (ret != 0) {

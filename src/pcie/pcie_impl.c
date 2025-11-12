@@ -77,7 +77,7 @@ int pcie_impl_init(void)
 	}
 
 	fd_w = open(xdma_h2c_dev, O_RDWR);
-	if (fd_r < 0) {
+	if (fd_w < 0) {
 		fprintf(stderr, "unable to open device %s, %d.\n",xdma_h2c_dev, fd_w);
 		perror("open device");
 		ret = -2;
@@ -94,7 +94,7 @@ int pcie_impl_init(void)
 	for(index = 0; index < DATA_CHANNEL_NUM_MAX; index++){
 		posix_memalign((void **)&align_buf_w[index], 4096 /*alignment */ , s_pcie_w_buf_size_max + 4096);
 		if (!align_buf_w) {
-			fprintf(stderr, "OOM %lu.\n", s_pcie_buf_size_max + 4096);
+			fprintf(stderr, "OOM %lu.\n", s_pcie_w_buf_size_max + 4096);
 			ret = -1;
 			goto out;
 		}
@@ -169,16 +169,25 @@ void pcie_impl_destory(void)
 
 	if(align_chn_reset_buf){
 		free(align_chn_reset_buf);
+		align_chn_reset_buf = NULL;
 	}
 
 	if (align_buf_r) {
 		free(align_buf_r);
+		align_buf_r = NULL;
 	}
 
 	for(int index = 0; index < DATA_CHANNEL_NUM_MAX; index++){
 		if (align_buf_w[index]) {
 			free(align_buf_w[index]);
 			align_buf_w[index] = NULL;
+		}
+	}
+
+	for(int index = 0; index < MPP_ENCODE_NTHREAD_MAX; index++){
+		if (align_buf_mpp_w[index]) {
+			free(align_buf_mpp_w[index]);
+			align_buf_mpp_w[index] = NULL;
 		}
 	}
 

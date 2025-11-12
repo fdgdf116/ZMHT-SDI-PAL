@@ -7,6 +7,10 @@ extern "C" {
 #include <sys/types.h>
 // #define DEC_CHN (4)
 
+#define PAL_RK3588_VERSION 0x10000000
+#define PAL_RK3588_BUILD_TIME 0x20251106
+#define TEST 1
+
 enum video_ratio_e {
     VIDEO_RATIO_1 = 1,
     VIDEO_RATIO_3 = 3,	
@@ -343,18 +347,22 @@ typedef struct {
     unsigned char rotate;        /* 0:不旋转, 90:旋转90 180:旋转180 270:旋转270 */
 }ratio_image_info_t;
 
-typedef struct {
-    unsigned char chn;           /* 图像所在的通道号 */
-    unsigned char fps;           /* 图像的帧率 */
-    unsigned int width;          /* 本通道图像的宽 */
-    unsigned int height;         /* 本通道图像的高 */
-    unsigned char mpp_type;
-    unsigned char mpp_chn;       /*图像进行h264/h265压缩所在的通道*/
-    unsigned int mpp_bps;
-    unsigned char position;         /*OSD叠加的位置*/
-    unsigned char out_type;
-    unsigned char extraction;
-}mpp_image_info_t;
+// typedef struct {
+// 	unsigned char chn;           /* 图像所在的通道号 */
+// 	unsigned char fps;           /* 图像的帧率 */
+// 	unsigned int width;          /* 本通道图像的宽 */
+// 	unsigned int height;         /* 本通道图像的高 */
+// 	unsigned char mpp_type;
+// 	unsigned char mpp_chn;       /*图像进行h264/h265压缩所在的通道*/
+// 	unsigned int mpp_bps;
+// 	unsigned char position;         /*字符叠加位置*/
+// 	unsigned char out_type;
+// 	unsigned char extraction;		/*抽帧比*/
+// 	unsigned char rotate;         /*旋转类型0/1/2/4*/
+// 	unsigned char crop;
+// 	unsigned int crop_width;
+// 	unsigned int crop_height;
+// }mpp_image_info_t;
 
 typedef struct {
     unsigned char chn;

@@ -142,7 +142,7 @@ CMAKE_PROJECT_DESCRIPTION:STATIC=
 CMAKE_PROJECT_HOMEPAGE_URL:STATIC=
 
 //Value Computed by CMake
-CMAKE_PROJECT_NAME:STATIC=sdi-pal_pro
+CMAKE_PROJECT_NAME:STATIC=sdi_pal_pro
 
 //Path to a program.
 CMAKE_RANLIB:FILEPATH=/home/megshark/3588_work/rk3588_toolchain/bin/aarch64-linux-ranlib
@@ -210,13 +210,13 @@ CMAKE_TAPI:FILEPATH=CMAKE_TAPI-NOTFOUND
 CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 
 //Value Computed by CMake
-sdi-pal_pro_BINARY_DIR:STATIC=/home/megshark/3588_work/SDI_PAL/rk_sdi_pal_pro/build
+sdi_pal_pro_BINARY_DIR:STATIC=/home/megshark/3588_work/SDI_PAL/rk_sdi_pal_pro/build
 
 //Value Computed by CMake
-sdi-pal_pro_IS_TOP_LEVEL:STATIC=ON
+sdi_pal_pro_IS_TOP_LEVEL:STATIC=ON
 
 //Value Computed by CMake
-sdi-pal_pro_SOURCE_DIR:STATIC=/home/megshark/3588_work/SDI_PAL/rk_sdi_pal_pro
+sdi_pal_pro_SOURCE_DIR:STATIC=/home/megshark/3588_work/SDI_PAL/rk_sdi_pal_pro
 
 
 ########################

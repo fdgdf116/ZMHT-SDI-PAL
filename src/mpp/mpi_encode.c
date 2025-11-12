@@ -23,13 +23,11 @@ int  video_data_wait_and_get(uint8_t chn, uint8_t *buf, uint32_t width, uint32_t
 {   
 	struct timeval time;
 
-	gpu_image_info_t* gpu_image;
-	fpga_chn_image_info_t* chn_image;
 	mpi_encode_info_t* mpi_encode = mpi_encode_info_get();
 	GPU_Frame_st* gpu_frame_stream = gpu_data_stream_get();
 	data_stream_t *data_stream = data_stream_get();
 	image_chn_info_t* image_chn_info = &data_stream->image_chn_info[chn];
-	ring_buffer_t *rb = gpu_frame_stream->mpp_data_rb;
+	ring_buffer_t *rb = gpu_frame_stream->mpp_data_rb[chn];
 	image_frame_info_t frame_info = {0}; 
 	Crop_Frame_st* crop_stream = crop_data_stream_get();
 	crop_image_info_t* crop_image = &crop_stream->crop_image[chn];
@@ -48,20 +46,14 @@ int  video_data_wait_and_get(uint8_t chn, uint8_t *buf, uint32_t width, uint32_t
 	}
 
 	ringbuffer_get(rb, (uint8_t *)&frame_info, sizeof(image_frame_info_t));
-	gpu_image = &gpu_frame_stream->gpu_image;
-	chn_image = data_stream->chn_image;
-	if(!gpu_image){
-		SLOGI("[Debug] %s get gpu_image error \n", __func__);
-		return -1;
+	// memcpy(buf,crop_image->crop_yuv_buffer[frame_info.frame_offset],frame_info.frame_size);
+	for(int i = 0; i < height; i++){
+		memcpy(buf + i*hor_stride,crop_image->crop_yuv_buffer[frame_info.frame_offset] + i*width,width);
 	}
-	memcpy(buf, crop_image->crop_yuv_buffer[frame_info.frame_offset], frame_info.frame_size);
-	// for(int i = 0; i < height; i++){
-	// 	memcpy(buf + i*hor_stride,gpu_image->out_yuv_buffer[frame_info.frame_offset] + i*osd_width,width);
-	// }
-	// for(int i = 0; i < height/2; i++){
-	// 	memcpy(buf + hor_stride*ver_stride + i*hor_stride,gpu_image->out_yuv_buffer[frame_info.frame_offset] + osd_width*osd_height + i*osd_width,width);
-	// }
-	// save_image_data(buf,frame_info.frame_size,"/userdata/mpp_input.raw");
+	for(int i = 0; i < height/2; i++){
+		memcpy(buf + hor_stride*ver_stride + i*hor_stride,crop_image->crop_yuv_buffer[frame_info.frame_offset] + width*height + i*width,width);
+	}
+	// save_image_data((char*)buf, hor_stride*ver_stride*3/2, "/tmp/mpp_input.raw");
 	return 0;
 }
 
@@ -78,12 +70,12 @@ static void mpp_data_to_queue(unsigned char chn, image_frame_info_t *frame_info)
 {
 	image_frame_info_t frame_param, tmp_param;
 	mpi_encode_info_t* mpi_encode = mpi_encode_info_get();
-	ring_buffer_t *rb =mpi_encode->mpp_encode_rb;
+	ring_buffer_t *rb =mpi_encode->mpp_encode_rb[chn];
 
 
 	if (ringbuffer_is_full(rb)) {					
 		ringbuffer_get(rb, (uint8_t *)&tmp_param, sizeof(tmp_param));
-		SLOGI("[Debug] %s ringbuffer_is_full\n", __func__);
+		SLOGI("[Debug] %s chn:%d ringbuffer_is_full\n", __func__, chn);
 	}
 
 	frame_param.chn = frame_info->chn;
@@ -102,7 +94,7 @@ static void mpp_encode_output(unsigned char chn,unsigned char* pkt_data,int pkt_
     image_frame_info_t frame_param;
 
     mpi_encode_info_t* mpi_encode = mpi_encode_info_get();
-    mpi_image_encode_info_t *image_encode = &mpi_encode->image_encode;
+    mpi_image_encode_info_t *image_encode = &mpi_encode->image_encode[chn];
 
     byte_count = MPP_OUTPUT_FRAME_SIZE; /*发送给上位机的一帧数据的最大数据量*/
     memcpy_len = 0;
@@ -1028,9 +1020,9 @@ unsigned int mpp_encode_chn_init(unsigned int chn, unsigned char image_chn, MpiE
 	mpi_encode->encode_cmd[chn].type = encode_cmd->type;
 #if TEST
 	if(encode_cmd->type == MPP_VIDEO_CodingAVC)
-		mpi_encode->encode_cmd[chn].file_output = "/userdata/output.h264";
+		mpi_encode->encode_cmd[chn].file_output = "/tmp/output.h264";
 	else if(encode_cmd->type == MPP_VIDEO_CodingHEVC)
-		mpi_encode->encode_cmd[chn].file_output = "/userdata/output.h265";
+		mpi_encode->encode_cmd[chn].file_output = "/tmp/output.h265";
 #endif
 
 	mpi_encode->encode_cmd[chn].bps_target = encode_cmd->bps_target;
@@ -1041,7 +1033,7 @@ unsigned int mpp_encode_chn_init(unsigned int chn, unsigned char image_chn, MpiE
 
 	/******************************************************************/
 	SLOGI("[Debug] %s chn:%d encode_size_max:%d \n", __func__, chn, mpi_encode->encode_size_max);
-	memset(&mpi_encode->image_encode[chn], 0x0, sizeof(mpi_encode->image_encode));
+	memset(&mpi_encode->image_encode[chn], 0x0, sizeof(mpi_encode->image_encode[chn]));
 	mpi_encode->image_encode[chn].image_chn = image_chn;
 	mpi_encode->image_encode[chn].frame_index = 1;
 	mpi_encode->image_encode[chn].encode_flag = 0;
@@ -1067,7 +1059,7 @@ unsigned int mpp_encode_chn_init(unsigned int chn, unsigned char image_chn, MpiE
 void mpp_chn_ringbuffer_is_empty(unsigned char chn)
 {
 	mpi_encode_info_t* mpi_encode = mpi_encode_info_get();
-	ring_buffer_t *rb = mpi_encode->mpp_encode_rb;
+	ring_buffer_t *rb = mpi_encode->mpp_encode_rb[chn];
 
 	while(!ringbuffer_is_empty(rb)){
 		xt_nanosleep(0, 100);
@@ -1139,8 +1131,8 @@ int mpp_encode_init(void)
 			ret = A818_MPI_INIT_ENCODE_RB;
 			goto err_3;
 		}
+		//SLOGI("chn:%d offset_size:%d encode_total_size:%d \n", chn, gs_mpi_encode->image_encode[chn].offset_size, gs_mpi_encode->image_encode[chn].encode_total_size);
 	}
-	//SLOGI("chn:%d offset_size:%d encode_total_size:%d \n", chn, gs_mpi_encode->image_encode[chn].offset_size, gs_mpi_encode->image_encode[chn].encode_total_size);
 
 	return A818_SUCCESS;
 

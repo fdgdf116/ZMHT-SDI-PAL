@@ -73,22 +73,22 @@ int crop_chn_image_init(unsigned char chn)
 	crop_image->crop_rb_offset = 0;
 
 	/* 根据分辨率决定初始化的每种buffer的个数 */
-	if((crop_width== VIDEO_FRAME_WIDTH_4k) && (crop_hight == VIDEO_FRAME_HEIGHT_4k)){
-		crop_image->data_frame_max = DATA_4K_STREAM_FRAME_MAX;
-	} else {
+	// if((crop_width== VIDEO_FRAME_WIDTH_4k) && (crop_hight == VIDEO_FRAME_HEIGHT_4k)){
+	// 	crop_image->data_frame_max = DATA_4K_STREAM_FRAME_MAX;
+	// } else {
 		crop_image->data_frame_max = DATA_STREAM_FRAME_MAX;
-	}
+	// }
 
 	/* 初始化输入的crop buffer*/
 	for(index = 0; index < crop_image->data_frame_max+1; index++)
 	{
-		crop_image->crop_yuv_buffer[index] = (uint8_t*)aligned_alloc(4096, (crop_width * crop_hight*2));
+		crop_image->crop_yuv_buffer[index] = (uint8_t*)aligned_alloc(4096, (crop_width * crop_hight*3/2));
 		if(crop_image->crop_yuv_buffer[index] == NULL){
 			printf("[ERROR] crop yuv buffer(%d) acquire error \n", index);
 			ret = A818_CROP_DATA_BUFFER;
 			goto err_1;
 		}
-		memset(crop_image->crop_yuv_buffer[index], 0x0, (crop_width * crop_hight*2));
+		memset(crop_image->crop_yuv_buffer[index], 0x0, (crop_width * crop_hight*3/2));
 	}
 
 	crop_chn_init(chn);
@@ -386,22 +386,27 @@ static void* crop_thread(void* parameter)
 		else
 			crop_yuv_addr = send_buf + crop_image->crop_rb_offset*width*height*2;
 		if(image_chn_info->rga_info.crop_flag)
-			data_stream_crop_src_to_new_yuyv(0,out_yuv_addr,crop_yuv_addr,image_chn_info->rga_info,0,0);
+		{
+			if(image_chn_info->rga_info.out_color == 3)
+				data_stream_crop_src_to_new_nv12(0,out_yuv_addr,crop_yuv_addr,image_chn_info->rga_info,0,0);
+			else
+				data_stream_crop_src_to_new_yuyv(0,out_yuv_addr,crop_yuv_addr,image_chn_info->rga_info,0,0);
+		}
 		else
 			memcpy(crop_yuv_addr,out_yuv_addr,frame_info.frame_size);
-		// save_image_data((char *)crop_yuv_addr,width*height*1.5,"/userdata/crop_buf.raw");
+		// save_image_data((char*)crop_image->crop_yuv_buffer[crop_image->crop_rb_offset],width*height*3/2,"/tmp/crop_buf.raw");
 
 		/*放到编码的ring buffer中，后续进行编码输出*/
 		if(crop_chn < MPP_ENCODE_NTHREAD_MAX){
 			if(!ringbuffer_is_full(mpp_rb)){
 				crop_frame_info.frame_offset = crop_image->crop_rb_offset;
-				crop_frame_info.frame_size = width*height*2;
+				crop_frame_info.frame_size = width*height*3/2;
 				crop_frame_info.chn = mpp_chn;
 				gpu_mpp_to_queue(mpp_chn, &crop_frame_info);
 				crop_image->crop_rb_offset += 1;
 			}
 			else {
-				SLOGI("[Debug]:%s chn:%d mpp_rb ringbuffer_is_full \n", __func__, crop_chn);
+				SLOGI("[Debug]:%s %d chn:%d mpp_rb ringbuffer_is_full \n", __func__, __LINE__, crop_chn);
 			}	
 		}
 		else
@@ -414,7 +419,7 @@ static void* crop_thread(void* parameter)
 				crop_image->crop_rb_offset += 1;
 			}
 			else {
-				SLOGI("[Debug]:%s chn:%d mpp_rb ringbuffer_is_full \n", __func__, crop_chn);
+				SLOGI("[Debug]:%s %d chn:%d mpp_rb ringbuffer_is_full \n", __func__, __LINE__, crop_chn);
 			}
 		}
 	}

@@ -47,18 +47,21 @@ typedef struct {
     MpiDecLoopData dec_data;
 }mpp_decode_info_t ;
 typedef struct {
-	unsigned char mpp_chn;       /*图像进行h264/h265压缩所在的通道*/
-	unsigned char frame_type;      /*输入图像的类型  rgb24 bggr rggb grbg gbrg gray8 gray10 gray12 gray14 gray16*/
-	unsigned char fps;           /* 图像的帧率 */
-	unsigned int width;          /* 本通道图像的宽 */
-	unsigned int height;         /* 本通道图像的高 */
+	unsigned char chn;              /*图像rga处理通道*/
+	unsigned char mpp_chn;          /*图像进行h264/h265压缩所在的通道*/
+	unsigned char frame_type;       /*输入图像的类型  rgb24 bggr rggb grbg gbrg gray8 gray10 gray12 gray14 gray16*/
+	unsigned char fps;              /* 图像的帧率 */
+	unsigned int width;             /* 本通道图像的宽 */
+	unsigned int height;            /* 本通道图像的高 */
+    unsigned int image_w0;             /*叠加图像的宽*/
+    unsigned int image_y0;             /*叠加图像的高*/
 	unsigned char mpp_type;
 	unsigned int mpp_bps;
 	unsigned char position;         /*字符叠加位置*/
 	unsigned char out_type;
 	unsigned char extraction;		/*抽帧比*/
-	unsigned char rotate;         /*旋转类型0/1/2/4*/
-	unsigned char resize;         /*是否缩放*/
+	unsigned char rotate;           /*旋转类型0/1/2/4*/
+	unsigned char resize;           /*是否缩放*/
 	unsigned int resize_width;
 	unsigned int resize_height;
 	unsigned char crop;

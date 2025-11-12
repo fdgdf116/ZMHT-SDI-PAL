@@ -69,7 +69,10 @@
         "mpp_enc_roi_utils.h": "c",
         "mpi_enc_utils.h": "c",
         "utils.h": "c",
-        "crop_engine.h": "c"
+        "crop_engine.h": "c",
+        "compare": "c",
+        "atomic": "c",
+        "mpp_soc.h": "c"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }

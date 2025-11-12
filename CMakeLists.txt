@@ -12,10 +12,10 @@ set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 
 # 项目信息
-project(sdi-pal_pro)
+project(sdi_pal_pro)
 
 # 设置可执行文件目标
-set(TARGETS "sdi-pal_pro")
+set(TARGETS "sdi_pal_pro")
 
 set(CMAKE_CXX_STANDARD 14)
 

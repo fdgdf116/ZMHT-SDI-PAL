@@ -64,16 +64,16 @@ int main(int argc, char *argv[])
     ret = fpga_pcie_device_open(); /* pcie初始化 */
     if(ret != 0){
         printf("fpga pcie open error \n");
-    }
-    ret = pcie_fpga_data_init();
-    if(ret != 0){
-        printf("fpga pcie data init error \n");
+        goto err_1;
     }
 #endif
     ret = data_stream_init();
-    if(ret != 0){
-        printf("data stream init error ret = %d \n", ret);
-    }
+	if(ret != 0){
+		printf("data stream init error ret = %d \n", ret);
+		goto err_2;
+	} else {
+		printf("data stream init ok \n");
+	}
 
     ret = gui_osd_init();
     if(ret != 0){
@@ -83,10 +83,13 @@ int main(int argc, char *argv[])
         printf("a818 osd init ok \n");
     }
 
-    ret = crop_stream_init();
-    if(ret != 0){
-        printf("crop stream init error ret = %d \n", ret);
-    }
+    ret = mpp_encode_init();
+	if(ret != 0){
+		printf("encode frame init error ret = %d \n", ret);
+		goto err_5;
+	} else {
+		printf("encode frame init ok \n");
+	}
 
 	ret = pcie_fpga_data_init();
 	if(ret != 0){
@@ -96,20 +99,44 @@ int main(int argc, char *argv[])
 		printf("fpga pcie data init ok \n");
 	}
 
-    ret = pcie_bar_open(0);
+    ret = crop_stream_init();
+    if(ret != 0){
+        printf("crop stream init error ret = %d \n", ret);
+        goto err_7;
+    } else {
+        printf("crop stream init ok \n");
+    }
+
     ret = axififo_data_init();/* fifo初始化 */
     if(ret != 0){
         printf("axififo init error \n");
+        goto err_8;
     }
     printf("init finished!!!\n");
+
+#if TEST
+	pcie_fpga_reg_reset();
+	run_test();
+#endif
 
     while(1){
         sleep(1);
     }
+err_8:
+    crop_stream_destory();
+err_7:
+	pcie_fpga_data_destory();
 err_6:
 	mpp_encode_destory();
+err_5:
+	gui_osd_destory();
 err_4:
-    gui_osd_destory();
+err_3:
+	data_stream_destory();
+err_2:
+	fpga_pcie_device_close();
+err_1:
+	gpu_lib_destory();
     return ret;
 }
 #endif

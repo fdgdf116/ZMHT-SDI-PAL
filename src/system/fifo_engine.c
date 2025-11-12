@@ -38,7 +38,6 @@
 #include "osd_engine.h"
 #include "crop_engine.h"
 
-#define TEST 0
 #define SLOGI printf
 
 #define FPGA_PCIE_AXIFIFO_PHY (0x20000)
@@ -59,7 +58,11 @@
 #define VERSION 0x10000010
 
 #define FILE_NAME_MAX_SIZE 256
+#if TEST
+#define SDD_ADDRESS "/userdata/"
+#else
 #define SDD_ADDRESS "/userdata/sda1/"
+#endif
 #define FPGA_PCIE_COMMON_PARM_REG_PHY (0x00010000)
 
 typedef enum {
@@ -108,6 +111,9 @@ static unsigned char* upgrade_buffer = NULL;
 static char upgrade_file_name[128];
 static FILE * upgrade_fp;
 static unsigned int upgrade_state;
+static unsigned char* cmd_buff = NULL;
+static cfg_info_t* cfg_info = NULL;
+static uint8_t* osd_tmp_info = NULL;
 
 static char * ZPK_PWD  = "/userdata/zpk/";
 static unsigned char* zpk_upgrade_state_patch = "/tmp/sd_update";
@@ -247,7 +253,7 @@ void convert_to_timeval(struct tm *time_elements, struct timeval *tv) {
     // tv->tv_usec = time_elements.tm_sec * 1000000; // 将秒转换为微秒
 }
 
-static void mpp_encode_cmd_init(MpiEncAppArgs *encode_cmd, mpp_image_info_t *mpp_info)
+static void mpp_encode_cmd_init(MpiEncAppArgs *encode_cmd, mpp_encode_info_t *mpp_info)
 {
 	encode_cmd->width = mpp_info->width; 
 	encode_cmd->height = mpp_info->height;
@@ -274,6 +280,7 @@ static void mpp_encode_cmd_init(MpiEncAppArgs *encode_cmd, mpp_image_info_t *mpp
 	encode_cmd->fps_in_num = mpp_info->fps;
 	encode_cmd->fps_out_num = mpp_info->fps;
 	encode_cmd->bps_target = mpp_info->mpp_bps * 1024;
+    SLOGI("[%s %d] width:%d height:%d format:%d type:%d fps_in_num:%d fps_out_num:%d bps_target:%d\n", __func__, __LINE__, mpp_info->width, mpp_info->height, encode_cmd->format, encode_cmd->type, encode_cmd->fps_in_num, encode_cmd->fps_out_num, encode_cmd->bps_target);
 }
 
 /*
@@ -293,7 +300,7 @@ static int request_type2_mpp_init(int chn)
 
 	/*mpp相关的资源初始化*/
 	mpp_encode_cmd_init(&encode_cmd, mpp_info);
-	ret = mpp_encode_chn_init(mpp_info->mpp_chn, 0, &encode_cmd);
+	ret = mpp_encode_chn_init(mpp_info->mpp_chn, mpp_info->mpp_chn, &encode_cmd);
 	if (ret != 0) {
 		SLOGI("encode frame chn init error \n");
 		return ret;
@@ -322,11 +329,11 @@ int EncodeStart(int chn){
         goto err_4;
     }
     if(g_axififo_info->rk_enable) {
-        pcie_set_rk_enable(1);
+        pcie_set_rk_enable();
     }
-    if(g_axififo_info->pc_enable) {
-        pcie_set_pc_enable(1);
-    }
+    // if(g_axififo_info->pc_enable) {
+    //     pcie_set_pc_enable(1);
+    // }
     return 0;
 err_4:
     rga_pthread_chn_destory(chn);
@@ -363,6 +370,7 @@ void DecodeStop(int chn){
         printf("no decoding!!!\n");
         return;
     }
+
     mpp_info->decode_state = 1;
     MpiDecodeDestroy(chn);
     rga_pthread_chn_destory(chn);
@@ -372,6 +380,8 @@ void DecodeStop(int chn){
     crop_chn_destory(chn);
     crop_chn_image_destory(chn);
     writePL_chn_destory(chn);
+
+	memset(&data_stream->image_chn_info[chn]->osd_info, 0x0, sizeof(osd_image_info_t));
     printf("DecodeStop finished!!!\n");
 }
 
@@ -424,28 +434,29 @@ void EncodeStop(int chn)
 	usleep(100*1000);
 
 	g_axififo_info->rk_enable = 0;
-	g_axififo_info->pc_enable = 0;
+	// g_axififo_info->pc_enable = 0;
 
 	mpi_encode->encode_size_max = MPP_OUTPUT_FRAME_SIZE;
 
 	memset(&data_stream->image_chn_info[chn]->osd_info, 0x0, sizeof(osd_image_info_t));
 	clean_system_buff_cache();
-	pcie_fpga_reg_reset();
+	// pcie_fpga_reg_reset();
 }
 
 /********************通用参数寄存器，用bar0配置**************************************/
 /* 帧类型1 (叠加配置) */
 static int axififo_frame_request_type1(unsigned char* frame_buff, unsigned int frame_size)
 {
-    char date[128];
-    stack_configuration_info_t * osd_info = (stack_configuration_info_t *)(frame_buff+1);
-    unsigned short * temp_pt = (unsigned short *)((unsigned char *)osd_info + 2);
-    for(int i = 1;i < sizeof(stack_configuration_info_t)/sizeof(unsigned short); i++)
-    {
-        *((unsigned short*)osd_info+i) = ntohs(*((unsigned short*)osd_info+i));
-    }
-    pcie_chn_stack_configuration_reg_init(osd_info);
-    return COMD_PROC_SUCCESS;
+    // char date[128];
+    // stack_configuration_info_t * osd_info = (stack_configuration_info_t *)(frame_buff+1);
+    // unsigned short * temp_pt = (unsigned short *)((unsigned char *)osd_info + 2);
+    // for(int i = 1;i < sizeof(stack_configuration_info_t)/sizeof(unsigned short); i++)
+    // {
+    //     *((unsigned short*)osd_info+i) = ntohs(*((unsigned short*)osd_info+i));
+    // }
+    // pcie_chn_stack_configuration_reg_init(osd_info);
+    // return COMD_PROC_SUCCESS;
+    return COMD_PROC_FAILED;
 }
 /* 帧类型17（图像生成配置） */
 static int axififo_frame_request_type17(unsigned char* frame_buff, unsigned int frame_size)
@@ -507,13 +518,15 @@ static unsigned int axififo_frame_request_type2(unsigned char* frame_buff, unsig
 	mpp_info->crop_height = ntohl(mpp_info->crop_height);
 #endif
     rga_info->rga_chn = chn;
-    rga_info->pixel_byte = 2;
-    rga_info->out_color = 2;
+    rga_info->pixel_byte = 1.5;
+    rga_info->out_color = 3;
 	rga_info->rotate_type = mpp_info->rotate;
     rga_info->resize = mpp_info->resize;
 	rga_info->crop_flag = mpp_info->crop;
     rga_info->src_width = mpp_info->width;
     rga_info->src_height = mpp_info->height;
+    rga_info->image_w0 = mpp_info->image_w0;
+    rga_info->image_y0 = mpp_info->image_y0;
 
     if( rga_info->rotate_type == IM_HAL_TRANSFORM_ROT_90 || rga_info->rotate_type == IM_HAL_TRANSFORM_ROT_270 )
     {
@@ -852,13 +865,13 @@ int axififo_frame_request_type11(unsigned char* frame_buff, unsigned int frame_s
     }
     value_offset[4] = htonl(BUILD_TIME);
     value_offset[5] = htonl(VERSION);
-    for(int j = 6;j<len/4;j++)
-    {
-        printf("read reg:%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+ntohl(value_offset[j]));
-        value_offset[j] = htonl(pcie_bar_read_reg(pcie_common_param_reg, ntohl(value_offset[j])));
-        printf("value:%x\n",value_offset[j]);
-        usleep(10);
-    }
+    // for(int j = 6;j<len/4;j++)
+    // {
+    //     printf("read reg:%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+ntohl(value_offset[j]));
+    //     value_offset[j] = htonl(pcie_bar_read_reg(pcie_common_param_reg, ntohl(value_offset[j])));
+    //     printf("value:%x\n",value_offset[j]);
+    //     usleep(10);
+    // }
 
     head.head = htons(0xec91);
     head.len = htonl(frame_size);
@@ -927,8 +940,8 @@ int axififo_frame_request_type12(unsigned char* frame_buff, unsigned int frame_s
     }
     if((osd_info->image_x0 + rga_info->image_w0 > canvas_width) || (osd_info->image_y0 + rga_info->image_y0 > canvas_height))
     {
-        printf("image_x0 image_y0 too large, image_x0:%d,image_y0:%d\n",
-               osd_info->image_x0+rga_info->image_w0, osd_info->image_y0+rga_info->image_y0);
+        printf("image_x0 image_y0 too large, image_x0:%d,image_y0:%d canvas_width:%d canvas_height:%d\n",
+               osd_info->image_x0+rga_info->image_w0, osd_info->image_y0+rga_info->image_y0,canvas_width,canvas_height);
         goto error;
     }
     if((osd_info->string_x + (osd_info->font_size+1)*11*osd_info->data_size > canvas_width) || (osd_info->string_y + (osd_info->font_size+1)*11 > canvas_height))
@@ -977,290 +990,291 @@ int axififo_frame_request_type14(unsigned char* frame_buff, unsigned int frame_s
 {
     u_int8_t bank = 0;
     u_int8_t fiberate = 0;
-    pcie_bar_write_reg(pcie_common_param_reg,523*4,1);
-    usleep(10);
-    int value = pcie_bar_read_reg(pcie_common_param_reg,523*4);
-    usleep(10);
-    printf("reg:%x value:%d\n",0x523*4,value);
-    for(int i = 0;i < frame_size/2;i++)
-    {
-        bank = *(++frame_buff);
-        fiberate = *(++frame_buff);
-        switch (fiberate)
-        {
-        case FiberRate_1_0625:
-        {
-            for(int j = 0;j < 4;j++)
-            {
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x2b4 + bank*0x5000 + j*0x1000, 0x190);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x2f0 + bank*0x5000 + j*0x1000, 0x0007);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x40 + bank*0x5000 + j*0x1000, 0x736);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x18c + bank*0x5000 + j*0x1000, 0x80c3);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + j*0x1000, 0x5668);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x148 + bank*0x5000 + j*0x1000, 0x2);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x198 + bank*0x5000 + j*0x1000, 0x3039);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x1f0 + bank*0x5000 + j*0x1000, 0x3e0);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x270 + bank*0x5000 + j*0x1000, 0xacc);
-                usleep(10);
-            }
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x2c0 + bank*0x5000 + 0x4000, 0x0);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x258 + bank*0x5000 + 0x4000, 0x7f);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x250 + bank*0x5000 + 0x4000, 0x42);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x248 + bank*0x5000 + 0x4000, 0x21e8);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + 0x4000, 0x21e8);
-            usleep(10);
-            break;
-        }
-        case FiberRate_2_125:
-        {
-            for(int j = 0;j < 4;j++)
-            {
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x2b4 + bank*0x5000 + j*0x1000, 0x190);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x2f0 + bank*0x5000 + j*0x1000, 0x0007);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x40 + bank*0x5000 + j*0x1000, 0x746);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x18c + bank*0x5000 + j*0x1000, 0x80c2);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + j*0x1000, 0x5668);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x148 + bank*0x5000 + j*0x1000, 0x2);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x198 + bank*0x5000 + j*0x1000, 0x3039);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x1f0 + bank*0x5000 + j*0x1000, 0x2e0);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x270 + bank*0x5000 + j*0x1000, 0xacc);
-                usleep(10);
-            }
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x2c0 + bank*0x5000 + 0x4000, 0x0);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x258 + bank*0x5000 + 0x4000, 0x7f);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x250 + bank*0x5000 + 0x4000, 0x42);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x248 + bank*0x5000 + 0x4000, 0x21e8);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + 0x4000, 0x21e8);
-            usleep(10);
-            break;
-        }
-        case FiberRate_3_1875:
-        {
-            for(int j = 0;j < 4;j++)
-            {
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x2b4 + bank*0x5000 + j*0x1000, 0x190);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x2f0 + bank*0x5000 + j*0x1000, 0xf007);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x40 + bank*0x5000 + j*0x1000, 0x746);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x18c + bank*0x5000 + j*0x1000, 0x80c2);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + j*0x1000, 0x0);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x148 + bank*0x5000 + j*0x1000, 0x2);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x198 + bank*0x5000 + j*0x1000, 0x3039);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x1f0 + bank*0x5000 + j*0x1000, 0x2e0);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x270 + bank*0x5000 + j*0x1000, 0x0);
-                usleep(10);
-            }
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x2c0 + bank*0x5000 + 0x4000, 0x9);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x258 + bank*0x5000 + 0x4000, 0x1ff);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x250 + bank*0x5000 + 0x4000, 0x64);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x248 + bank*0x5000 + 0x4000, 0x25e8);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + 0x4000, 0x25e8);
-            usleep(10);
-            break;
-        }
-        case FiberRate_4_25:
-        {
-            for(int j = 0;j < 4;j++)
-            {
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x2b4 + bank*0x5000 + j*0x1000, 0x190);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x2f0 + bank*0x5000 + j*0x1000, 0x0007);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x40 + bank*0x5000 + j*0x1000, 0x756);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x18c + bank*0x5000 + j*0x1000, 0x80c1);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + j*0x1000, 0x5668);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x148 + bank*0x5000 + j*0x1000, 0x2);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x198 + bank*0x5000 + j*0x1000, 0x3039);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x1f0 + bank*0x5000 + j*0x1000, 0x1e0);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x270 + bank*0x5000 + j*0x1000, 0xacc);
-                usleep(10);
-            }
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x2c0 + bank*0x5000 + 0x4000, 0x0);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x258 + bank*0x5000 + 0x4000, 0x7f);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x250 + bank*0x5000 + 0x4000, 0x42);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x248 + bank*0x5000 + 0x4000, 0x21e8);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + 0x4000, 0x21e8);
-            usleep(10);
-            break;
-        }
-        case FiberRate_8:
-        {
-            for(int j = 0;j < 4;j++)
-            {
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x2b4 + bank*0x5000 + j*0x1000, 0x1f0);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x2f0 + bank*0x5000 + j*0x1000, 0x0007);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x40 + bank*0x5000 + j*0x1000, 0x766);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x18c + bank*0x5000 + j*0x1000, 0x80c0);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + j*0x1000, 0x5668);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x148 + bank*0x5000 + j*0x1000, 0x2);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x198 + bank*0x5000 + j*0x1000, 0x3039);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x1f0 + bank*0x5000 + j*0x1000, 0x0e0);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x270 + bank*0x5000 + j*0x1000, 0xacc);
-                usleep(10);
-            }
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x2c0 + bank*0x5000 + 0x4000, 0x0);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x258 + bank*0x5000 + 0x4000, 0x7f);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x250 + bank*0x5000 + 0x4000, 0x3e);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x248 + bank*0x5000 + 0x4000, 0x21e8);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + 0x4000, 0x21e8);
-            usleep(10);
-            break;
-        }
-        case FiberRate_10:
-        {
-            for(int j = 0;j < 4;j++)
-            {
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x2b4 + bank*0x5000 + j*0x1000, 0x1f0);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x2f0 + bank*0x5000 + j*0x1000, 0x0007);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x40 + bank*0x5000 + j*0x1000, 0x766);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x18c + bank*0x5000 + j*0x1000, 0x80c0);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + j*0x1000, 0x5568);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x148 + bank*0x5000 + j*0x1000, 0x42);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x198 + bank*0x5000 + j*0x1000, 0x303d);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x1f0 + bank*0x5000 + j*0x1000, 0x0e0);
-                usleep(10);
-                pcie_bar_write_reg(fiber_rate_config_reg, 0x270 + bank*0x5000 + j*0x1000, 0xacc);
-                usleep(10);
-            }
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x2c0 + bank*0x5000 + 0x4000, 0x0);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x258 + bank*0x5000 + 0x4000, 0x1ff);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x250 + bank*0x5000 + 0x4000, 0x4e);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x248 + bank*0x5000 + 0x4000, 0x21e8);
-            usleep(10);
-            pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + 0x4000, 0x21e8);
-            usleep(10);
-            break;
-        }
-        default:
-            break;
-        }
-    }
-    pcie_bar_write_reg(pcie_common_param_reg,523*4,0);
-    usleep(10);
-    pcie_bar_write_reg(pcie_common_param_reg,0x04,0x1);
-    usleep(10);
-    pcie_bar_write_reg(pcie_common_param_reg,0x04,0x0);
-    usleep(10);
-    return COMD_PROC_SUCCESS;
-    error:
+    // pcie_bar_write_reg(pcie_common_param_reg,523*4,1);
+    // usleep(10);
+    // int value = pcie_bar_read_reg(pcie_common_param_reg,523*4);
+    // usleep(10);
+    // printf("reg:%x value:%d\n",0x523*4,value);
+    // for(int i = 0;i < frame_size/2;i++)
+    // {
+    //     bank = *(++frame_buff);
+    //     fiberate = *(++frame_buff);
+    //     switch (fiberate)
+    //     {
+    //     case FiberRate_1_0625:
+    //     {
+    //         for(int j = 0;j < 4;j++)
+    //         {
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x2b4 + bank*0x5000 + j*0x1000, 0x190);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x2f0 + bank*0x5000 + j*0x1000, 0x0007);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x40 + bank*0x5000 + j*0x1000, 0x736);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x18c + bank*0x5000 + j*0x1000, 0x80c3);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + j*0x1000, 0x5668);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x148 + bank*0x5000 + j*0x1000, 0x2);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x198 + bank*0x5000 + j*0x1000, 0x3039);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x1f0 + bank*0x5000 + j*0x1000, 0x3e0);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x270 + bank*0x5000 + j*0x1000, 0xacc);
+    //             usleep(10);
+    //         }
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x2c0 + bank*0x5000 + 0x4000, 0x0);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x258 + bank*0x5000 + 0x4000, 0x7f);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x250 + bank*0x5000 + 0x4000, 0x42);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x248 + bank*0x5000 + 0x4000, 0x21e8);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + 0x4000, 0x21e8);
+    //         usleep(10);
+    //         break;
+    //     }
+    //     case FiberRate_2_125:
+    //     {
+    //         for(int j = 0;j < 4;j++)
+    //         {
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x2b4 + bank*0x5000 + j*0x1000, 0x190);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x2f0 + bank*0x5000 + j*0x1000, 0x0007);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x40 + bank*0x5000 + j*0x1000, 0x746);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x18c + bank*0x5000 + j*0x1000, 0x80c2);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + j*0x1000, 0x5668);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x148 + bank*0x5000 + j*0x1000, 0x2);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x198 + bank*0x5000 + j*0x1000, 0x3039);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x1f0 + bank*0x5000 + j*0x1000, 0x2e0);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x270 + bank*0x5000 + j*0x1000, 0xacc);
+    //             usleep(10);
+    //         }
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x2c0 + bank*0x5000 + 0x4000, 0x0);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x258 + bank*0x5000 + 0x4000, 0x7f);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x250 + bank*0x5000 + 0x4000, 0x42);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x248 + bank*0x5000 + 0x4000, 0x21e8);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + 0x4000, 0x21e8);
+    //         usleep(10);
+    //         break;
+    //     }
+    //     case FiberRate_3_1875:
+    //     {
+    //         for(int j = 0;j < 4;j++)
+    //         {
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x2b4 + bank*0x5000 + j*0x1000, 0x190);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x2f0 + bank*0x5000 + j*0x1000, 0xf007);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x40 + bank*0x5000 + j*0x1000, 0x746);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x18c + bank*0x5000 + j*0x1000, 0x80c2);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + j*0x1000, 0x0);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x148 + bank*0x5000 + j*0x1000, 0x2);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x198 + bank*0x5000 + j*0x1000, 0x3039);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x1f0 + bank*0x5000 + j*0x1000, 0x2e0);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x270 + bank*0x5000 + j*0x1000, 0x0);
+    //             usleep(10);
+    //         }
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x2c0 + bank*0x5000 + 0x4000, 0x9);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x258 + bank*0x5000 + 0x4000, 0x1ff);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x250 + bank*0x5000 + 0x4000, 0x64);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x248 + bank*0x5000 + 0x4000, 0x25e8);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + 0x4000, 0x25e8);
+    //         usleep(10);
+    //         break;
+    //     }
+    //     case FiberRate_4_25:
+    //     {
+    //         for(int j = 0;j < 4;j++)
+    //         {
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x2b4 + bank*0x5000 + j*0x1000, 0x190);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x2f0 + bank*0x5000 + j*0x1000, 0x0007);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x40 + bank*0x5000 + j*0x1000, 0x756);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x18c + bank*0x5000 + j*0x1000, 0x80c1);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + j*0x1000, 0x5668);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x148 + bank*0x5000 + j*0x1000, 0x2);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x198 + bank*0x5000 + j*0x1000, 0x3039);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x1f0 + bank*0x5000 + j*0x1000, 0x1e0);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x270 + bank*0x5000 + j*0x1000, 0xacc);
+    //             usleep(10);
+    //         }
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x2c0 + bank*0x5000 + 0x4000, 0x0);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x258 + bank*0x5000 + 0x4000, 0x7f);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x250 + bank*0x5000 + 0x4000, 0x42);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x248 + bank*0x5000 + 0x4000, 0x21e8);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + 0x4000, 0x21e8);
+    //         usleep(10);
+    //         break;
+    //     }
+    //     case FiberRate_8:
+    //     {
+    //         for(int j = 0;j < 4;j++)
+    //         {
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x2b4 + bank*0x5000 + j*0x1000, 0x1f0);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x2f0 + bank*0x5000 + j*0x1000, 0x0007);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x40 + bank*0x5000 + j*0x1000, 0x766);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x18c + bank*0x5000 + j*0x1000, 0x80c0);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + j*0x1000, 0x5668);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x148 + bank*0x5000 + j*0x1000, 0x2);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x198 + bank*0x5000 + j*0x1000, 0x3039);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x1f0 + bank*0x5000 + j*0x1000, 0x0e0);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x270 + bank*0x5000 + j*0x1000, 0xacc);
+    //             usleep(10);
+    //         }
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x2c0 + bank*0x5000 + 0x4000, 0x0);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x258 + bank*0x5000 + 0x4000, 0x7f);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x250 + bank*0x5000 + 0x4000, 0x3e);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x248 + bank*0x5000 + 0x4000, 0x21e8);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + 0x4000, 0x21e8);
+    //         usleep(10);
+    //         break;
+    //     }
+    //     case FiberRate_10:
+    //     {
+    //         for(int j = 0;j < 4;j++)
+    //         {
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x2b4 + bank*0x5000 + j*0x1000, 0x1f0);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x2f0 + bank*0x5000 + j*0x1000, 0x0007);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x40 + bank*0x5000 + j*0x1000, 0x766);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x18c + bank*0x5000 + j*0x1000, 0x80c0);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + j*0x1000, 0x5568);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x148 + bank*0x5000 + j*0x1000, 0x42);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x198 + bank*0x5000 + j*0x1000, 0x303d);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x1f0 + bank*0x5000 + j*0x1000, 0x0e0);
+    //             usleep(10);
+    //             pcie_bar_write_reg(fiber_rate_config_reg, 0x270 + bank*0x5000 + j*0x1000, 0xacc);
+    //             usleep(10);
+    //         }
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x2c0 + bank*0x5000 + 0x4000, 0x0);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x258 + bank*0x5000 + 0x4000, 0x1ff);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x250 + bank*0x5000 + 0x4000, 0x4e);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x248 + bank*0x5000 + 0x4000, 0x21e8);
+    //         usleep(10);
+    //         pcie_bar_write_reg(fiber_rate_config_reg, 0x274 + bank*0x5000 + 0x4000, 0x21e8);
+    //         usleep(10);
+    //         break;
+    //     }
+    //     default:
+    //         break;
+    //     }
+    // }
+    // pcie_bar_write_reg(pcie_common_param_reg,523*4,0);
+    // usleep(10);
+    // pcie_bar_write_reg(pcie_common_param_reg,0x04,0x1);
+    // usleep(10);
+    // pcie_bar_write_reg(pcie_common_param_reg,0x04,0x0);
+    // usleep(10);
+    // return COMD_PROC_SUCCESS;
+    // error:
         return COMD_PROC_FAILED;
 }
 /* 帧类型18（时序参数配置） */
 static int axififo_frame_request_type18(unsigned char* frame_buff, unsigned int frame_size)
 {
-    temporal_parameters_t * temporal_par = (temporal_parameters_t *)(frame_buff+1);
-    for(int i = 1;i < sizeof(temporal_parameters_t)/sizeof(u_int32_t); i++)
-    {
-        *((u_int32_t*)temporal_par+i) = ntohl(*((u_int32_t*)temporal_par+i));
-    }
+    // temporal_parameters_t * temporal_par = (temporal_parameters_t *)(frame_buff+1);
+    // for(int i = 1;i < sizeof(temporal_parameters_t)/sizeof(u_int32_t); i++)
+    // {
+    //     *((u_int32_t*)temporal_par+i) = ntohl(*((u_int32_t*)temporal_par+i));
+    // }
 
-    pcie_bar_write_reg(pcie_common_param_reg, 0x960, temporal_par->a818_param_select);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + 0x960,temporal_par->a818_param_select);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, 0x964, temporal_par->active_pixels_per_line);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + 0x964,temporal_par->active_pixels_per_line);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, 0x968, temporal_par->active_lines_per_video);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + 0x968,temporal_par->active_lines_per_video);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, 0x96c, temporal_par->num_of_advb_obj2_frames);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + 0x96c,temporal_par->num_of_advb_obj2_frames);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, 0x970, temporal_par->obj0_advb_frame);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + 0x970,temporal_par->obj0_advb_frame);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, 0x974, temporal_par->obj2_advb_frame);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + 0x974,temporal_par->obj2_advb_frame);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, 0x978, temporal_par->sofi_to_sofi);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + 0x978,temporal_par->sofi_to_sofi);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, 0x97c, temporal_par->sofi_to_sofn_firtst);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + 0x97c,temporal_par->sofi_to_sofn_firtst);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, 0x980, temporal_par->sofn_to_sofn_next);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + 0x980,temporal_par->sofn_to_sofn_next);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, 0x984, temporal_par->sofnlast_to_sofi);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + 0x984,temporal_par->sofnlast_to_sofi);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, 0x988, temporal_par->eofn_to_sofn);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+0x988,temporal_par->eofn_to_sofn);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, 0x98c, temporal_par->eoft_to_sofn);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+0x98c,temporal_par->eoft_to_sofn);
-    usleep(1000);
-    pcie_bar_write_reg(pcie_common_param_reg, 0x990, temporal_par->a818_image_format);
-    printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+0x990, temporal_par->a818_image_format);
-    usleep(1000);
-    return COMD_PROC_SUCCESS;
+    // pcie_bar_write_reg(pcie_common_param_reg, 0x960, temporal_par->a818_param_select);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + 0x960,temporal_par->a818_param_select);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, 0x964, temporal_par->active_pixels_per_line);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + 0x964,temporal_par->active_pixels_per_line);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, 0x968, temporal_par->active_lines_per_video);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + 0x968,temporal_par->active_lines_per_video);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, 0x96c, temporal_par->num_of_advb_obj2_frames);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + 0x96c,temporal_par->num_of_advb_obj2_frames);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, 0x970, temporal_par->obj0_advb_frame);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + 0x970,temporal_par->obj0_advb_frame);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, 0x974, temporal_par->obj2_advb_frame);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + 0x974,temporal_par->obj2_advb_frame);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, 0x978, temporal_par->sofi_to_sofi);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + 0x978,temporal_par->sofi_to_sofi);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, 0x97c, temporal_par->sofi_to_sofn_firtst);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + 0x97c,temporal_par->sofi_to_sofn_firtst);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, 0x980, temporal_par->sofn_to_sofn_next);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + 0x980,temporal_par->sofn_to_sofn_next);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, 0x984, temporal_par->sofnlast_to_sofi);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY + 0x984,temporal_par->sofnlast_to_sofi);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, 0x988, temporal_par->eofn_to_sofn);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+0x988,temporal_par->eofn_to_sofn);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, 0x98c, temporal_par->eoft_to_sofn);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+0x98c,temporal_par->eoft_to_sofn);
+    // usleep(1000);
+    // pcie_bar_write_reg(pcie_common_param_reg, 0x990, temporal_par->a818_image_format);
+    // printf("offset:0x%x value:0x%x\n",FPGA_PCIE_COMMON_PARM_REG_PHY+0x990, temporal_par->a818_image_format);
+    // usleep(1000);
+    // return COMD_PROC_SUCCESS;
+    return COMD_PROC_FAILED;
 }
 
 static void axififo_send(unsigned char mode, unsigned int data)
@@ -1544,14 +1558,14 @@ int axififo_data_init(void)
 
     memset(g_axififo_info, 0, sizeof(axififo_info_t));
 #if OLD_AXI_FIFO
-    g_axififo_info->fifo_reg.cfg = (config_reg_t *)pcie_bar_mmap(0x40000, FPGA_PCIE_AXIFIFO_LEN,0);
+    g_axififo_info->fifo_reg.cfg = (config_reg_t *)pcie_bar_mmap(0x40000, FPGA_PCIE_AXIFIFO_LEN,1);
     if(g_axififo_info->fifo_reg.cfg == NULL){
         printf("[ERROR] pcie axififo config reg error \n");
         ret = A818_FIFO_CONFIG_REG_MMAP;
         goto err_1;
     }
 
-    g_axififo_info->fifo_reg.send_data = (config_reg_t *)pcie_bar_mmap(0x50000, FPGA_PCIE_DATA_LEN,0);
+    g_axififo_info->fifo_reg.send_data = (config_reg_t *)pcie_bar_mmap(0x50000, FPGA_PCIE_DATA_LEN,1);
     if(g_axififo_info->fifo_reg.send_data == NULL){
         printf("[ERROR] pcie axififo data reg error \n");
         ret = A818_FIFO_DATA_REG_MMAP;
@@ -1574,77 +1588,6 @@ int axififo_data_init(void)
         ret = A818_FIFO_RECV_THREAD;
         goto err_3;
     }
-
-#if TEST
-    cfg_info_t* cfg_info = (cfg_info_t*)malloc(sizeof(cfg_info_t));
-    if(cfg_info == NULL){
-        printf("[ERROR] cfg_info malloc error \n");
-        ret = A818_PCIE_DATA_MALLOC;
-        return -1;
-    }
-    uint8_t* osd_tmp_info = (uint8_t *)malloc(sizeof(osd_image_info_t) + 1);
-    if(osd_tmp_info == NULL){
-        printf("[ERROR] osd_tmp_info malloc error \n");
-        ret = A818_PCIE_DATA_MALLOC;
-        return -1;
-    }
-    FILE* fp = NULL;
-    for(int chn = 0 ; chn < 4;chn++){
-        // int chn = 1;
-        cfg_info->channel_param.chan0_sel_mode = chn;
-        cfg_info->channel_param.chn = 0x05;
-        cfg_info->channel_param.out_color = 1;
-        cfg_info->channel_param.rotate = 1;
-        cfg_info->channel_param.image_length0 = 1080;
-        cfg_info->channel_param.image_width0 = 1920;
-        cfg_info->channel_param.image_fps = 60;
-        cfg_info->channel_param.image_w0 = 256;
-        cfg_info->channel_param.image_y0 = 256;
-        printf("cfg_info_image_w0:%d, cfg_info_image_y0:%d\n",cfg_info->channel_param.image_w0,cfg_info->channel_param.image_y0);
-        strcpy(cfg_info->in_filename_chn, "/userdata/sda1/h264test.h264");
-        sprintf(cfg_info->out_filename_chn, "/userdata/sda1/output%d.raw",chn);
-        decode_configuration_init(cfg_info);
-
-        osd_image_info_t* osd_info = (osd_image_info_t *)(osd_tmp_info + 1);
-        osd_info->chn = cfg_info->channel_param.chan0_sel_mode;
-        osd_info->osd_type = 0x07;
-        osd_info->shape = STITCHBASE_OSD_ROUND_SHAPE;
-        osd_info->font_type = 0;
-        osd_info->font_format = 0;
-        osd_info->font_size = 2;
-        osd_info->time_position = 0;
-        osd_info->font_color = 0xffff00;
-        osd_info->color =  0x000000;
-        osd_info->string_x = 600;
-        osd_info->string_y = 600;
-        osd_info->x = 640;
-        osd_info->y = 512;
-        osd_info->x_off = 30;
-        osd_info->y_off = 30;
-        osd_info->image_x0 = 576;
-        osd_info->image_y0 = 576;
-        osd_info->data_size = 0x0f;
-        strcpy(osd_info->data, "1920*1080@60Hz");
-
-        GPU_Frame_st* gpu_frame_stream = gpu_data_stream_get();
-        gpu_image_info_t *gpu_image = &gpu_frame_stream->gpu_image[cfg_info->channel_param.chan0_sel_mode];
-        fp = fopen("/userdata/sda1/sea-8411640_640.rgb565", "rb");
-        if(fp == NULL){
-            printf("open file error\n");
-            return -1;
-        }
-        fread(gpu_image->over_image,cfg_info->channel_param.image_w0 * cfg_info->channel_param.image_y0 *2 ,sizeof(unsigned char), fp);
-        fflush(fp);
-        fclose(fp);
-        axififo_frame_request_type13(osd_tmp_info, sizeof(osd_image_info_t) + 1);
-
-        ret = DecodeStart(cfg_info->channel_param.chan0_sel_mode);
-        if(ret < 0){
-            printf("DecodeStart error\n");
-            return -1;
-        }
-    }
-#endif    
 
 	return A818_SUCCESS;
 err_3:
@@ -1694,6 +1637,110 @@ err:
     free(buf);
     return -1;
 }
+
+int run_test()
+{
+    int ret = 0;
+
+	// cmd_buff = (unsigned char*)malloc(sizeof(mpp_encode_info_t) + 1);
+	// mpp_encode_info_t* mpp_info = (mpp_encode_info_t*)(cmd_buff + 1);
+	// mpp_info->chn = 0;
+	// mpp_info->fps = 25;
+	// mpp_info->width = 1920;
+	// mpp_info->height = 1080;
+    // mpp_info->image_w0 = 256;
+	// mpp_info->image_y0 = 256;
+	// mpp_info->mpp_bps = 1;
+	// mpp_info->extraction = 0;
+	// mpp_info->mpp_type = 0;
+	// mpp_info->out_type = MPP_OUT_TYPE;
+	// mpp_info->rotate = 0;
+	// mpp_info->position = 0;
+	// mpp_info->resize = 1;
+	// mpp_info->resize_width = 1920;
+	// mpp_info->resize_height = 1080;
+	// mpp_info->crop = 0;
+	// mpp_info->crop_width = 768;
+	// mpp_info->crop_height = 768;
+	// axififo_frame_request_type2(cmd_buff,sizeof(mpp_encode_info_t) + 1);
+    // ret = EncodeStart(mpp_info->chn);
+
+    cfg_info = (cfg_info_t*)malloc(sizeof(cfg_info_t));
+    if(cfg_info == NULL){
+        printf("[ERROR] cfg_info malloc error \n");
+        ret = A818_PCIE_DATA_MALLOC;
+        return -1;
+    }
+    FILE* fp = NULL;
+    int chn = 2;
+    cfg_info->channel_param.chn = chn;
+    cfg_info->channel_param.out_color = 1;
+    cfg_info->channel_param.rotate = 1;
+    cfg_info->channel_param.image_length0 = 1080;
+    cfg_info->channel_param.image_width0 = 1920;
+    cfg_info->channel_param.image_fps = 60;
+    cfg_info->channel_param.image_w0 = 256;
+    cfg_info->channel_param.image_y0 = 256;
+    printf("cfg_info_image_w0:%d, cfg_info_image_y0:%d\n",cfg_info->channel_param.image_w0,cfg_info->channel_param.image_y0);
+    strcpy(cfg_info->in_filename_chn, "h264test.h264");
+    sprintf(cfg_info->out_filename_chn, "output%d.raw",chn);
+    decode_configuration_init(cfg_info);
+    ret = DecodeStart(cfg_info->channel_param.chn);
+
+    osd_tmp_info = (uint8_t *)malloc(sizeof(osd_image_info_t) + 1);
+    if(osd_tmp_info == NULL){
+        printf("[ERROR] osd_tmp_info malloc error \n");
+        ret = A818_PCIE_DATA_MALLOC;
+        return -1;
+    }
+    osd_image_info_t* osd_info = (osd_image_info_t *)(osd_tmp_info + 1);
+    osd_info->chn = cfg_info->channel_param.chn;
+    // osd_info->chn = mpp_info->chn;
+    osd_info->osd_type = 0x0f;
+    osd_info->shape = STITCHBASE_OSD_ROUND_SHAPE;
+    osd_info->font_type = 0;
+    osd_info->font_format = 0;
+    osd_info->font_size = 2;
+    osd_info->time_position = 0;
+    osd_info->font_color = 0xffff00;
+    osd_info->color =  0x000000;
+    osd_info->string_x = 600;
+    osd_info->string_y = 600;
+    osd_info->x = 640;
+    osd_info->y = 512;
+    osd_info->x_off = 30;
+    osd_info->y_off = 30;
+    osd_info->image_x0 = 576;
+    osd_info->image_y0 = 576;
+    osd_info->data_size = 0x0f;
+    strcpy(osd_info->data, "1920*1080@60Hz");
+    GPU_Frame_st* gpu_frame_stream = gpu_data_stream_get();
+    gpu_image_info_t *gpu_image = &gpu_frame_stream->gpu_image[cfg_info->channel_param.chn];
+    // gpu_image_info_t *gpu_image = &gpu_frame_stream->gpu_image[mpp_info->chn];
+    fp = fopen("/userdata/castle-256.rgb24", "rb");
+    if(fp == NULL){
+        printf("open file error\n");
+        return -1;
+    }
+    fread(gpu_image->over_image,cfg_info->channel_param.image_w0 * cfg_info->channel_param.image_y0 *2 ,sizeof(unsigned char), fp);
+    // fread(gpu_image->over_image, mpp_info->image_w0 * mpp_info->image_y0 *3, sizeof(unsigned char), fp);
+    fflush(fp);
+    fclose(fp);
+    axififo_frame_request_type12(osd_tmp_info, sizeof(osd_image_info_t) + 1);
+	return 0;
+}
+
+int run_destory()
+{
+    EncodeStop(0);
+	free(cmd_buff);
+
+    // DecodeStop(2);
+	// free(cfg_info);
+    // free(osd_tmp_info);
+	return 0;
+}
+
 #if 0
 void axififo_data_destory(void)
 {

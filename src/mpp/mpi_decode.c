@@ -19,7 +19,6 @@
 #include "log.h"
 // #include "types_def.h"
 
-#define TEST 0
 struct timespec start_tm,end_tm;
 unsigned char output_filename[256];
 unsigned char input_filename[256];

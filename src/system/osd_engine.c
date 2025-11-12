@@ -437,7 +437,7 @@ static void* image_over_thread(void* parameter)
       {
         gpu_cooperate_encode_nv12(0, in_rgb_addr, out_yuv_addr, width, height);
       }
-      event_param.frame_size = width*height*1.5;
+      event_param.frame_size = width*height*3/2;
     }
 #if OSD_DEBUG
     gettimeofday(&end, NULL);
@@ -450,7 +450,11 @@ static void* image_over_thread(void* parameter)
     // }
     // else if (rga_info.out_color == 2)
     // {
-    //   save_image_data(out_yuv_addr,width*height,"/tmp/osd_buf.raw");
+    //   save_image_data(out_yuv_addr,width*height*2,"/tmp/osd_buf.raw");
+    // }
+    // else if (rga_info.out_color == 3)
+    // {
+    //   save_image_data(out_yuv_addr,width*height*3/2,"/tmp/osd_buf.raw");
     // }
 		/*放到编码的ring buffer中，后续进行裁剪*/
     if(!ringbuffer_is_full(image_over_rb)){
@@ -540,7 +544,7 @@ static void* gui_paint_on_canvas_thread(void* parameter)
       out_gui_osd_addr = gpu_image->gui_osd_buffer[frame_info.frame_offset%(DATA_STREAM_FRAME_MAX + 1)];
       /*裁剪出需要的画布*/
       chage_src_to_new(gui_osd_data, out_gui_osd_addr, over_width, over_height);
-      // save_image_data(out_gui_osd_addr, over_width * over_height * 2, "/tmp/gui_osd.raw");
+      // save_image_data(image_over_data, over_width * over_height * 3, "/tmp/image_over.raw");
       /*放到编码的ring buffer中，后续进行编码输出*/
       if(!ringbuffer_is_full(osd_data_rb)){
         event_param.frame_offset = frame_info.frame_offset;
@@ -696,7 +700,7 @@ int gpu_osd_chn_image_init(unsigned char chn)
             goto err_2;
         }
 
-        gpu_image->out_yuv_buffer[index] = (uint8_t*)aligned_alloc(4096, osd_width * osd_height * rga_info.pixel_byte);
+        gpu_image->out_yuv_buffer[index] = (uint8_t*)aligned_alloc(4096, osd_width * osd_height * 2);//rga_info.pixel_byte);
         if(gpu_image->out_yuv_buffer[index] == NULL){
             printf("[ERROR] osd gpu buffer(%d) acquire error \n", index);
             ret = A818_GUI_OSD_DATA_BUFFER;
