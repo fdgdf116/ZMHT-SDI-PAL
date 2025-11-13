@@ -1674,10 +1674,9 @@ int run_test()
     FILE* fp = NULL;
     int chn = 2;
     cfg_info->channel_param.chn = chn;
-    cfg_info->channel_param.out_color = 1;
-    cfg_info->channel_param.rotate = 1;
-    cfg_info->channel_param.image_length0 = 1080;
-    cfg_info->channel_param.image_width0 = 1920;
+    cfg_info->channel_param.rotate = 0;
+    cfg_info->channel_param.image_length0 = 1920;
+    cfg_info->channel_param.image_width0 = 1080;
     cfg_info->channel_param.image_fps = 60;
     cfg_info->channel_param.image_w0 = 256;
     cfg_info->channel_param.image_y0 = 256;
@@ -1722,7 +1721,7 @@ int run_test()
         printf("open file error\n");
         return -1;
     }
-    fread(gpu_image->over_image,cfg_info->channel_param.image_w0 * cfg_info->channel_param.image_y0 *2 ,sizeof(unsigned char), fp);
+    fread(gpu_image->over_image,cfg_info->channel_param.image_w0 * cfg_info->channel_param.image_y0 *3 ,sizeof(unsigned char), fp);
     // fread(gpu_image->over_image, mpp_info->image_w0 * mpp_info->image_y0 *3, sizeof(unsigned char), fp);
     fflush(fp);
     fclose(fp);

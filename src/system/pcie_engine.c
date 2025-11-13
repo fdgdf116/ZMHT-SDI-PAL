@@ -302,7 +302,6 @@ int decode_configuration_init(cfg_info_t* reg_val_info)
 
     mpp_info->mpp_chn = reg_val_info->channel_param.chn%MPP_DECODE_NTHREAD_MAX;
     MpiDecLoopData* loop_data = &mpp_info->dec_data;
-    loop_data->chn = reg_val_info->channel_param.chn;
     rga_param_t* rga_info = &image_chn_info->rga_info;
     data_stream_t* gs_data_stream = data_stream_get();
 

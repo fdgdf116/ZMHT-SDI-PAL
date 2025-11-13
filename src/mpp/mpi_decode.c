@@ -205,7 +205,7 @@ static int decode_simple(MpiDecLoopData *data)
                     err_info = mpp_frame_get_errinfo(frame) | mpp_frame_get_discard(frame);
                     data->frame_count++;
                     if (!err_info){
-                        DumpYUYVtoFile(frame,chn);
+                        DumpYUYVtoFile(frame,chn+2);
 					}
                     if(mpp_info->decode_state){
                         printf("decode_chn[%d] stop!\n",chn);
@@ -315,11 +315,11 @@ int mpi_dec_chn_init(int chn)
     data->fps = mpp_info->fps;
 
     /* 指定解码文件和输出文件 */
-#if TEST
-    data->frame_num		= 1; //指定解码帧数，0为解析整个文件
-#else
+// #if TEST
+//     data->frame_num		= 1; //指定解码帧数，0为解析整个文件
+// #else
 	data->frame_num		= 0; //指定解码帧数，0为解析整个文件
-#endif
+// #endif
     if ( NULL == data->fp_input ) {
         printf("failed to open input/output file \n");
         return -1;

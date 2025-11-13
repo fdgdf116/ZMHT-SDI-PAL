@@ -91,10 +91,10 @@ void *thread_writePL(void *arg){
     struct timeval time;
     int chn = *(int*)arg;
     struct timeval t1, t2;
-    send_buf = align_write_buf_get(chn);
+    send_buf = align_write_buf_get(chn+2);
     rb_t = GetOutPutRingBufferPt(chn);
     data_stream_t* data_stream = data_stream_get();
-    pcie_info_t* pcie_info = &data_stream->pcie_info[chn];
+    pcie_info_t* pcie_info = data_stream->pcie_info[chn];
     mpp_decode_info_t* mpp_info = data_stream->mpp_decode_info[chn];
     MpiDecLoopData* data = &mpp_info->dec_data;
     printf("chn:[%d] %s start\n", chn, __func__);
@@ -127,31 +127,28 @@ void *thread_writePL(void *arg){
             continue;
         }
         ringbuffer_get(rb_t, (uint8_t *)&frame_info, sizeof(image_frame_info_t));
-        // pcie_dec_send(send_tmp, frame_info.frame_size,chn);
-        pcie_dec_send(send_buf + frame_info.frame_offset*frame_info.frame_size, frame_info.frame_size,chn);
+        // pcie_dec_send(send_buf + frame_info.frame_offset*frame_info.frame_size, frame_info.frame_size,chn);
         if(data->fp_output != NULL)
         {
             fwrite(send_buf + frame_info.frame_offset*frame_info.frame_size,frame_info.frame_size,1,data->fp_output);
         }
-
-        if(pcie_info->out_height < 4096){
-            if(data->fps <= 35)
-            {
-                time.tv_sec=0;
-                time.tv_usec=(29000);
-            }
-            else
-            {
-                time.tv_sec=0;
-                time.tv_usec=(9000);
-            }
-        }
-        else{
-            time.tv_sec=0;
-            time.tv_usec=(970000);
-        }
-        select(0,NULL,NULL,NULL,&time);
-        // save_image_data(send_buf,resize_width[chn]*resize_height[chn]*2,"/tmp/pcie_send.raw");
+        // if(pcie_info->out_height < 4096){
+        //     if(data->fps <= 35)
+        //     {
+        //         time.tv_sec=0;
+        //         time.tv_usec=(29000);
+        //     }
+        //     else
+        //     {
+        //         time.tv_sec=0;
+        //         time.tv_usec=(9000);
+        //     }
+        // }
+        // else{
+        //     time.tv_sec=0;
+        //     time.tv_usec=(970000);
+        // }
+        // select(0,NULL,NULL,NULL,&time);
     }
 stop:
     printf("chn[%d] writePL finish!!!\n",chn);

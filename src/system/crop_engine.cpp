@@ -332,7 +332,7 @@ static void* crop_thread(void* parameter)
 {
 	ring_buffer_t *rb;
 	unsigned char crop_chn;
-	ring_buffer_t *mpp_rb;
+	ring_buffer_t *rb_t;
 	struct timeval time;
 
 	gpu_image_info_t *gpu_image;
@@ -352,10 +352,12 @@ static void* crop_thread(void* parameter)
 	gpu_image = &gpu_frame_stream->gpu_image[crop_chn];
 	crop_image_info_t *crop_image = &crop_stream->crop_image[crop_chn];
 
-	unsigned char mpp_chn = crop_chn%MPP_ENCODE_NTHREAD_MAX;
-	mpp_rb = gpu_frame_stream->mpp_data_rb[mpp_chn];
     uint8_t* send_buf = align_write_buf_get(crop_chn);
-    ring_buffer_t* pl_out_rb= GetOutPutRingBufferPt(mpp_chn);
+	unsigned char mpp_chn = crop_chn%MPP_ENCODE_NTHREAD_MAX;
+	if(crop_chn < MPP_ENCODE_NTHREAD_MAX)
+		rb_t = gpu_frame_stream->mpp_data_rb[mpp_chn];
+	else
+		rb_t= GetOutPutRingBufferPt(mpp_chn);
 
 	uint8_t* crop_yuv_addr = NULL;
 	uint8_t* out_yuv_addr = NULL;
@@ -368,7 +370,15 @@ static void* crop_thread(void* parameter)
 		}
 		while(ringbuffer_is_empty(rb)){
 			time.tv_sec=0;
-			time.tv_usec=(1);
+			time.tv_usec=(100);
+			select(0,NULL,NULL,NULL,&time);
+			if(!crop_image->crop_flag){
+				goto stop;
+			}
+		}
+		while(ringbuffer_is_full(rb_t)){
+			time.tv_sec=0;
+			time.tv_usec=(100);
 			select(0,NULL,NULL,NULL,&time);
 			if(!crop_image->crop_flag){
 				goto stop;
@@ -394,33 +404,21 @@ static void* crop_thread(void* parameter)
 		}
 		else
 			memcpy(crop_yuv_addr,out_yuv_addr,frame_info.frame_size);
-		// save_image_data((char*)crop_image->crop_yuv_buffer[crop_image->crop_rb_offset],width*height*3/2,"/tmp/crop_buf.raw");
+		// if(crop_chn < MPP_ENCODE_NTHREAD_MAX)
+		// 	save_image_data((char*)crop_yuv_addr,width*height*3/2,"/tmp/crop_buf.raw");
+		// else
+		// 	save_image_data((char*)crop_yuv_addr,width*height*2,"/tmp/crop_buf.raw");
 
 		/*放到编码的ring buffer中，后续进行编码输出*/
-		if(crop_chn < MPP_ENCODE_NTHREAD_MAX){
-			if(!ringbuffer_is_full(mpp_rb)){
-				crop_frame_info.frame_offset = crop_image->crop_rb_offset;
-				crop_frame_info.frame_size = width*height*3/2;
-				crop_frame_info.chn = mpp_chn;
-				gpu_mpp_to_queue(mpp_chn, &crop_frame_info);
-				crop_image->crop_rb_offset += 1;
-			}
-			else {
-				SLOGI("[Debug]:%s %d chn:%d mpp_rb ringbuffer_is_full \n", __func__, __LINE__, crop_chn);
-			}	
+		if(!ringbuffer_is_full(rb_t)){
+			crop_frame_info.frame_offset = crop_image->crop_rb_offset;
+			crop_frame_info.frame_size = width*height*2;
+			crop_frame_info.chn = mpp_chn;
+			ringbuffer_put(rb_t, (uint8_t *)&crop_frame_info, sizeof(image_frame_info_t));
+			crop_image->crop_rb_offset += 1;
 		}
-		else
-		{
-			if(!ringbuffer_is_full(pl_out_rb)){
-				crop_frame_info.frame_offset = crop_image->crop_rb_offset;
-				crop_frame_info.frame_size = width*height*2;
-				crop_frame_info.chn = mpp_chn;
-				ringbuffer_put(pl_out_rb, (uint8_t *)&crop_frame_info, sizeof(image_frame_info_t));
-				crop_image->crop_rb_offset += 1;
-			}
-			else {
-				SLOGI("[Debug]:%s %d chn:%d mpp_rb ringbuffer_is_full \n", __func__, __LINE__, crop_chn);
-			}
+		else {
+			SLOGI("[Debug]:%s %d chn:%d pl_out_rb ringbuffer_is_full \n", __func__, __LINE__, crop_chn);
 		}
 	}
 stop:
