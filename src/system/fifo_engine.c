@@ -1672,7 +1672,7 @@ int run_test()
         return -1;
     }
     FILE* fp = NULL;
-    int chn = 2;
+    int chn = 3;
     cfg_info->channel_param.chn = chn;
     cfg_info->channel_param.rotate = 0;
     cfg_info->channel_param.image_length0 = 1920;

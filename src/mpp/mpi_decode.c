@@ -19,7 +19,8 @@
 #include "log.h"
 // #include "types_def.h"
 
-struct timespec start_tm,end_tm;
+static struct timespec start_tm,end_tm;
+static int frame_space = 0;
 unsigned char output_filename[256];
 unsigned char input_filename[256];
 
@@ -123,7 +124,9 @@ static int decode_simple(MpiDecLoopData *data)
 {
     RK_U32 pkt_done = 0;
     RK_U32 err_info = 0;
-	
+    struct timeval time;
+    unsigned int time_consume = 0;
+
     MPP_RET ret = MPP_OK;
     MppCtx ctx  = data->ctx;
     MppApi *mpi = data->mpi;
@@ -205,7 +208,19 @@ static int decode_simple(MpiDecLoopData *data)
                     err_info = mpp_frame_get_errinfo(frame) | mpp_frame_get_discard(frame);
                     data->frame_count++;
                     if (!err_info){
+                        //计算每次运行DumpYUYVtoFile之间的耗时，根据帧率与程序耗时，重新分配时延达到固定帧率目的
                         DumpYUYVtoFile(frame,chn+2);
+                        clock_gettime(CLOCK_MONOTONIC, &end_tm);
+                        time_consume = (end_tm.tv_sec - start_tm.tv_sec) * 1000000 + (end_tm.tv_nsec - start_tm.tv_nsec) / 1000;
+                        frame_space += 1000000 / data->fps - time_consume;
+                        if(frame_space > 0)
+                        {
+                            time.tv_sec=0;
+                            time.tv_usec=(frame_space);
+                            select(0,NULL,NULL,NULL,&time);
+                            frame_space = 0;
+                        }
+                        clock_gettime(CLOCK_MONOTONIC, &start_tm);
 					}
                     if(mpp_info->decode_state){
                         printf("decode_chn[%d] stop!\n",chn);
@@ -280,6 +295,7 @@ void *thread_decode(void *arg){
 	// file_size = ftell(data->fp_input);
     // rewind(data->fp_input);
     // printf("input file size %ld\n", file_size);
+    clock_gettime(CLOCK_MONOTONIC, &start_tm);
     while (!data->eos)
 	{
         ret = decode_simple(data);

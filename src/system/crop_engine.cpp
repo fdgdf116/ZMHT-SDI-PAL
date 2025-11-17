@@ -357,7 +357,7 @@ static void* crop_thread(void* parameter)
 	if(crop_chn < MPP_ENCODE_NTHREAD_MAX)
 		rb_t = gpu_frame_stream->mpp_data_rb[mpp_chn];
 	else
-		rb_t= GetOutPutRingBufferPt(mpp_chn);
+		rb_t = GetOutPutRingBufferPt(mpp_chn);
 
 	uint8_t* crop_yuv_addr = NULL;
 	uint8_t* out_yuv_addr = NULL;

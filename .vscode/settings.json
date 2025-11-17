@@ -72,7 +72,12 @@
         "crop_engine.h": "c",
         "compare": "c",
         "atomic": "c",
-        "mpp_soc.h": "c"
+        "mpp_soc.h": "c",
+        "cmath": "c",
+        "type_traits": "c",
+        "charconv": "c",
+        "ctime": "c",
+        "numeric": "c"
     },
     "C_Cpp.errorSquiggles": "enabled"
 }

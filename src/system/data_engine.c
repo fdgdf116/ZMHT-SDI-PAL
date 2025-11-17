@@ -117,8 +117,8 @@ void *thread_writePL(void *arg){
             if(pcie_info->send_flag)
                 goto stop;
         }
-        fifo_num = (pcie_bar_read_reg(pcie_common_param_reg,0x2c+chn*4) * 32);
-        if(fifo_num > (32*1024*1024))
+        fifo_num = (pcie_bar_read_reg(pcie_common_param_reg,0x2c+chn*4) * 16);
+        if(fifo_num > (8*1024*1024))
         {
             time.tv_sec=0;
             time.tv_usec=(1000);
@@ -127,11 +127,14 @@ void *thread_writePL(void *arg){
             continue;
         }
         ringbuffer_get(rb_t, (uint8_t *)&frame_info, sizeof(image_frame_info_t));
-        // pcie_dec_send(send_buf + frame_info.frame_offset*frame_info.frame_size, frame_info.frame_size,chn);
+        pcie_dec_send(send_buf + frame_info.frame_offset*frame_info.frame_size, frame_info.frame_size,chn);
         if(data->fp_output != NULL)
         {
             fwrite(send_buf + frame_info.frame_offset*frame_info.frame_size,frame_info.frame_size,1,data->fp_output);
         }
+        gettimeofday(&t2, NULL);
+        printf("[%s %d]time: %ld us\n", __func__, __LINE__, (t2.tv_sec - t1.tv_sec) * 1000000 + (t2.tv_usec - t1.tv_usec));
+        memcpy(&t1, &t2, sizeof(struct timeval));
         // if(pcie_info->out_height < 4096){
         //     if(data->fps <= 35)
         //     {

@@ -26,7 +26,7 @@ int  video_data_wait_and_get(uint8_t chn, uint8_t *buf, uint32_t width, uint32_t
 	mpi_encode_info_t* mpi_encode = mpi_encode_info_get();
 	GPU_Frame_st* gpu_frame_stream = gpu_data_stream_get();
 	data_stream_t *data_stream = data_stream_get();
-	image_chn_info_t* image_chn_info = &data_stream->image_chn_info[chn];
+	image_chn_info_t* image_chn_info = data_stream->image_chn_info[chn];
 	ring_buffer_t *rb = gpu_frame_stream->mpp_data_rb[chn];
 	image_frame_info_t frame_info = {0}; 
 	Crop_Frame_st* crop_stream = crop_data_stream_get();

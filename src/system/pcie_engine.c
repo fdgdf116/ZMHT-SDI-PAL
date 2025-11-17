@@ -38,8 +38,9 @@
 
 #define ringbuffer_destory ringbuffer_deinit
 #define PCIE_READ_IMAGE_DATA_ADDRESS (0x400000000)
-#define PCIE_WRITE_IMAGE_DATA_ADDRESS (0x700000000)
-
+#define PCIE_WRITE_IMAGE_DATA_ADDRESS (0x600000000)
+#define PCIE_WRITE_IMAGE_DATA_LEN (0x100000000)
+#define PCIE_WRITE_EMCODE_DATA_ADDRESS (0x700000000)
 
 #define FPGA2RK_VFIFO_SIZE_OFFSET (0x28)
 #define RK2FPGA_VFIFO_SIZE_OFFSET (0x104)
@@ -311,6 +312,7 @@ int decode_configuration_init(cfg_info_t* reg_val_info)
         return -1;
     }
     parse_stream_info(cfg_info->in_filename_chn,&mpp_info->decode_type,&mpp_info->fps,&mpp_info->width, &mpp_info->height);
+    mpp_info->fps = cfg_info->channel_param.image_fps;
     loop_data->fps = mpp_info->fps;
     loop_data->fp_input = fopen(cfg_info->in_filename_chn, "rb");
     if (loop_data->fp_input == NULL) {
@@ -1151,7 +1153,7 @@ static void *pcie_data_analysis_thread(void* parameter)
 int pcie_mpp_data_send(unsigned char* mpp_data, unsigned int size)
 {
     int ret = 0;
-    ret = dma_memory_mapped_write(mpp_data, PCIE_WRITE_IMAGE_DATA_ADDRESS,size, PCIE_H2C_0);
+    ret = dma_memory_mapped_write(mpp_data, PCIE_WRITE_EMCODE_DATA_ADDRESS,size, PCIE_H2C_0);
     if(ret != size){
         SLOGI("rk2fpga size:(%d-%d) data error \n", ret, size);
     }
@@ -1291,7 +1293,7 @@ int pcie_dec_send(uint8_t *buf,uint64_t frame_size,int chn)
 {
 #if 1
     int ret;
-    ret = dma_memory_mapped_write(buf, PCIE_WRITE_IMAGE_DATA_ADDRESS * (chn + 1), frame_size, PCIE_H2C_0);
+    ret = dma_memory_mapped_write(buf, PCIE_WRITE_IMAGE_DATA_ADDRESS - chn * PCIE_WRITE_IMAGE_DATA_LEN, frame_size, PCIE_H2C_0);
     if(ret != frame_size){
         ret = -1;
         printf("pcie send size error\n");
