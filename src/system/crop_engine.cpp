@@ -377,7 +377,7 @@ static void* crop_thread(void* parameter)
 			}
 		}
 		while(ringbuffer_is_full(rb_t)){
-			printf("rb_t chn:%d is_full\n", crop_chn);
+			// printf("rb_t chn:%d is_full\n", crop_chn);
 			time.tv_sec=0;
 			time.tv_usec=(100);
 			select(0,NULL,NULL,NULL,&time);

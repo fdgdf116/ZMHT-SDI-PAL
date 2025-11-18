@@ -65,7 +65,7 @@ void* rga_deal(void* arg){
             rb_out = gpu_frame_stream->osd_data_rb[chn];
         }
         while(ringbuffer_is_full(rb_out)){
-            printf("OutPutRingBuffer chn:%d is_full\n", chn);
+            // printf("OutPutRingBuffer chn:%d is_full\n", chn);
             time_val.tv_sec=0;
             time_val.tv_usec=(1000);
             select(0,NULL,NULL,NULL,&time_val);

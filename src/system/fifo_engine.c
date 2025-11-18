@@ -527,6 +527,7 @@ static unsigned int axififo_frame_request_type2(unsigned char* frame_buff, unsig
     rga_info->src_height = mpp_info->height;
     rga_info->image_w0 = mpp_info->image_w0;
     rga_info->image_y0 = mpp_info->image_y0;
+    printf("chn:%x mpp_chn:%x frame_type:%x fps:%x width:%x height:%x image_w0:%x image_y0:%x mpp_type:%x mpp_bps:%x position:%x out_type:%x extraction:%x\n",mpp_info->chn,mpp_info->mpp_chn,mpp_info->frame_type,mpp_info->fps,mpp_info->width,mpp_info->height,mpp_info->image_w0,mpp_info->image_y0,mpp_info->mpp_type,mpp_info->mpp_bps,mpp_info->position, mpp_info->out_type,mpp_info->extraction);
 
     if( rga_info->rotate_type == IM_HAL_TRANSFORM_ROT_90 || rga_info->rotate_type == IM_HAL_TRANSFORM_ROT_270 )
     {
@@ -586,11 +587,11 @@ static unsigned int axififo_frame_request_type2(unsigned char* frame_buff, unsig
     mpp_info->width = rga_info->out_width;
     mpp_info->height = rga_info->out_height;
 
-    SLOGI("out_color:%d rotate_width:%d rotate_height:%d resize_width:%d resize_height:%d image_w0:%d image_y0:%d osd_width:%d osd_height:%d out_width:%d out_height:%d totate_type:%d resize:%d crop:%d pixel_byte:%d\n",
-          rga_info->out_color, rga_info->rotate_width, rga_info->rotate_height,
+    SLOGI("out_color:%d src_width:%d src_height:%d rotate_width:%d rotate_height:%d resize_width:%d resize_height:%d image_w0:%d image_y0:%d osd_width:%d osd_height:%d out_width:%d out_height:%d totate_type:%d resize:%d crop:%d out_type:%d pixel_byte:%f\n",
+          rga_info->out_color, rga_info->src_width,rga_info->src_height, rga_info->rotate_width, rga_info->rotate_height,
           rga_info->resize_width, rga_info->resize_height, rga_info->image_w0, rga_info->image_y0,
           rga_info->osd_width, rga_info->osd_height, rga_info->out_width, rga_info->out_height,
-          rga_info->rotate_type, rga_info->resize, rga_info->crop_flag, rga_info->pixel_byte);
+          rga_info->rotate_type, rga_info->resize, rga_info->crop_flag,mpp_info->out_type, rga_info->pixel_byte);
 
 	/*判断输出的类型*/
 	switch(mpp_info->out_type){
@@ -1642,28 +1643,28 @@ int run_test()
 {
     int ret = 0;
 
-	cmd_buff = (unsigned char*)malloc(sizeof(mpp_encode_info_t) + 1);
-	mpp_encode_info_t* mpp_info = (mpp_encode_info_t*)(cmd_buff + 1);
-	mpp_info->chn = 0;
-	mpp_info->fps = 25;
-	mpp_info->width = 1920;
-	mpp_info->height = 1080;
-    mpp_info->image_w0 = 256;
-	mpp_info->image_y0 = 256;
-	mpp_info->mpp_bps = 1;
-	mpp_info->extraction = 0;
-	mpp_info->mpp_type = 0;
-	mpp_info->out_type = MPP_OUT_TYPE;
-	mpp_info->rotate = 0;
-	mpp_info->position = 0;
-	mpp_info->resize = 1;
-	mpp_info->resize_width = 1920;
-	mpp_info->resize_height = 1080;
-	mpp_info->crop = 0;
-	mpp_info->crop_width = 768;
-	mpp_info->crop_height = 768;
-	axififo_frame_request_type2(cmd_buff,sizeof(mpp_encode_info_t) + 1);
-    ret = EncodeStart(mpp_info->chn);
+	// cmd_buff = (unsigned char*)malloc(sizeof(mpp_encode_info_t) + 1);
+	// mpp_encode_info_t* mpp_info = (mpp_encode_info_t*)(cmd_buff + 1);
+	// mpp_info->chn = 0;
+	// mpp_info->fps = 25;
+	// mpp_info->width = 1920;
+	// mpp_info->height = 1080;
+    // mpp_info->image_w0 = 256;
+	// mpp_info->image_y0 = 256;
+	// mpp_info->mpp_bps = 1;
+	// mpp_info->extraction = 0;
+	// mpp_info->mpp_type = 0;
+	// mpp_info->out_type = MPP_OUT_TYPE;
+	// mpp_info->rotate = 0;
+	// mpp_info->position = 0;
+	// mpp_info->resize = 1;
+	// mpp_info->resize_width = 1920;
+	// mpp_info->resize_height = 1080;
+	// mpp_info->crop = 0;
+	// mpp_info->crop_width = 768;
+	// mpp_info->crop_height = 768;
+	// axififo_frame_request_type2(cmd_buff,sizeof(mpp_encode_info_t) + 1);
+    // ret = EncodeStart(mpp_info->chn);
 
     cfg_info = (cfg_info_t*)malloc(sizeof(cfg_info_t));
     if(cfg_info == NULL){

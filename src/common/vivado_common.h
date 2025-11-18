@@ -9,7 +9,7 @@ extern "C" {
 
 #define PAL_RK3588_VERSION 0x10000000
 #define PAL_RK3588_BUILD_TIME 0x20251106
-#define TEST 0
+#define TEST 1
 
 enum video_ratio_e {
     VIDEO_RATIO_1 = 1,
@@ -119,9 +119,9 @@ enum uartlist_data_type_info_e {
 
 enum fpga_reg_out_type_e {
     NULL_OUT_TYPE = 0,
-    DP_OUT_TYPE = 1,
-    MPP_OUT_TYPE = 2,
-    PC_OUT_TYPE = 3,
+    MPP_OUT_TYPE = 1,
+    PC_OUT_TYPE = 2,
+    DP_OUT_TYPE = 3,
     MPP_DP_OUT_TYPE = 4,
     DP_PC_OUT_TYPE = 5,
     MPP_PC_OUT_TYPE = 6,

@@ -46,6 +46,7 @@ typedef struct {
     int decode_state;
     MpiDecLoopData dec_data;
 }mpp_decode_info_t ;
+#pragma pack(1)
 typedef struct {
 	unsigned char chn;              /*图像rga处理通道*/
 	unsigned char mpp_chn;          /*图像进行h264/h265压缩所在的通道*/
@@ -68,6 +69,7 @@ typedef struct {
 	unsigned int crop_width;
 	unsigned int crop_height;
 }mpp_encode_info_t;
+#pragma pack()
 typedef struct {
     u_int16_t rga_chn;
     u_int16_t rga_flag;
