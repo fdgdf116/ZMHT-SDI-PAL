@@ -384,6 +384,7 @@ static void* image_over_thread(void* parameter)
 		}
     while (ringbuffer_is_full(image_over_rb))
     {
+      printf("image_over_rb chn:%d is_full\n", osd_chn);
 			time.tv_sec=0;
 			time.tv_usec=(1000);
 			select(0,NULL,NULL,NULL,&time);
@@ -512,6 +513,7 @@ static void* gui_paint_on_canvas_thread(void* parameter)
 			}
 		}
     while(ringbuffer_is_full(osd_data_rb)){
+      printf("osd_data_rb chn:%d is_full\n", over_chn);
 			time.tv_sec=0;
 			time.tv_usec=(1000);
 			select(0,NULL,NULL,NULL,&time);

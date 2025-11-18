@@ -1642,28 +1642,28 @@ int run_test()
 {
     int ret = 0;
 
-	// cmd_buff = (unsigned char*)malloc(sizeof(mpp_encode_info_t) + 1);
-	// mpp_encode_info_t* mpp_info = (mpp_encode_info_t*)(cmd_buff + 1);
-	// mpp_info->chn = 0;
-	// mpp_info->fps = 25;
-	// mpp_info->width = 1920;
-	// mpp_info->height = 1080;
-    // mpp_info->image_w0 = 256;
-	// mpp_info->image_y0 = 256;
-	// mpp_info->mpp_bps = 1;
-	// mpp_info->extraction = 0;
-	// mpp_info->mpp_type = 0;
-	// mpp_info->out_type = MPP_OUT_TYPE;
-	// mpp_info->rotate = 0;
-	// mpp_info->position = 0;
-	// mpp_info->resize = 1;
-	// mpp_info->resize_width = 1920;
-	// mpp_info->resize_height = 1080;
-	// mpp_info->crop = 0;
-	// mpp_info->crop_width = 768;
-	// mpp_info->crop_height = 768;
-	// axififo_frame_request_type2(cmd_buff,sizeof(mpp_encode_info_t) + 1);
-    // ret = EncodeStart(mpp_info->chn);
+	cmd_buff = (unsigned char*)malloc(sizeof(mpp_encode_info_t) + 1);
+	mpp_encode_info_t* mpp_info = (mpp_encode_info_t*)(cmd_buff + 1);
+	mpp_info->chn = 0;
+	mpp_info->fps = 25;
+	mpp_info->width = 1920;
+	mpp_info->height = 1080;
+    mpp_info->image_w0 = 256;
+	mpp_info->image_y0 = 256;
+	mpp_info->mpp_bps = 1;
+	mpp_info->extraction = 0;
+	mpp_info->mpp_type = 0;
+	mpp_info->out_type = MPP_OUT_TYPE;
+	mpp_info->rotate = 0;
+	mpp_info->position = 0;
+	mpp_info->resize = 1;
+	mpp_info->resize_width = 1920;
+	mpp_info->resize_height = 1080;
+	mpp_info->crop = 0;
+	mpp_info->crop_width = 768;
+	mpp_info->crop_height = 768;
+	axififo_frame_request_type2(cmd_buff,sizeof(mpp_encode_info_t) + 1);
+    ret = EncodeStart(mpp_info->chn);
 
     cfg_info = (cfg_info_t*)malloc(sizeof(cfg_info_t));
     if(cfg_info == NULL){
@@ -1672,8 +1672,7 @@ int run_test()
         return -1;
     }
     FILE* fp = NULL;
-    int chn = 3;
-    cfg_info->channel_param.chn = chn;
+    cfg_info->channel_param.chn = 3;
     cfg_info->channel_param.rotate = 0;
     cfg_info->channel_param.image_length0 = 1920;
     cfg_info->channel_param.image_width0 = 1080;
@@ -1682,9 +1681,13 @@ int run_test()
     cfg_info->channel_param.image_y0 = 256;
     printf("cfg_info_image_w0:%d, cfg_info_image_y0:%d\n",cfg_info->channel_param.image_w0,cfg_info->channel_param.image_y0);
     strcpy(cfg_info->in_filename_chn, "h264test.h264");
-    sprintf(cfg_info->out_filename_chn, "output%d.raw",chn);
+    sprintf(cfg_info->out_filename_chn, "output%d.raw",cfg_info->channel_param.chn);
     decode_configuration_init(cfg_info);
     ret = DecodeStart(cfg_info->channel_param.chn);
+    // cfg_info->channel_param.chn = 2;
+    // sprintf(cfg_info->out_filename_chn, "output%d.raw",cfg_info->channel_param.chn);
+    // decode_configuration_init(cfg_info);
+    // ret = DecodeStart(cfg_info->channel_param.chn);
 
     osd_tmp_info = (uint8_t *)malloc(sizeof(osd_image_info_t) + 1);
     if(osd_tmp_info == NULL){

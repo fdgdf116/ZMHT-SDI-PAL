@@ -9,7 +9,7 @@ extern "C" {
 
 #define PAL_RK3588_VERSION 0x10000000
 #define PAL_RK3588_BUILD_TIME 0x20251106
-#define TEST 1
+#define TEST 0
 
 enum video_ratio_e {
     VIDEO_RATIO_1 = 1,

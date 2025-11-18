@@ -37,6 +37,7 @@
 #include "data_engine.h"
 
 #define ringbuffer_destory ringbuffer_deinit
+#define PCIE_READ_OTHER_DATA_ADDRESS (0x000000000)
 #define PCIE_READ_IMAGE_DATA_ADDRESS (0x400000000)
 #define PCIE_WRITE_IMAGE_DATA_ADDRESS (0x600000000)
 #define PCIE_WRITE_IMAGE_DATA_LEN (0x100000000)
@@ -612,7 +613,7 @@ void pcie_chn_stack_image(unsigned char* reg_val_info, unsigned int frame_size)
     rga_param_t* rga_info = &image_chn_info->rga_info;
 
     uint8_t *pcie_buf = g_fpga_pcie->pcie_data;
-    ret = dma_memory_mapped_read(pcie_buf,PCIE_READ_IMAGE_DATA_ADDRESS, data_len,PCIE_C2H_0);
+    ret = dma_memory_mapped_read(pcie_buf,PCIE_READ_OTHER_DATA_ADDRESS, data_len,PCIE_C2H_0);
 
     if(ret == rga_info->image_w0 * rga_info->image_y0 *3)
     {
@@ -759,7 +760,7 @@ static void pcie_data_to_queue(image_frame_info_t *frame_info, ring_buffer_t *rb
 {
 	image_frame_info_t frame_param, tmp_param;
 	if (ringbuffer_is_full(rb)) {					
-		//ringbuffer_get(rb, (uint8_t *)&tmp_param, sizeof(tmp_param));
+		ringbuffer_get(rb, (uint8_t *)&tmp_param, sizeof(tmp_param));
         SLOGI("[Debug] %s ringbuffer_is_full", __func__);
 	}
 
@@ -814,9 +815,6 @@ static void *pcie_read_data_thread(void* parameter)
                 // save_image_data(pcie_buf + pcie_buf_offset, ret, "/tmp/pcie_data.raw");
                 frame_info.frame_offset = pcie_buf_offset;
                 //frame_info.frame_index=pcie_read_frame;
-                if(ringbuffer_is_full(rb)){
-                    SLOGI("[%s] ringbuffer full \n", __func__);
-                }
                 pcie_data_to_queue(&frame_info, rb);
                 pcie_buf_offset += pcie_offset;
                 pcie_read_frame += 1;
@@ -1274,7 +1272,7 @@ int pcie_read_data(uint32_t frame_size,FILE *fp){
 
     // fpga_vfifo_size = pcie_get_fpga2rk_vfifo_szie();
 
-    ret = dma_memory_mapped_read(pcie_buf,PCIE_READ_IMAGE_DATA_ADDRESS, frame_size,PCIE_C2H_0);
+    ret = dma_memory_mapped_read(pcie_buf,PCIE_READ_OTHER_DATA_ADDRESS, frame_size,PCIE_C2H_0);
     if(ret == frame_size){
         ret = fwrite(pcie_buf,1,frame_size,fp);
         if(ret != frame_size){
