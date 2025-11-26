@@ -320,6 +320,151 @@ void data_stream_crop_src_to_new_yuyv(unsigned int index, unsigned char *src, un
     src_mat(crop_roi).copyTo(dst_mat);
 }
 
+bool FAPI_imagebase_odd_transform_to_origin(uint32_t width, uint32_t height, uint8_t px_size, uint8_t* img, uint8_t* temp_boost)
+{
+	if (!img || !width || !height || !px_size)
+		return false;
+
+	uint16_t row_len = width * px_size;
+
+	uint8_t* temp_row = nullptr; // 还原奇偶场数据
+	bool* visit_map = nullptr;   // 建立一个映射，防止因为闭环导致出现未交换的行
+	if (temp_boost)
+	{
+		temp_row = temp_boost;
+		visit_map = (bool*)(temp_boost + row_len);
+	}
+	else
+	{
+		temp_row = new uint8_t[row_len];
+		visit_map = new bool[height];
+	}
+	memset(visit_map, false, height);
+
+	uint32_t start = 1;
+	uint32_t current = start;
+	memcpy(temp_row, &img[current * row_len], row_len); // 保存第1行数据
+	visit_map[start] = true;
+
+	while (true)
+	{
+		uint32_t next = (current % 2) ? (current + height) / 2 : current / 2;
+		if (next == start)
+		{
+			// 先找到 start 对应的地址，完成这个闭环
+			uint16_t temp_target = start < height / 2 ? start * 2 : 2 * (start - height / 2) + 1;
+			memcpy(&img[row_len * temp_target], temp_row, row_len); // 保存第1行数据
+			visit_map[temp_target] = true;
+
+			// 检查是否有闭环
+			uint32_t unvisited = 0;
+			for (uint16_t i = 1; i < height - 1; ++i)
+				if (!visit_map[i])
+				{
+					unvisited = i;
+					break;
+				}
+			if (unvisited)
+			{
+				start = unvisited;
+				current = start;
+				memcpy(temp_row, &img[start * row_len], row_len); // 保存第1行数据
+				continue;
+			}
+			else
+				break;
+		}
+		else
+			visit_map[current] = true;
+		// 数据向目标索引移动
+		memcpy(&img[current * row_len], &img[next * row_len], row_len);
+		current = next;
+	}
+
+	// 释放内存
+	if (!temp_boost)
+	{
+		delete[] temp_row;
+		delete[] visit_map;
+	}
+}
+
+bool FAPI_imagebase_odd_transform_to_target(uint32_t width, uint32_t height, uint8_t px_size, uint8_t* img, uint8_t* temp_boost)
+{
+	if (!img || !width || !height || !px_size)
+		return false;
+
+	uint16_t row_len = width * px_size;
+
+	uint8_t* temp_row = nullptr;
+	bool* visit_map = nullptr;
+
+	if (temp_boost)
+	{
+		temp_row = temp_boost;
+		visit_map = (bool*)(temp_boost + row_len);
+	}
+	else
+	{
+		temp_row = new uint8_t[row_len];
+		visit_map = new bool[height];
+	}
+	memset(visit_map, false, height);
+
+	uint32_t start = 1;
+	uint32_t current = start;
+	memcpy(temp_row, &img[current * row_len], row_len); // 保存第1行数据
+	visit_map[start] = true;
+
+	while (true)
+	{
+		// 原始图 → 奇偶场的映射公式（逆运算）
+		uint32_t next = (current < height / 2) ? (current * 2) : (current - height / 2) * 2 + 1;
+
+		if (next == start)
+		{
+			// 完成闭环
+			uint16_t temp_target = (start % 2) ? (start + height) / 2 : start / 2;
+			memcpy(&img[temp_target * row_len], temp_row, row_len);
+			visit_map[temp_target] = true;
+
+			// 检查是否有未访问行
+			uint32_t unvisited = 0;
+			for (uint16_t i = 1; i < height - 1; ++i)
+			{
+				if (!visit_map[i])
+				{
+					unvisited = i;
+					break;
+				}
+			}
+			if (unvisited)
+			{
+				start = unvisited;
+				current = start;
+				memcpy(temp_row, &img[start * row_len], row_len);
+				continue;
+			}
+			else
+				break;
+		}
+		else
+			visit_map[current] = true;
+
+		// 数据向目标索引移动
+		memcpy(&img[current * row_len], &img[next * row_len], row_len);
+		current = next;
+	}
+
+	if (!temp_boost)
+	{
+		delete[] temp_row;
+		delete[] visit_map;
+	}
+
+	return true;
+}
+
 /*
 	函数: static void* crop_thread(void* parameter)
 	作用: 编码图进行画布做画线程
@@ -396,6 +541,10 @@ static void* crop_thread(void* parameter)
 			crop_yuv_addr = crop_image->crop_yuv_buffer[crop_image->crop_rb_offset];
 		else
 			crop_yuv_addr = send_buf + crop_image->crop_rb_offset*width*height*2;
+		if(crop_chn == 2)
+		{
+			FAPI_imagebase_odd_transform_to_target(image_chn_info->rga_info.osd_width, image_chn_info->rga_info.osd_height, 2, out_yuv_addr, NULL);
+		}
 		if(image_chn_info->rga_info.crop_flag)
 		{
 			if(image_chn_info->rga_info.out_color == 3)

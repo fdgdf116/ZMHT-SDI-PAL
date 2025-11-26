@@ -1018,12 +1018,12 @@ unsigned int mpp_encode_chn_init(unsigned int chn, unsigned char image_chn, MpiE
 	mpi_encode->encode_cmd[chn].fps_out_den = 1;
 
 	mpi_encode->encode_cmd[chn].type = encode_cmd->type;
-#if TEST
+// #if TEST
 	if(encode_cmd->type == MPP_VIDEO_CodingAVC)
 		mpi_encode->encode_cmd[chn].file_output = "/tmp/output.h264";
 	else if(encode_cmd->type == MPP_VIDEO_CodingHEVC)
 		mpi_encode->encode_cmd[chn].file_output = "/tmp/output.h265";
-#endif
+// #endif
 
 	mpi_encode->encode_cmd[chn].bps_target = encode_cmd->bps_target;
 

@@ -328,7 +328,8 @@ int EncodeStart(int chn){
         SLOGI("rga_chn_image_init error \n");
         goto err_4;
     }
-    if(g_axififo_info->rk_enable) {
+    sleep(1);
+    if(g_axififo_info->rk_enable && (chn == 0)) {
         pcie_set_rk_enable();
     }
     // if(g_axififo_info->pc_enable) {
@@ -348,15 +349,16 @@ int DecodeStart(int chn){
     if(!mpp_info->decode_state)
     {
         printf("decoding!!!\n");
-        return -1;
+        return 1;
     }
     int ret = 0;
 
 #if 1
-    printf("DecodeStart chn:%d\n",chn);
+
+    printf("mpi_dec chn:%d\n",chn);
     ret = mpi_dec_chn_init(mpp_info->mpp_chn);
     if(ret != MPP_OK)
-        return -1;
+        return 3;
     return ret;
 #endif
 }
@@ -364,14 +366,16 @@ int DecodeStart(int chn){
 void DecodeStop(int chn){
     data_stream_t* data_stream = data_stream_get();
     mpp_decode_info_t *mpp_info = data_stream->mpp_decode_info[chn%MPP_DECODE_NTHREAD_MAX];
+    picture_info_t *picture_info = &data_stream->picture_info[chn%MPP_DECODE_NTHREAD_MAX];
 
     if(mpp_info->decode_state)
     {
         printf("no decoding!!!\n");
         return;
     }
-
+    picture_info->send_flag = 1;
     mpp_info->decode_state = 1;
+    sleep(1);
     MpiDecodeDestroy(chn);
     rga_pthread_chn_destory(chn);
     data_stream_chn_data_destory(chn);
@@ -381,6 +385,7 @@ void DecodeStop(int chn){
     crop_chn_image_destory(chn);
     writePL_chn_destory(chn);
 
+    vfifo_reg_reset(chn+1);
 	memset(&data_stream->image_chn_info[chn]->osd_info, 0x0, sizeof(osd_image_info_t));
     printf("DecodeStop finished!!!\n");
 }
@@ -511,6 +516,8 @@ static unsigned int axififo_frame_request_type2(unsigned char* frame_buff, unsig
 #else
 	mpp_info->width = ntohl(mpp_info->width);
 	mpp_info->height = ntohl(mpp_info->height);
+    mpp_info->image_w0 = ntohl(mpp_info->image_w0);
+    mpp_info->image_y0 = ntohl(mpp_info->image_y0);
 	mpp_info->mpp_bps = ntohl(mpp_info->mpp_bps);
 	mpp_info->resize_width = ntohl(mpp_info->resize_width);
 	mpp_info->resize_height = ntohl(mpp_info->resize_height);
@@ -783,7 +790,7 @@ int axififo_frame_request_type9(unsigned char* frame_buff, unsigned int frame_si
             goto error;
         }
     }
-    usleep(100000);
+    // usleep(100000);
     return COMD_PROC_SUCCESS;
     error:
 		// axififo_send(frame_buff[0], COMD_PROC_FAILED);
@@ -828,7 +835,6 @@ int axififo_frame_request_type10(unsigned char* frame_buff, unsigned int frame_s
     int ret = 0;
     int reg_offset ;
     int chn = frame_buff[1];
-
     if(chn >= MPP_DECODE_NTHREAD_MAX)
     {
         DecodeStop(chn);
@@ -1278,6 +1284,20 @@ static int axififo_frame_request_type18(unsigned char* frame_buff, unsigned int 
     return COMD_PROC_FAILED;
 }
 
+//图片输出配置
+static int axififo_frame_request_type19(unsigned char* frame_buff, unsigned int frame_size)
+{
+    int chn = frame_buff[1];
+    data_stream_t* data_stream = data_stream_get();
+    picture_info_t *picture_info = &data_stream->picture_info[chn%MPP_DECODE_NTHREAD_MAX];
+    picture_info->chn = chn%MPP_DECODE_NTHREAD_MAX;
+    strcpy(picture_info->picture_name, frame_buff+2);
+    int ret = picture_init(picture_info->chn);
+    if(!ret)
+        return COMD_PROC_SUCCESS;
+    return COMD_PROC_FAILED;
+}
+
 static void axififo_send(unsigned char mode, unsigned int data)
 {
 #if 1
@@ -1372,7 +1392,6 @@ void axififo_frame_data_analyse(unsigned char* frame_buffer, unsigned int frame_
         case UARTLIST_REQUEST_TYPE10:/* 帧类型10（编解码停止配置） */
             SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE10+++++\n");        
             cmd_ok = axififo_frame_request_type10(frame_buffer,frame_size);
-            sleep(2);
             break;
         case UARTLIST_REQUEST_TYPE11:/* 帧类型11（系统自检） */
             SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE11+++++\n");
@@ -1453,6 +1472,10 @@ void axififo_frame_data_analyse(unsigned char* frame_buffer, unsigned int frame_
         case UARTLIST_REQUEST_TYPE18:/* 帧类型18（时序参数配置） */
             SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE18++++\n");
             cmd_ok = axififo_frame_request_type18(frame_buffer,frame_size);
+            break;
+        case UARTLIST_REQUEST_TYPE19:/* 帧类型19（图片生成配置） */
+            SLOGI("[Debug]++++UARTLIST_REQUEST_TYPE19++++\n");
+            cmd_ok = axififo_frame_request_type19(frame_buffer,frame_size);
             break;
         default: 
             SLOGI("set uartlist request type%d error \n", frame_buffer[0]);
@@ -1673,63 +1696,62 @@ int run_test()
         return -1;
     }
     FILE* fp = NULL;
-    cfg_info->channel_param.chn = 3;
+    cfg_info->channel_param.chn = 2;
     cfg_info->channel_param.rotate = 0;
-    cfg_info->channel_param.image_length0 = 1920;
-    cfg_info->channel_param.image_width0 = 1080;
+    cfg_info->channel_param.resize = 1;
+    cfg_info->channel_param.resize_width = 720;
+    cfg_info->channel_param.resize_higth = 576;
+    cfg_info->channel_param.image_length0 = 720;
+    cfg_info->channel_param.image_width0 = 576;
     cfg_info->channel_param.image_fps = 60;
     cfg_info->channel_param.image_w0 = 256;
     cfg_info->channel_param.image_y0 = 256;
     printf("cfg_info_image_w0:%d, cfg_info_image_y0:%d\n",cfg_info->channel_param.image_w0,cfg_info->channel_param.image_y0);
-    strcpy(cfg_info->in_filename_chn, "h264test.h264");
+    strcpy(cfg_info->in_filename_chn, "output.mjpeg");
     sprintf(cfg_info->out_filename_chn, "output%d.raw",cfg_info->channel_param.chn);
     decode_configuration_init(cfg_info);
     ret = DecodeStart(cfg_info->channel_param.chn);
-    // cfg_info->channel_param.chn = 2;
-    // sprintf(cfg_info->out_filename_chn, "output%d.raw",cfg_info->channel_param.chn);
-    // decode_configuration_init(cfg_info);
-    // ret = DecodeStart(cfg_info->channel_param.chn);
 
-    osd_tmp_info = (uint8_t *)malloc(sizeof(osd_image_info_t) + 1);
-    if(osd_tmp_info == NULL){
-        printf("[ERROR] osd_tmp_info malloc error \n");
-        ret = A818_PCIE_DATA_MALLOC;
-        return -1;
-    }
-    osd_image_info_t* osd_info = (osd_image_info_t *)(osd_tmp_info + 1);
-    osd_info->chn = cfg_info->channel_param.chn;
-    // osd_info->chn = mpp_info->chn;
-    osd_info->osd_type = 0x0f;
-    osd_info->shape = STITCHBASE_OSD_ROUND_SHAPE;
-    osd_info->font_type = 0;
-    osd_info->font_format = 0;
-    osd_info->font_size = 2;
-    osd_info->time_position = 0;
-    osd_info->font_color = 0xffff00;
-    osd_info->color =  0x000000;
-    osd_info->string_x = 600;
-    osd_info->string_y = 600;
-    osd_info->x = 640;
-    osd_info->y = 512;
-    osd_info->x_off = 30;
-    osd_info->y_off = 30;
-    osd_info->image_x0 = 576;
-    osd_info->image_y0 = 576;
-    osd_info->data_size = 0x0f;
-    strcpy(osd_info->data, "1920*1080@60Hz");
-    GPU_Frame_st* gpu_frame_stream = gpu_data_stream_get();
-    gpu_image_info_t *gpu_image = &gpu_frame_stream->gpu_image[cfg_info->channel_param.chn];
-    // gpu_image_info_t *gpu_image = &gpu_frame_stream->gpu_image[mpp_info->chn];
-    fp = fopen("/userdata/castle-256.rgb24", "rb");
-    if(fp == NULL){
-        printf("open file error\n");
-        return -1;
-    }
-    fread(gpu_image->over_image,cfg_info->channel_param.image_w0 * cfg_info->channel_param.image_y0 *3 ,sizeof(unsigned char), fp);
-    // fread(gpu_image->over_image, mpp_info->image_w0 * mpp_info->image_y0 *3, sizeof(unsigned char), fp);
-    fflush(fp);
-    fclose(fp);
-    axififo_frame_request_type12(osd_tmp_info, sizeof(osd_image_info_t) + 1);
+    // osd_tmp_info = (uint8_t *)malloc(sizeof(osd_image_info_t) + 1);
+    // if(osd_tmp_info == NULL){
+    //     printf("[ERROR] osd_tmp_info malloc error \n");
+    //     ret = A818_PCIE_DATA_MALLOC;
+    //     return -1;
+    // }
+    // osd_image_info_t* osd_info = (osd_image_info_t *)(osd_tmp_info + 1);
+    // osd_info->chn = cfg_info->channel_param.chn;
+    // // osd_info->chn = mpp_info->chn;
+    // osd_info->osd_type = 0x0f;
+    // osd_info->shape = STITCHBASE_OSD_ROUND_SHAPE;
+    // osd_info->font_type = 0;
+    // osd_info->font_format = 0;
+    // osd_info->font_size = 2;
+    // osd_info->time_position = 0;
+    // osd_info->font_color = 0xffff00;
+    // osd_info->color =  0x000000;
+    // osd_info->string_x = 600;
+    // osd_info->string_y = 600;
+    // osd_info->x = 640;
+    // osd_info->y = 512;
+    // osd_info->x_off = 30;
+    // osd_info->y_off = 30;
+    // osd_info->image_x0 = 576;
+    // osd_info->image_y0 = 576;
+    // osd_info->data_size = 0x0f;
+    // strcpy(osd_info->data, "1920*1080@60Hz");
+    // GPU_Frame_st* gpu_frame_stream = gpu_data_stream_get();
+    // gpu_image_info_t *gpu_image = &gpu_frame_stream->gpu_image[cfg_info->channel_param.chn];
+    // // gpu_image_info_t *gpu_image = &gpu_frame_stream->gpu_image[mpp_info->chn];
+    // fp = fopen("/userdata/castle-256.rgb24", "rb");
+    // if(fp == NULL){
+    //     printf("open file error\n");
+    //     return -1;
+    // }
+    // fread(gpu_image->over_image,cfg_info->channel_param.image_w0 * cfg_info->channel_param.image_y0 *3 ,sizeof(unsigned char), fp);
+    // // fread(gpu_image->over_image, mpp_info->image_w0 * mpp_info->image_y0 *3, sizeof(unsigned char), fp);
+    // fflush(fp);
+    // fclose(fp);
+    // axififo_frame_request_type12(osd_tmp_info, sizeof(osd_image_info_t) + 1);
 	return 0;
 }
 

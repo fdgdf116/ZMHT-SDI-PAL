@@ -19,7 +19,7 @@ int decode_configuration_init(cfg_info_t* reg_val_info);
 void pcie_chn_stack_char(unsigned char* reg_val_info, unsigned int frame_size);
 void pcie_chn_stack_image(unsigned char* reg_val_info, unsigned int frame_size);
 void pcie_VdmaConfigInit(vdma_configuration_info_t *vdma_configuration_info);
-
+void vfifo_reg_reset(int chn);
 int pcie_set_rk_enable();
 // void pcie_set_pc_enable(unsigned char val);
 

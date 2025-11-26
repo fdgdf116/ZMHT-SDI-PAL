@@ -121,10 +121,10 @@ enum fpga_reg_out_type_e {
     NULL_OUT_TYPE = 0,
     MPP_OUT_TYPE = 1,
     PC_OUT_TYPE = 2,
-    DP_OUT_TYPE = 3,
-    MPP_DP_OUT_TYPE = 4,
-    DP_PC_OUT_TYPE = 5,
-    MPP_PC_OUT_TYPE = 6,
+    MPP_PC_OUT_TYPE = 3,
+    DP_OUT_TYPE = 4,
+    MPP_DP_OUT_TYPE = 5,
+    DP_PC_OUT_TYPE = 6,
     MPP_DP_PC_OUT_TYPE = 7,
 };
 

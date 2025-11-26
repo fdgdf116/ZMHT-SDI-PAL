@@ -80,6 +80,73 @@ ring_buffer_t *GetOutPutRingBufferPt(int chn){
     return chn_image->pcie_data_rb;
 }
 
+void *thread_picture_decode(void *arg){
+    int chn = (int)arg;
+    unsigned int fifo_num = 0;
+    struct timeval time;
+    data_stream_t* data_stream = data_stream_get();
+    picture_info_t *picture_info = &data_stream->picture_info[chn%MPP_DECODE_NTHREAD_MAX];
+    while(!picture_info->send_flag){
+        fifo_num = (pcie_bar_read_reg(pcie_common_param_reg,0x2c+chn*4) * 16);
+        if(fifo_num > (8*1024*1024))
+        {
+            time.tv_sec=0;
+            time.tv_usec=(1000);
+            select(0,NULL,NULL,NULL,&time);
+            // printf("fifo fulll\n");
+            continue;
+        }
+        pcie_dec_send(picture_info->pitture_buf, picture_info->weidth*picture_info->height*2,chn);
+        // save_image_data(picture_info->pitture_buf, picture_info->weidth*picture_info->height*2, "/tmp/pitture_buf.raw");
+    }
+}
+
+int picture_init(u_int32_t chn)
+{
+    unsigned int picture_head = 0;
+    data_stream_t* data_stream = data_stream_get();
+    picture_info_t *picture_info = &data_stream->picture_info[chn%MPP_DECODE_NTHREAD_MAX];
+    mpp_decode_info_t* mpp_info = data_stream->mpp_decode_info[chn%MPP_DECODE_NTHREAD_MAX];
+    if(!mpp_info->decode_state)
+    {
+        printf("decoding!!!\n");
+        return 1;
+    }
+
+    picture_info->pitture_fp = fopen(picture_info->picture_name, "rb");
+    if(picture_info->pitture_fp == NULL){
+        printf("open %s failed\n", picture_info->picture_name);
+        return 2;
+    }
+    fread(&picture_head, 4, 1, picture_info->pitture_fp);
+    fread(&picture_info->weidth, 4, 1, picture_info->pitture_fp);
+    fread(&picture_info->height, 4, 1, picture_info->pitture_fp);
+    fread(&picture_info->fps, 4, 1, picture_info->pitture_fp);
+    fflush(picture_info->pitture_fp);
+
+    if(picture_head != 0x56fa3751){
+        printf("picture head error\n");
+        return 3;
+    }
+    picture_info->weidth = ntohl(picture_info->weidth);
+    picture_info->height = ntohl(picture_info->height);
+    picture_info->fps = ntohl(picture_info->fps);
+    SLOGI("picture weidth:%d, height:%d, fps:%d", picture_info->weidth, picture_info->height, picture_info->fps);
+    picture_info->pitture_buf = align_write_buf_get(chn+2);;
+    if(picture_info->pitture_buf == NULL){
+        printf("malloc %s failed\n", picture_info->picture_name);
+        return 4;
+    }
+    fread(picture_info->pitture_buf, picture_info->weidth * picture_info->height * 2, 1, picture_info->pitture_fp);
+    fflush(picture_info->pitture_fp);
+    fclose(picture_info->pitture_fp);
+    if(picture_info->chn == 0)
+        FAPI_imagebase_odd_transform_to_target(picture_info->weidth, picture_info->height, 2, picture_info->pitture_buf,NULL);
+    picture_info->send_flag = 0;
+    mpp_info->decode_state = pthread_create(&picture_info->pht_picture, NULL, thread_picture_decode, &picture_info->chn);
+    return 0;
+}
+
 void *thread_writePL(void *arg){
     pthread_detach(pthread_self());
     // pthread_mutex_lock(&mutex);

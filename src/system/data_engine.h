@@ -23,6 +23,17 @@
 
 extern "C" {
 #endif
+typedef struct {
+    pthread_t pht_picture;
+    u_int32_t chn;
+    u_int32_t weidth;
+    u_int32_t height;
+    u_int32_t fps;
+    u_int32_t send_flag;
+    u_int8_t* pitture_buf;
+    FILE* pitture_fp;
+    char picture_name[256];
+} picture_info_t;
 
 typedef struct {
     uint32_t data_offset; /* 在一帧图像中的行偏移 */
@@ -130,6 +141,7 @@ typedef struct {
     mpp_decode_info_t* mpp_decode_info[MPP_DECODE_NTHREAD_MAX];
     mpp_encode_info_t* mpp_encode_info[MPP_ENCODE_NTHREAD_MAX];
     pcie_info_t* pcie_info[MPP_DECODE_NTHREAD_MAX];
+    picture_info_t picture_info[MPP_DECODE_NTHREAD_MAX];
 }data_stream_t;
 
 data_stream_t *data_stream_get(void);
@@ -139,6 +151,7 @@ ring_buffer_t *GetInPutRingBufferPt(int chn);
 ring_buffer_t *GetResizeRingBufferPt(int chn);
 ring_buffer_t *GetOutPutRingBufferPt(int chn);
 
+int picture_init(u_int32_t chn);
 void MpiDecDestroy();
 int data_stream_init(void);
 void data_stream_destory(void);

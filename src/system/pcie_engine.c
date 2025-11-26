@@ -173,8 +173,22 @@ void pcie_fpga_reg_reset(void)
     usleep(1000);
     pcie_bar_write_reg(g_fpga_pcie->pcie_reg, FPGA_SYSTEM_RESETN, 1);
     usleep(1000);
+    //vfifo复位
+    pcie_bar_write_reg(g_fpga_pcie->pcie_reg, FPGA_VFIFO_RESET_OFFSET, 1);
+    usleep(1000);
+    pcie_bar_write_reg(g_fpga_pcie->pcie_reg, FPGA_VFIFO_RESET_OFFSET, 0);
+    usleep(1000);
 
     SLOGI("[%s] pcie reset end \n", __func__);
+}
+
+void vfifo_reg_reset(int chn)
+{
+    //vfifo复位;chn:0接收vfifo；chn:1pal发送vfifo；chn2:sdi发送vfifo;chn3:压缩发送vfifo
+    pcie_bar_write_reg(g_fpga_pcie->pcie_reg, FPGA_VFIFO_RESET_OFFSET + chn * 4, 1);
+    usleep(1000);
+    pcie_bar_write_reg(g_fpga_pcie->pcie_reg, FPGA_VFIFO_RESET_OFFSET + chn * 4, 0);
+    usleep(1000);
 }
 
 void pcie_close_chn_enable(unsigned int chn)
@@ -334,6 +348,7 @@ int decode_configuration_init(cfg_info_t* reg_val_info)
     
     rga_info->rga_chn = reg_val_info->channel_param.chn;
     rga_info->out_color = 2;
+    rga_info->pixel_byte = 2;
     rga_info->image_w0 = channel_param.image_w0;
     rga_info->image_y0 = channel_param.image_y0;
     rga_info->rotate_type = cfg_info->channel_param.rotate;
@@ -398,7 +413,6 @@ int decode_configuration_init(cfg_info_t* reg_val_info)
     }
     pcie_info->out_width = rga_info->out_width;
     pcie_info->out_height = rga_info->out_height;
-
     SLOGI("out_color:%d rotate_width:%d rotate_height:%d resize_width:%d resize_height:%d image_w0:%d image_y0:%d osd_width:%d osd_height:%d out_width:%d out_height:%d totate_type:%d resize:%d crop:%d pixel_byte:%f\n",
           rga_info->out_color, rga_info->rotate_width, rga_info->rotate_height,
           rga_info->resize_width, rga_info->resize_height, rga_info->image_w0, rga_info->image_y0,
@@ -712,11 +726,6 @@ int pcie_chn_stack_image_test_r()
 
 int pcie_set_rk_enable()
 {
-    //vfifo复位
-    pcie_bar_write_reg(g_fpga_pcie->pcie_reg, FPGA_VFIFO_RESET_OFFSET, 1);
-    usleep(1000);
-    pcie_bar_write_reg(g_fpga_pcie->pcie_reg, FPGA_VFIFO_RESET_OFFSET, 0);
-    usleep(1000);
     //接收通道使能
     pcie_bar_write_reg(g_fpga_pcie->pcie_reg, MULTIPLEX_CHN_EN, 1);
     usleep(1000);
@@ -965,8 +974,11 @@ int pcie_chn_data_analysis(unsigned char chn, unsigned char* chn_buf_l)
 
 		memcpy_len = chn_data->frame_size - chn_data->data_offset; /* 剩余的进行拷贝 */
 		memcpy(chn_image_buf + chn_data->data_offset, (chn_buf_l + FPGA_PCIE_DATA_HEAD_SIZE),memcpy_len);
-        if(chn == 0)
-            odd_transform_yuv(chn_image_buf,chn);
+        // if(chn == 0)
+        // {
+        //     FAPI_imagebase_odd_transform_to_origin(data_stream->image_chn_info[chn]->rga_info.src_width, data_stream->image_chn_info[chn]->rga_info.src_height, 2, chn_image_buf, NULL);
+        //     // odd_transform_yuv(chn_image_buf,chn);
+        // }
 		// save_image_data(chn_image_buf,chn_data->frame_size,"/tmp/chn_image_buf.raw");
 		chn_rb = GetInPutRingBufferPt(chn);
 		if(chn_rb){

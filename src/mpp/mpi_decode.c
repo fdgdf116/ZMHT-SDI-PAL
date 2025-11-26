@@ -139,11 +139,10 @@ static int decode_simple(MpiDecLoopData *data)
     MppPacket packet = data->packet;
     MppFrame  frame  = NULL;
     size_t read_size = fread(buf, 1, data->packet_size, data->fp_input);
-    // printf("packet_size:%d,read_size:%d\n",data->packet_size,read_size);
-    if (read_size != data->packet_size || feof(data->fp_input)) {
+    if (feof(data->fp_input)) {
         printf("found last packet\n");
         rewind(data->fp_input);
-        read_size = fread(buf, 1, data->packet_size, data->fp_input);
+        // read_size = fread(buf, 1, data->packet_size, data->fp_input);
         // data->eos = 1;
     }
     mpp_packet_write(packet, 0, buf, read_size);
@@ -369,14 +368,13 @@ int mpi_dec_chn_init(int chn)
         goto MPP_TEST_OUT;
     }
 
-    MppFrameFormat format = MPP_FMT_YUV420SP_VU;
+    MppFrameFormat format = MPP_FMT_YUV420SP;
     ret = data->mpi->control(data->ctx, MPP_DEC_SET_OUTPUT_FORMAT, &format);
     if (MPP_OK != ret) {
         printf("mpi->control failed\n");
         goto MPP_TEST_OUT;
     }
 
-    mpp_info->decode_state = 0;
     mpp_info->decode_state = pthread_create(&mpp_info->pht_dec, NULL, thread_decode, &mpp_info->mpp_chn);
     if (mpp_info->decode_state) {
         printf("failed to create thread for input ret %d\n", ret);

@@ -244,9 +244,9 @@ ssize_t dma_memory_mapped_write(uint8_t *buf, uint64_t dma_addr, uint64_t size, 
 	uint64_t addr = dma_addr;
 
    //ssize_t write_from_buffer(int fd, uint8_t *buffer, uint64_t size, uint64_t base, int ch_index);
-	pthread_mutex_lock(&send_mutex);
+	// pthread_mutex_lock(&send_mutex);
     rc = write_from_buffer(info->fd_w[ch], buf, size, addr,ch);
-	pthread_mutex_unlock(&send_mutex);
+	// pthread_mutex_unlock(&send_mutex);
 	if (rc < 0) {
 		goto out;
 	}

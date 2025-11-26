@@ -36,6 +36,17 @@ int crop_chn_image_init(unsigned char chn);
 void crop_chn_image_destory(unsigned char chn);
 void crop_chn_ringbuffer_is_empty(unsigned char chn);
 
+/**
+ * @brief 将行场分割的图像数据转换成单帧图像数据
+ * @param  width      宽度
+ * @param  height     高度
+ * @param  px_size    像素大小，单位字节
+ * @param  img        处理图像数据
+ * @param  temp_boost 临时缓冲区,可以为空。如果不为空，要求有效长度是 width * px_size + height。
+ */
+bool FAPI_imagebase_odd_transform_to_origin(uint32_t width, uint32_t height, uint8_t px_size, uint8_t* img, uint8_t* temp_boost);
+// @note  将单帧图像数据转换成行场分割的图像数据（参数同上）
+bool FAPI_imagebase_odd_transform_to_target(uint32_t width, uint32_t height, uint8_t px_size, uint8_t* img, uint8_t* temp_boost);
 int crop_stream_init(void);
 void crop_stream_destory(void);
 int crop_chn_init(unsigned char chn);
