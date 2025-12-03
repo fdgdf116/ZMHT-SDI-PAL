@@ -163,20 +163,20 @@ void *thread_writePL(void *arg){
     data_stream_t* data_stream = data_stream_get();
     pcie_info_t* pcie_info = data_stream->pcie_info[chn];
     mpp_decode_info_t* mpp_info = data_stream->mpp_decode_info[chn];
-    // rga_param_t rga_info = data_stream->image_chn_info[chn+2]->rga_info;
+    rga_param_t rga_info = data_stream->image_chn_info[chn+2]->rga_info;
     MpiDecLoopData* data = &mpp_info->dec_data;
     printf("chn:[%d] %s start\n", chn, __func__);
     //计算每个通道的pcie发送耗时
     gettimeofday(&t1, NULL);
-    // u_int8_t* send_tmp = (u_int8_t*)malloc(rga_info.out_width * rga_info.out_height * 2);
-    // for(int j = 0;j<rga_info.out_height;j++)
-    // {
-    //     for(int i = 0;i<rga_info.out_width;i++)
-    //     {
-    //         send_tmp[j*rga_info.out_width*2 + i*2] = i;
-    //         send_tmp[j*rga_info.out_width*2 + i*2+1] = 128;
-    //     }
-    // }
+    u_int8_t* send_tmp = (u_int8_t*)malloc(rga_info.out_width * rga_info.out_height * 2);
+    for(int j = 0;j<rga_info.out_height;j++)
+    {
+        for(int i = 0;i<rga_info.out_width;i++)
+        {
+            send_tmp[j*rga_info.out_width*2 + i*2] = i;
+            send_tmp[j*rga_info.out_width*2 + i*2+1] = 128;
+        }
+    }
     while(!pcie_info->send_flag){
         while(ringbuffer_is_empty(rb_t)){
             // pcie_dec_send(send_buf + frame_info.frame_size*frame_info.frame_offset,frame_info.frame_size,chn);
@@ -207,7 +207,7 @@ void *thread_writePL(void *arg){
         //     fwrite(send_tmp, rga_info.out_width * rga_info.out_height * 2,1,data->fp_output);
         // }
         // gettimeofday(&t2, NULL);
-        // printf("[%s %d]time: %ld us\n", __func__, __LINE__, (t2.tv_sec - t1.tv_sec) * 1000000 + (t2.tv_usec - t1.tv_usec));
+        // printf("[%s %d]speed:%f MBps frame_size:%d time: %ld us\n", __func__, __LINE__, frame_info.frame_size*1.0/(1024*1024) /((t2.tv_sec - t1.tv_sec) * 1000000 + (t2.tv_usec - t1.tv_usec)) * 1000000, frame_info.frame_size, (t2.tv_sec - t1.tv_sec) * 1000000 + (t2.tv_usec - t1.tv_usec));
         // memcpy(&t1, &t2, sizeof(struct timeval));
         // if(pcie_info->out_height < 4096){
         //     if(data->fps <= 35)
@@ -225,7 +225,18 @@ void *thread_writePL(void *arg){
         //     time.tv_sec=0;
         //     time.tv_usec=(970000);
         // }
-        // select(0,NULL,NULL,NULL,&time);
+        if(chn == 0)
+        {
+            time.tv_sec=0;
+            time.tv_usec=(30000);
+            select(0,NULL,NULL,NULL,&time);
+        }
+        else
+        {
+            time.tv_sec=0;
+            time.tv_usec=(5000);
+            select(0,NULL,NULL,NULL,&time);
+        }
     }
 stop:
     printf("chn[%d] writePL finish!!!\n",chn);

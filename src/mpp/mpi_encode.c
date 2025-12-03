@@ -46,7 +46,7 @@ int  video_data_wait_and_get(uint8_t chn, uint8_t *buf, uint32_t width, uint32_t
 	}
 
 	ringbuffer_get(rb, (uint8_t *)&frame_info, sizeof(image_frame_info_t));
-	// memcpy(buf,crop_image->crop_yuv_buffer[frame_info.frame_offset],frame_info.frame_size);
+	// memcpy(buf,crop_image->crop_yuv_buffer[frame_info.frame_offset],width*height*3/2);
 	for(int i = 0; i < height; i++){
 		memcpy(buf + i*hor_stride,crop_image->crop_yuv_buffer[frame_info.frame_offset] + i*width,width);
 	}
@@ -150,10 +150,10 @@ static MPP_RET encode_app_ctx_init(MpiEncMultiCtxInfo *info)
 	p->bps_max      = cmd->bps_max;
 	p->rc_mode      = cmd->rc_mode;
 	p->frame_num    = cmd->frame_num;
-	if (cmd->type == MPP_VIDEO_CodingMJPEG && p->frame_num == 0) {
-		SLOGI("jpege default encode only one frame. Use -n [num] for rc case\n");
-		p->frame_num = 1;
-	}
+	// if (cmd->type == MPP_VIDEO_CodingMJPEG && p->frame_num == 0) {
+	// 	SLOGI("jpege default encode only one frame. Use -n [num] for rc case\n");
+	// 	p->frame_num = 1;
+	// }
 	p->gop_mode     = cmd->gop_mode;
 	p->gop_len      = cmd->gop_len;
 	p->vi_len       = cmd->vi_len;
@@ -514,7 +514,7 @@ static MPP_RET app_mpp_run(MpiEncMultiCtxInfo *info)
 	memset(&checkcrc, 0, sizeof(checkcrc));
 	checkcrc.sum = mpp_malloc(RK_ULONG, 512);
 
-	if (p->type == MPP_VIDEO_CodingAVC || p->type == MPP_VIDEO_CodingHEVC) {
+	if (p->type == MPP_VIDEO_CodingAVC || p->type == MPP_VIDEO_CodingHEVC || p->type == MPP_VIDEO_CodingMJPEG) {
 		MppPacket packet = NULL;
 
 		/*
@@ -836,13 +836,22 @@ static MPP_RET app_mpp_run(MpiEncMultiCtxInfo *info)
 #endif             
 
 		if (p->frame_num > 0 && p->frame_count >= p->frame_num)
+		{
+			printf("chn %d frame_num:%d frame_count:%d \n", chn, p->frame_num, p->frame_count);
 			break;
+		}
 
 		if (p->loop_end)
+		{
+			printf("chn %d loop_end:%d \n", chn, p->loop_end);
 			break;
+		}
 
 		if (p->frm_eos && p->pkt_eos)
+		{
+			printf("chn %d frm_eos:%d pkt_eos:%d \n", chn, p->frm_eos, p->pkt_eos);
 			break;
+		}
 	}
 RET:
 	MPP_FREE(checkcrc.sum);
@@ -1018,12 +1027,14 @@ unsigned int mpp_encode_chn_init(unsigned int chn, unsigned char image_chn, MpiE
 	mpi_encode->encode_cmd[chn].fps_out_den = 1;
 
 	mpi_encode->encode_cmd[chn].type = encode_cmd->type;
-// #if TEST
+#if TEST
 	if(encode_cmd->type == MPP_VIDEO_CodingAVC)
 		mpi_encode->encode_cmd[chn].file_output = "/tmp/output.h264";
 	else if(encode_cmd->type == MPP_VIDEO_CodingHEVC)
 		mpi_encode->encode_cmd[chn].file_output = "/tmp/output.h265";
-// #endif
+	else if(encode_cmd->type == MPP_VIDEO_CodingMJPEG)
+		mpi_encode->encode_cmd[chn].file_output = "/tmp/output.mjpeg";
+#endif
 
 	mpi_encode->encode_cmd[chn].bps_target = encode_cmd->bps_target;
 

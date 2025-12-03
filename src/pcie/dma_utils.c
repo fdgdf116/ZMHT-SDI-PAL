@@ -109,7 +109,7 @@ ssize_t write_from_buffer(int fd, uint8_t *buffer, uint64_t size, uint64_t base,
 			perror("write file");
 			return -EIO;
 		}
-		// usleep(10);
+		usleep(10);
 
 		count += rc;
 		if (rc != bytes) {

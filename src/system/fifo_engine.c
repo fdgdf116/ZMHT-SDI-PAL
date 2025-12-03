@@ -78,7 +78,7 @@ typedef enum {
 typedef struct {
     uint8_t axififo_data[81*1024];
     unsigned char pc_enable;
-    unsigned char rk_enable;
+    unsigned char rk_enable[MPP_ENCODE_NTHREAD_MAX];
     stream_fifo_reg_t fifo_reg;
 } axififo_info_t;
 
@@ -323,13 +323,13 @@ static void request_type2_mpp_destory(int chn)
 }
 
 int EncodeStart(int chn){
-    int ret = rga_chn_image_init(chn);
-    if (ret != 0) {
-        SLOGI("rga_chn_image_init error \n");
-        goto err_4;
-    }
-    sleep(1);
-    if(g_axififo_info->rk_enable && (chn == 0)) {
+    if(g_axififo_info->rk_enable[chn%MPP_ENCODE_NTHREAD_MAX]) {
+        int ret = rga_chn_image_init(chn);
+        if (ret != 0) {
+            SLOGI("rga_chn_image_init error \n");
+            goto err_4;
+        }
+        sleep(1);
         pcie_set_rk_enable();
     }
     // if(g_axififo_info->pc_enable) {
@@ -438,7 +438,7 @@ void EncodeStop(int chn)
 	SLOGI("[Debug] %s mpp_encode_chn_destory ok \n", __func__);
 	usleep(100*1000);
 
-	g_axififo_info->rk_enable = 0;
+	g_axififo_info->rk_enable[chn%MPP_ENCODE_NTHREAD_MAX] = 0;
 	// g_axififo_info->pc_enable = 0;
 
 	mpi_encode->encode_size_max = MPP_OUTPUT_FRAME_SIZE;
@@ -649,7 +649,7 @@ static unsigned int axififo_frame_request_type2(unsigned char* frame_buff, unsig
         usleep(10*1000);
 
 		printf("rgb rk_enable\n");
-		g_axififo_info->rk_enable = 1;
+		g_axififo_info->rk_enable[chn%MPP_ENCODE_NTHREAD_MAX] = 1;
 	}
 	return COMD_PROC_SUCCESS;
 
@@ -1666,51 +1666,51 @@ int run_test()
 {
     int ret = 0;
 
-	// cmd_buff = (unsigned char*)malloc(sizeof(mpp_encode_info_t) + 1);
-	// mpp_encode_info_t* mpp_info = (mpp_encode_info_t*)(cmd_buff + 1);
-	// mpp_info->chn = 0;
-	// mpp_info->fps = 25;
-	// mpp_info->width = 1920;
-	// mpp_info->height = 1080;
-    // mpp_info->image_w0 = 256;
-	// mpp_info->image_y0 = 256;
-	// mpp_info->mpp_bps = 1;
-	// mpp_info->extraction = 0;
-	// mpp_info->mpp_type = 0;
-	// mpp_info->out_type = MPP_OUT_TYPE;
-	// mpp_info->rotate = 0;
-	// mpp_info->position = 0;
-	// mpp_info->resize = 1;
-	// mpp_info->resize_width = 1920;
-	// mpp_info->resize_height = 1080;
-	// mpp_info->crop = 0;
-	// mpp_info->crop_width = 768;
-	// mpp_info->crop_height = 768;
-	// axififo_frame_request_type2(cmd_buff,sizeof(mpp_encode_info_t) + 1);
-    // ret = EncodeStart(mpp_info->chn);
+	cmd_buff = (unsigned char*)malloc(sizeof(mpp_encode_info_t) + 1);
+	mpp_encode_info_t* mpp_info = (mpp_encode_info_t*)(cmd_buff + 1);
+	mpp_info->chn = 0;
+	mpp_info->fps = 25;
+	mpp_info->width = 1920;
+	mpp_info->height = 1080;
+    mpp_info->image_w0 = 256;
+	mpp_info->image_y0 = 256;
+	mpp_info->mpp_bps = 1;
+	mpp_info->extraction = 0;
+	mpp_info->mpp_type = 2;
+	mpp_info->out_type = MPP_OUT_TYPE;
+	mpp_info->rotate = 0;
+	mpp_info->position = 0;
+	mpp_info->resize = 1;
+	mpp_info->resize_width = 1920;
+	mpp_info->resize_height = 1080;
+	mpp_info->crop = 0;
+	mpp_info->crop_width = 768;
+	mpp_info->crop_height = 768;
+	axififo_frame_request_type2(cmd_buff,sizeof(mpp_encode_info_t) + 1);
+    ret = EncodeStart(mpp_info->chn);
 
-    cfg_info = (cfg_info_t*)malloc(sizeof(cfg_info_t));
-    if(cfg_info == NULL){
-        printf("[ERROR] cfg_info malloc error \n");
-        ret = A818_PCIE_DATA_MALLOC;
-        return -1;
-    }
-    FILE* fp = NULL;
-    cfg_info->channel_param.chn = 2;
-    cfg_info->channel_param.rotate = 0;
-    cfg_info->channel_param.resize = 1;
-    cfg_info->channel_param.resize_width = 720;
-    cfg_info->channel_param.resize_higth = 576;
-    cfg_info->channel_param.image_length0 = 720;
-    cfg_info->channel_param.image_width0 = 576;
-    cfg_info->channel_param.image_fps = 60;
-    cfg_info->channel_param.image_w0 = 256;
-    cfg_info->channel_param.image_y0 = 256;
-    printf("cfg_info_image_w0:%d, cfg_info_image_y0:%d\n",cfg_info->channel_param.image_w0,cfg_info->channel_param.image_y0);
-    strcpy(cfg_info->in_filename_chn, "output.mjpeg");
-    sprintf(cfg_info->out_filename_chn, "output%d.raw",cfg_info->channel_param.chn);
-    decode_configuration_init(cfg_info);
-    ret = DecodeStart(cfg_info->channel_param.chn);
+    // cfg_info = (cfg_info_t*)malloc(sizeof(cfg_info_t));
+    // if(cfg_info == NULL){
+    //     printf("[ERROR] cfg_info malloc error \n");
+    //     ret = A818_PCIE_DATA_MALLOC;
+    //     return -1;
+    // }
+    // FILE* fp = NULL;
+    // cfg_info->channel_param.chn = 2;
+    // cfg_info->channel_param.rotate = 0;
+    // cfg_info->channel_param.resize = 1;
+    // cfg_info->channel_param.resize_width = 720;
+    // cfg_info->channel_param.resize_higth = 576;
+    // cfg_info->channel_param.image_length0 = 720;
+    // cfg_info->channel_param.image_width0 = 576;
+    // cfg_info->channel_param.image_fps = 60;
+    // cfg_info->channel_param.image_w0 = 256;
+    // cfg_info->channel_param.image_y0 = 256;
+    // printf("cfg_info_image_w0:%d, cfg_info_image_y0:%d\n",cfg_info->channel_param.image_w0,cfg_info->channel_param.image_y0);
+    // strcpy(cfg_info->in_filename_chn, "output.mjpeg");
+    // sprintf(cfg_info->out_filename_chn, "output%d.raw",cfg_info->channel_param.chn);
+    // decode_configuration_init(cfg_info);
+    // ret = DecodeStart(cfg_info->channel_param.chn);
 
     // osd_tmp_info = (uint8_t *)malloc(sizeof(osd_image_info_t) + 1);
     // if(osd_tmp_info == NULL){

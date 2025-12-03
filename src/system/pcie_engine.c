@@ -46,7 +46,7 @@
 #define FPGA2RK_VFIFO_SIZE_OFFSET (0x28)
 #define RK2FPGA_VFIFO_SIZE_OFFSET (0x104)
 
-#define FPGA_READ_DATA_ROW_MAX (200)
+#define FPGA_READ_DATA_ROW_MAX (800)
 #define FPGA_READ_ONE_DATA_MAX (FPGA_ROW_DATA_SIZE * FPGA_READ_DATA_ROW_MAX)
 // #define FPGA_READ_ONE_DATA_MAX (1*1024*1024)
 
@@ -733,8 +733,8 @@ int pcie_set_rk_enable()
     pcie_bar_write_reg(g_fpga_pcie->pcie_reg, MULTIPLEX_RECV_EN, 1);
     usleep(1000);
     //内源使能
-    pcie_bar_write_reg(g_fpga_pcie->pcie_reg, IN_SOURCE_EN, 1);
-    usleep(1000);
+    // pcie_bar_write_reg(g_fpga_pcie->pcie_reg, IN_SOURCE_EN, 1);
+    // usleep(1000);
 }
 
 int pcie_set_rk_disable()
@@ -811,9 +811,13 @@ static void *pcie_read_data_thread(void* parameter)
     ring_buffer_t *rb = g_fpga_pcie->pcie_data_rb;
     uint8_t *pcie_buf = g_fpga_pcie->pcie_data;
     image_frame_info_t frame_info;
+    //计算dma_memory_mapped_read读取速率
+    struct timespec start_tm,end_tm;
+    long long time_cost = 0;
+    clock_gettime(CLOCK_MONOTONIC,&start_tm);
 
     while(1) {
-        fpga_vfifo_size = pcie_get_fpga2rk_vfifo_szie();
+        fpga_vfifo_size = pcie_get_fpga2rk_vfifo_szie()*32;
         if(fpga_vfifo_size >= frame_size) {
             if(pcie_buf_offset >= pcie_offset_max){
                 pcie_buf_offset = 0;
@@ -827,6 +831,10 @@ static void *pcie_read_data_thread(void* parameter)
                 pcie_data_to_queue(&frame_info, rb);
                 pcie_buf_offset += pcie_offset;
                 pcie_read_frame += 1;
+                // clock_gettime(CLOCK_MONOTONIC,&end_tm);
+                // time_cost = (end_tm.tv_sec - start_tm.tv_sec) * 1000000 + (end_tm.tv_nsec - start_tm.tv_nsec) / 1000;
+                // printf("speed %f MBps read frame %d, time cost %lld us\n",frame_size*1.0/1024/1024/time_cost*1000000,pcie_read_frame,time_cost);
+                // memcpy(&start_tm,&end_tm,sizeof(struct timespec));
 
             } else {
                 SLOGI("[ERROR] PCIE READ DATA ERROR \n");
@@ -965,7 +973,7 @@ int pcie_chn_data_analysis(unsigned char chn, unsigned char* chn_buf_l)
 
 	chn_image_buf = (uint8_t*)chn_image->chn_data.yuv420_data[chn_data->rb_offset].vir_addr;
 	if((!chn_image_buf)){
-		printf("[Debug] %s chn:%d get chn_image_buf error \n", __func__, chn);
+		// printf("[Debug] %s chn:%d get chn_image_buf error \n", __func__, chn);
 		return 3;
 	}
 
@@ -974,11 +982,11 @@ int pcie_chn_data_analysis(unsigned char chn, unsigned char* chn_buf_l)
 
 		memcpy_len = chn_data->frame_size - chn_data->data_offset; /* 剩余的进行拷贝 */
 		memcpy(chn_image_buf + chn_data->data_offset, (chn_buf_l + FPGA_PCIE_DATA_HEAD_SIZE),memcpy_len);
-        // if(chn == 0)
-        // {
-        //     FAPI_imagebase_odd_transform_to_origin(data_stream->image_chn_info[chn]->rga_info.src_width, data_stream->image_chn_info[chn]->rga_info.src_height, 2, chn_image_buf, NULL);
-        //     // odd_transform_yuv(chn_image_buf,chn);
-        // }
+        if(chn == 0)
+        {
+            FAPI_imagebase_odd_transform_to_origin(data_stream->image_chn_info[chn]->rga_info.src_width, data_stream->image_chn_info[chn]->rga_info.src_height, 2, chn_image_buf, NULL);
+            // odd_transform_yuv(chn_image_buf,chn);
+        }
 		// save_image_data(chn_image_buf,chn_data->frame_size,"/tmp/chn_image_buf.raw");
 		chn_rb = GetInPutRingBufferPt(chn);
 		if(chn_rb){
@@ -1033,7 +1041,7 @@ int pcie_chn_data_analysis(unsigned char chn, unsigned char* chn_buf_l)
 		fpga传递的数据是有协议的，协议为64 + 5120 = 5184，每个5184会打一次帧头，
 		因此按照5184的整数倍来读取数据，这样方便确认是不是丢数据。
 */
-#if 0
+#if TEST
 static void *pcie_data_analysis_thread(void* parameter)
 {
 	u_int32_t ret;
@@ -1053,7 +1061,7 @@ static void *pcie_data_analysis_thread(void* parameter)
 	GPU_Frame_st* gpu_frame_stream = gpu_data_stream_get();;
 	gpu_image_info_t *gpu_image = &gpu_frame_stream->gpu_image[chn];;
 
-	FILE* fp_datasrc = fopen("/userdata/output_720x576.yuyv","rb");
+	FILE* fp_datasrc = fopen("/userdata/output_1920x1080.yuyv","rb");
 	if(fp_datasrc == NULL)
 	{
 		SLOGI("fp_datasrc open fail!");
@@ -1067,32 +1075,42 @@ static void *pcie_data_analysis_thread(void* parameter)
 	CPU_SET(6, &mask), CPU_SET(7, &mask);
 	pthread_setaffinity_np(pthread_self( ), sizeof(mask), &mask);
 
-	// chn_image_buf = (uint8_t*)malloc(gpu_image->frame_size);
+	chn_image = data_stream->chn_image[chn];
+	if(!chn_image){
+		SLOGI("-1-CHN:%d malloc chn_image error \n", chn);
+		return 4;
+	}
+    chn_data_info_t* chn_data = &chn_image->chn_data;
+    if (!chn_data)
+    {
+        SLOGI("-1-CHN:%d malloc chn_data error \n", chn);
+		return 5;
+    } 
+
 	while(1){
-		chn_image_buf = (uint8_t*)chn_image->chn_data.yuv422_data[gpu_image->rb_offset].vir_addr;
+		chn_image_buf = (uint8_t*)chn_image->chn_data.yuv420_data[chn_data->rb_offset].vir_addr;
 		if(chn_image_buf == NULL)
 		{
 			continue;
 		}
-		ret = fread(chn_image_buf,1,gpu_image->frame_size,fp_datasrc);
+		ret = fread(chn_image_buf,1,chn_data->frame_size,fp_datasrc);
 		fflush(fp_datasrc);
-		if(ret != gpu_image->frame_size)
+		if(ret != chn_data->frame_size)
 		{
-			SLOGI("fp_datasrc read over ret:%d frame_size:%d,come back\n",ret,gpu_image->frame_size);
+			SLOGI("fp_datasrc read over ret:%d frame_size:%d,come back\n",ret,chn_data->frame_size);
 			rewind(fp_datasrc);
 			continue;
 		}
-		chn_rb = chn_image->chn_data_rb;
+		chn_rb = GetInPutRingBufferPt(chn);;
 		if(chn_rb){
 			if(!ringbuffer_is_full(chn_rb)){
-				chn_frame_info.frame_offset = gpu_image->rb_offset;
+				chn_frame_info.frame_offset = chn_data->rb_offset;
 				//chn_frame_info.frame_index = gpu_image->rb_offset;
-				chn_frame_info.frame_size = gpu_image->frame_size;
-				chn_frame_info.t0 = what_time_is_it_now();
+				chn_frame_info.frame_size = chn_data->frame_size;
 				pcie_fpga2rga_image_to_queue(chn, &chn_frame_info);
-				gpu_image->rb_offset += 1;
-				if(gpu_image->rb_offset >= (chn_image->data_frame_max + 1)){
-					gpu_image->rb_offset = 0;
+				chn_data->rb_offset += 1;
+				if(chn_data->rb_offset >= (chn_image->data_frame_max + 1)){
+					chn_data->rb_offset = 0;
 				}
 			}
 		} else {
@@ -1115,6 +1133,7 @@ static void *pcie_data_analysis_thread(void* parameter)
 	uint8_t *chn_buf_l;
 	ring_buffer_t *rb = g_fpga_pcie->pcie_data_rb;
 	unsigned int pcie_data_head = 0x499602d2;
+    u_int32_t head_err_cnt = 0;
 
 	cpu_set_t mask;
 	CPU_ZERO(&mask);
@@ -1143,7 +1162,9 @@ static void *pcie_data_analysis_thread(void* parameter)
             // save_image_data(chn_buf_l, FPGA_ROW_DATA_SIZE , "/tmp/chn_buf_l.raw");
 
 			if(PCIE_GET_DATA_HEAD(chn_buf_l) != pcie_data_head){ /*帧头错误，则跳过本帧解析*/
-				SLOGI("pcie index (0x%x != 0x%x )error \n", PCIE_GET_DATA_HEAD(chn_buf_l), pcie_data_head);
+                if(head_err_cnt%10000 == 0)
+                    SLOGI("pcie index (0x%x != 0x%x )error \n", PCIE_GET_DATA_HEAD(chn_buf_l), pcie_data_head);
+                head_err_cnt++;
 				continue;
 			}
 
@@ -1152,7 +1173,6 @@ static void *pcie_data_analysis_thread(void* parameter)
 				SLOGI("get pcie data chn(%d - %d) error \n", chn, chn_buf_l[16]);
 				continue;
 			}
-
 			pcie_chn_data_analysis(chn, chn_buf_l);
 		}
 	}

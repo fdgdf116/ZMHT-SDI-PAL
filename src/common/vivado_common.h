@@ -9,7 +9,7 @@ extern "C" {
 
 #define PAL_RK3588_VERSION 0x10000000
 #define PAL_RK3588_BUILD_TIME 0x20251106
-#define TEST 1
+#define TEST 0
 
 enum video_ratio_e {
     VIDEO_RATIO_1 = 1,
@@ -52,7 +52,7 @@ enum video_common_e {
 
 
 enum data_stream_e {
-    PCIE_DATA_STREAM_FRAME_MAX = 64,
+    PCIE_DATA_STREAM_FRAME_MAX = 16,
 
     DATA_4K_STREAM_FRAME_MAX = 1,  /* buf 缓冲区 */
     DATA_STREAM_FRAME_MAX = 5,  /* buf 缓冲区 */

@@ -105,6 +105,7 @@ void* rga_deal(void* arg){
             rga_cvtColor(&chn_image->chn_data.yuv420_data[frame_info.frame_offset],\
                 &gpu_image->in_rgb_buffer[chn_image->chn_data.resize_rb_offset]);
         }
+        // save_image_data((char*)gpu_image->in_rgb_buffer[chn_image->chn_data.resize_rb_offset].vir_addr, resize_size, rga_test_file);
         // pthread_mutex_unlock(&data_stream->rga_lock);
         if(!ringbuffer_is_full(rb_out)){
             event_param.chn = chn;
