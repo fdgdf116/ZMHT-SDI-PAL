@@ -770,7 +770,7 @@ static void pcie_data_to_queue(image_frame_info_t *frame_info, ring_buffer_t *rb
 	image_frame_info_t frame_param, tmp_param;
 	if (ringbuffer_is_full(rb)) {					
 		ringbuffer_get(rb, (uint8_t *)&tmp_param, sizeof(tmp_param));
-        SLOGI("[Debug] %s ringbuffer_is_full", __func__);
+        SLOGI("[Debug] %s ringbuffer_is_full\n", __func__);
 	}
 
     memcpy(&frame_param,frame_info,sizeof(image_frame_info_t));		
@@ -1048,7 +1048,7 @@ static void *pcie_data_analysis_thread(void* parameter)
 	struct timeval time;
 	uint8_t *pcie_buf;
 	unsigned int chn, frame_index;
-	chn = 0;
+	chn = 1;
 	image_frame_info_t frame_info;
 	uint8_t *chn_buf_l;
 	ring_buffer_t *rb = g_fpga_pcie->pcie_data_rb;

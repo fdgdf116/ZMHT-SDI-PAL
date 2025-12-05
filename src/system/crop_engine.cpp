@@ -116,7 +116,9 @@ err_1:
 void crop_chn_ringbuffer_is_empty(unsigned char chn)
 {
 	Crop_Frame_st* crop_stream = crop_data_stream_get();
+	image_frame_info_t frame_info = {0};
 	while(!ringbuffer_is_empty(crop_stream->crop_data_rb[chn])){
+		ringbuffer_get(crop_stream->crop_data_rb[chn], (uint8_t *)&frame_info, sizeof(image_frame_info_t));
 		xt_nanosleep(0, 100);
 	}
 }

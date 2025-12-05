@@ -514,7 +514,7 @@ static MPP_RET app_mpp_run(MpiEncMultiCtxInfo *info)
 	memset(&checkcrc, 0, sizeof(checkcrc));
 	checkcrc.sum = mpp_malloc(RK_ULONG, 512);
 
-	if (p->type == MPP_VIDEO_CodingAVC || p->type == MPP_VIDEO_CodingHEVC || p->type == MPP_VIDEO_CodingMJPEG) {
+	if (p->type == MPP_VIDEO_CodingAVC || p->type == MPP_VIDEO_CodingHEVC) {
 		MppPacket packet = NULL;
 
 		/*
@@ -1084,8 +1084,10 @@ void mpp_encode_chn_destory(unsigned int chn)
 	GPU_Frame_st* gpu_frame_stream = gpu_data_stream_get();
 	Crop_Frame_st* crop_stream = crop_data_stream_get();
 	crop_image_info_t* crop_image = &crop_stream->crop_image[chn];
+	image_frame_info_t frame_info = {0};
 
 	while(!ringbuffer_is_empty(gpu_frame_stream->mpp_data_rb[chn%MPP_ENCODE_NTHREAD_MAX])){
+		ringbuffer_get(gpu_frame_stream->mpp_data_rb[chn%MPP_ENCODE_NTHREAD_MAX], (uint8_t *)&frame_info, sizeof(image_frame_info_t));
 		// printf("InPutRingBuffer is_empty\n");
 		time_val.tv_sec=0;
 		time_val.tv_usec=(1000);

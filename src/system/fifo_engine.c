@@ -330,7 +330,10 @@ int EncodeStart(int chn){
             goto err_4;
         }
         sleep(1);
+#if TEST
+#else
         pcie_set_rk_enable();
+#endif
     }
     // if(g_axififo_info->pc_enable) {
     //     pcie_set_pc_enable(1);
@@ -1668,7 +1671,7 @@ int run_test()
 
 	cmd_buff = (unsigned char*)malloc(sizeof(mpp_encode_info_t) + 1);
 	mpp_encode_info_t* mpp_info = (mpp_encode_info_t*)(cmd_buff + 1);
-	mpp_info->chn = 0;
+	mpp_info->chn = 1;
 	mpp_info->fps = 25;
 	mpp_info->width = 1920;
 	mpp_info->height = 1080;
@@ -1680,7 +1683,7 @@ int run_test()
 	mpp_info->out_type = MPP_OUT_TYPE;
 	mpp_info->rotate = 0;
 	mpp_info->position = 0;
-	mpp_info->resize = 1;
+	mpp_info->resize = 0;
 	mpp_info->resize_width = 1920;
 	mpp_info->resize_height = 1080;
 	mpp_info->crop = 0;

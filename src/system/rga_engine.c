@@ -79,6 +79,7 @@ void* rga_deal(void* arg){
             SLOGI("[ERROR] %s chn:%d frame_offset:%d yuv420_data is NULL\n", __func__, chn, frame_info.frame_offset);
             continue;
         }
+        // save_image_data((char*)chn_image->chn_data.yuv420_data[frame_info.frame_offset].vir_addr, image_chn_info->rga_info.src_width * image_chn_info->rga_info.src_height * 2, "/tmp/rga_input.raw");
         if(chn_image->chn_data.resize_rb_offset >= 2*(chn_image->data_frame_max + 1)){
             chn_image->chn_data.resize_rb_offset = 0;
         }
@@ -105,7 +106,7 @@ void* rga_deal(void* arg){
             rga_cvtColor(&chn_image->chn_data.yuv420_data[frame_info.frame_offset],\
                 &gpu_image->in_rgb_buffer[chn_image->chn_data.resize_rb_offset]);
         }
-        // save_image_data((char*)gpu_image->in_rgb_buffer[chn_image->chn_data.resize_rb_offset].vir_addr, resize_size, rga_test_file);
+        // save_image_data((char*)gpu_image->in_rgb_buffer[chn_image->chn_data.resize_rb_offset].vir_addr, resize_size, "/tmp/rga_output.raw");
         // pthread_mutex_unlock(&data_stream->rga_lock);
         if(!ringbuffer_is_full(rb_out)){
             event_param.chn = chn;
@@ -163,9 +164,9 @@ unsigned int rga_chn_image_init(unsigned char chn)
 	memset(&chn_image->chn_data, 0x0, sizeof(chn_image->chn_data));
 	chn_image->chn_data.data_offset = 0;
     if(chn < MPP_ENCODE_NTHREAD_MAX)
-        chn_image->chn_data.frame_size = w_stride*h_stride*2;
+        chn_image->chn_data.frame_size = rga_info->src_width * rga_info->src_height * 2;
     else
-        chn_image->chn_data.frame_size = w_stride*h_stride*3/2;
+        chn_image->chn_data.frame_size = rga_info->src_width * rga_info->src_height * 3/2;
 	chn_image->chn_data.rb_offset = 0;
 
 	SLOGI("[DEBUG] %s chn:%d frame_size:%d (%d-%d-%d-%d-%d-%d)\n", __func__, chn, chn_image->chn_data.frame_size,rga_info->src_width,rga_info->src_height,\
@@ -292,14 +293,15 @@ void rga_pthread_chn_destory(unsigned char chn)
     image_chn_info_t* image_chn_info = data_stream->image_chn_info[chn];
     ring_buffer_t *rb_in = GetInPutRingBufferPt(chn);
     struct timeval time_val;
-    printf("chn:%d %s line:%d test\n", chn, __func__, __LINE__);
+    image_frame_info_t frame_info = {0};
+
     while(!ringbuffer_is_empty(rb_in)){
+        ringbuffer_get(rb_in, (uint8_t *)&frame_info, sizeof(image_frame_info_t));
         // printf("InPutRingBuffer is_empty\n");
         time_val.tv_sec=0;
         time_val.tv_usec=(1000);
         select(0,NULL,NULL,NULL,&time_val);
     }
-    printf("chn:%d %s line:%d test\n", chn, __func__, __LINE__);
     if(!image_chn_info->rga_info.rga_flag){
         //pthread_cancel(gs_osd_stream->chn_info[chn].osd_tid);
         image_chn_info->rga_info.rga_flag = 1;
@@ -322,12 +324,10 @@ void data_stream_chn_data_destory(unsigned char chn)
 	int index;
 	data_stream_t *data_stream = data_stream_get();
 	fpga_chn_image_info_t* chn_image = data_stream->chn_image[chn];
-    printf("chn:%d %s line:%d test\n", chn, __func__, __LINE__);
     if(chn_image->chn_data.rgb888_data.vir_addr){
         rga_release_frame_image2(&chn_image->chn_data.rgb888_data);
         chn_image->chn_data.rgb888_data.vir_addr = NULL;
     }
-    printf("chn:%d %s line:%d test\n", chn, __func__, __LINE__);
     if(chn_image->chn_data.rotate_data.vir_addr){
         rga_release_frame_image2(&chn_image->chn_data.rotate_data);
         chn_image->chn_data.rotate_data.vir_addr = NULL;
@@ -336,14 +336,12 @@ void data_stream_chn_data_destory(unsigned char chn)
     //     rga_release_frame_image2(&chn_image->chn_data.tmp_data);
     //     chn_image->chn_data.tmp_data.vir_addr = NULL;
     // }
-    printf("chn:%d %s line:%d test\n", chn, __func__, __LINE__);
 	for(index = 0; index < (chn_image->data_frame_max + 1); index++){
 		if(chn_image->chn_data.yuv420_data[index].vir_addr){
 			rga_release_frame_image2(&chn_image->chn_data.yuv420_data[index]);
 			chn_image->chn_data.yuv420_data[index].vir_addr = NULL;
 		}
 	}
-    printf("chn:%d %s line:%d test\n", chn, __func__, __LINE__);
     if(chn_image->rga_vir_addr){
         free(chn_image->rga_vir_addr);
         chn_image->rga_vir_addr = NULL;

@@ -788,14 +788,17 @@ void gui_osd_overlapped_chn_destory(unsigned char chn)
   fpga_chn_image_info_t* chn_image = data_stream->chn_image[chn];
   ring_buffer_t* osd_data_rb = gpu_frame_stream->osd_data_rb[chn];
 	ring_buffer_t* resize_data_rb = chn_image->resize_data_rb;
+  image_frame_info_t frame_info = {0};
 
   while(!ringbuffer_is_empty(resize_data_rb)){
+    ringbuffer_get(resize_data_rb, (uint8_t *)&frame_info, sizeof(image_frame_info_t));
     // printf("InPutRingBuffer is_empty\n");
     time_val.tv_sec=0;
     time_val.tv_usec=(1000);
     select(0,NULL,NULL,NULL,&time_val);
   }
   while(!ringbuffer_is_empty(osd_data_rb)){
+    ringbuffer_get(osd_data_rb, (uint8_t *)&frame_info, sizeof(image_frame_info_t));
     // printf("InPutRingBuffer is_empty\n");
     time_val.tv_sec=0;
     time_val.tv_usec=(1000);

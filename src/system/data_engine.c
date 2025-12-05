@@ -252,8 +252,10 @@ int writePL_chn_destory(unsigned char chn)
     ring_buffer_t* pcie_data_rb = chn_image->pcie_data_rb;
 	Crop_Frame_st* crop_stream = crop_data_stream_get();
 	crop_image_info_t *crop_image = &crop_stream->crop_image[chn];
+    image_frame_info_t frame_info = {0};
 
     while(!ringbuffer_is_empty(pcie_data_rb)){
+        ringbuffer_get(pcie_data_rb, (uint8_t *)&frame_info, sizeof(image_frame_info_t));
         // printf("InPutRingBuffer is_empty\n");
         time_val.tv_sec=0;
         time_val.tv_usec=(1000);
