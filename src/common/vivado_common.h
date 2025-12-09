@@ -165,6 +165,7 @@ typedef struct {
     u_int16_t   chn;            /*rga处理通路*/
     u_int16_t   out_color;      /*输出颜色选择*/
     u_int16_t   rotate;         /*旋转角度*/
+    u_int16_t   odd_even_transform; /*奇数行偶数行变换标志*/
     u_int16_t   resize;         /*是否缩放*/
     u_int16_t   resize_width;  /*缩放宽*/
     u_int16_t   resize_higth;   /*缩放高*/

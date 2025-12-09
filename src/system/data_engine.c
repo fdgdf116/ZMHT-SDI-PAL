@@ -141,7 +141,7 @@ int picture_init(u_int32_t chn)
     fflush(picture_info->pitture_fp);
     fclose(picture_info->pitture_fp);
     if(picture_info->chn == 0)
-        FAPI_imagebase_odd_transform_to_target(picture_info->weidth, picture_info->height, 2, picture_info->pitture_buf,NULL);
+        FAPI_image_odd_transform_to_target(picture_info->weidth, picture_info->height, 2, picture_info->pitture_buf, picture_info->pitture_buf);
     picture_info->send_flag = 0;
     mpp_info->decode_state = pthread_create(&picture_info->pht_picture, NULL, thread_picture_decode, &picture_info->chn);
     return 0;

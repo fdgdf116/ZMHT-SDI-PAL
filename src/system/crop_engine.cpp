@@ -391,77 +391,24 @@ bool FAPI_imagebase_odd_transform_to_origin(uint32_t width, uint32_t height, uin
 	}
 }
 
-bool FAPI_imagebase_odd_transform_to_target(uint32_t width, uint32_t height, uint8_t px_size, uint8_t* img, uint8_t* temp_boost)
+bool FAPI_image_odd_transform_to_target(uint32_t width, uint32_t height, uint8_t px_size, const uint8_t* src, uint8_t* target)
 {
-	if (!img || !width || !height || !px_size)
+	if (!src || !target)
 		return false;
-
-	uint16_t row_len = width * px_size;
-
-	uint8_t* temp_row = nullptr;
-	bool* visit_map = nullptr;
-
-	if (temp_boost)
+	// 典型场图像要求偶数高度
+	if (height % 2 != 0)
+		return false;
+	const size_t width_size = (size_t)width * px_size;
+	for (size_t src_row = 0; src_row < height; ++src_row)
 	{
-		temp_row = temp_boost;
-		visit_map = (bool*)(temp_boost + row_len);
-	}
-	else
-	{
-		temp_row = new uint8_t[row_len];
-		visit_map = new bool[height];
-	}
-	memset(visit_map, false, height);
+		size_t target_row;
+#if 1 // 奇在上，偶在下
+		target_row = (src_row % 2) ? src_row / 2 : src_row / 2 + height / 2;
+#else // 偶在上，奇在下
+		target_row = (src_row % 2) ? src_row / 2 + height / 2 : src_row / 2;
+#endif
 
-	uint32_t start = 1;
-	uint32_t current = start;
-	memcpy(temp_row, &img[current * row_len], row_len); // 保存第1行数据
-	visit_map[start] = true;
-
-	while (true)
-	{
-		// 原始图 → 奇偶场的映射公式（逆运算）
-		uint32_t next = (current < height / 2) ? (current * 2) : (current - height / 2) * 2 + 1;
-
-		if (next == start)
-		{
-			// 完成闭环
-			uint16_t temp_target = (start % 2) ? (start + height) / 2 : start / 2;
-			memcpy(&img[temp_target * row_len], temp_row, row_len);
-			visit_map[temp_target] = true;
-
-			// 检查是否有未访问行
-			uint32_t unvisited = 0;
-			for (uint16_t i = 1; i < height - 1; ++i)
-			{
-				if (!visit_map[i])
-				{
-					unvisited = i;
-					break;
-				}
-			}
-			if (unvisited)
-			{
-				start = unvisited;
-				current = start;
-				memcpy(temp_row, &img[start * row_len], row_len);
-				continue;
-			}
-			else
-				break;
-		}
-		else
-			visit_map[current] = true;
-
-		// 数据向目标索引移动
-		memcpy(&img[current * row_len], &img[next * row_len], row_len);
-		current = next;
-	}
-
-	if (!temp_boost)
-	{
-		delete[] temp_row;
-		delete[] visit_map;
+		memcpy(target + width_size * target_row, src + width_size * src_row, width_size);
 	}
 
 	return true;
@@ -508,6 +455,7 @@ static void* crop_thread(void* parameter)
 
 	uint8_t* crop_yuv_addr = NULL;
 	uint8_t* out_yuv_addr = NULL;
+	uint8_t* send_yuv_addr = NULL;
 	unsigned int width = image_chn_info->rga_info.out_width;
 	unsigned int height = image_chn_info->rga_info.out_height;
 	
@@ -539,23 +487,37 @@ static void* crop_thread(void* parameter)
 		}
 
 		out_yuv_addr = gpu_image->out_yuv_buffer[frame_info.frame_offset];
-		if(crop_chn < MPP_ENCODE_NTHREAD_MAX)
-			crop_yuv_addr = crop_image->crop_yuv_buffer[crop_image->crop_rb_offset];
-		else
-			crop_yuv_addr = send_buf + crop_image->crop_rb_offset*width*height*2;
-		if(crop_chn == 2)
-		{
-			FAPI_imagebase_odd_transform_to_target(image_chn_info->rga_info.osd_width, image_chn_info->rga_info.osd_height, 2, out_yuv_addr, NULL);
-		}
+		crop_yuv_addr = crop_image->crop_yuv_buffer[crop_image->crop_rb_offset];
+		send_yuv_addr = send_buf + crop_image->crop_rb_offset*width*height*2;
 		if(image_chn_info->rga_info.crop_flag)
 		{
 			if(image_chn_info->rga_info.out_color == 3)
 				data_stream_crop_src_to_new_nv12(0,out_yuv_addr,crop_yuv_addr,image_chn_info->rga_info,0,0);
 			else
 				data_stream_crop_src_to_new_yuyv(0,out_yuv_addr,crop_yuv_addr,image_chn_info->rga_info,0,0);
+			if(image_chn_info->rga_info.odd_even_transform && (crop_chn >= MPP_ENCODE_NTHREAD_MAX))
+			{
+				FAPI_image_odd_transform_to_target(width, height, 2, crop_yuv_addr, send_yuv_addr);
+			}
 		}
 		else
-			memcpy(crop_yuv_addr,out_yuv_addr,frame_info.frame_size);
+		{
+			if(crop_chn >= MPP_ENCODE_NTHREAD_MAX)
+			{
+				if(image_chn_info->rga_info.odd_even_transform)
+				{
+					FAPI_image_odd_transform_to_target(width, height, 2, out_yuv_addr, send_yuv_addr);
+				}
+				else
+				{
+					memcpy(send_yuv_addr,out_yuv_addr,frame_info.frame_size);
+				}
+			}
+			else
+			{
+				memcpy(crop_yuv_addr,out_yuv_addr,frame_info.frame_size);
+			}
+		}
 		// if(crop_chn < MPP_ENCODE_NTHREAD_MAX)
 		// 	save_image_data((char*)crop_yuv_addr,width*height*3/2,"/tmp/crop_buf.raw");
 		// else

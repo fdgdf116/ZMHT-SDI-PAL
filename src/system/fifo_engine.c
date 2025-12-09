@@ -537,7 +537,8 @@ static unsigned int axififo_frame_request_type2(unsigned char* frame_buff, unsig
     rga_info->src_height = mpp_info->height;
     rga_info->image_w0 = mpp_info->image_w0;
     rga_info->image_y0 = mpp_info->image_y0;
-    printf("chn:%x mpp_chn:%x frame_type:%x fps:%x width:%x height:%x image_w0:%x image_y0:%x mpp_type:%x mpp_bps:%x position:%x out_type:%x extraction:%x\n",mpp_info->chn,mpp_info->mpp_chn,mpp_info->frame_type,mpp_info->fps,mpp_info->width,mpp_info->height,mpp_info->image_w0,mpp_info->image_y0,mpp_info->mpp_type,mpp_info->mpp_bps,mpp_info->position, mpp_info->out_type,mpp_info->extraction);
+    rga_info->odd_even_transform = mpp_info->odd_even_transform;
+    printf("chn:%x mpp_chn:%x frame_type:%x fps:%x width:%x height:%x image_w0:%x image_y0:%x mpp_type:%x mpp_bps:%x position:%x out_type:%x extraction:%x  odd_even_transform:%x\n",mpp_info->chn,mpp_info->mpp_chn,mpp_info->frame_type,mpp_info->fps,mpp_info->width,mpp_info->height,mpp_info->image_w0,mpp_info->image_y0,mpp_info->mpp_type,mpp_info->mpp_bps,mpp_info->position, mpp_info->out_type,mpp_info->extraction,mpp_info->odd_even_transform);
 
     if( rga_info->rotate_type == IM_HAL_TRANSFORM_ROT_90 || rga_info->rotate_type == IM_HAL_TRANSFORM_ROT_270 )
     {
@@ -597,11 +598,11 @@ static unsigned int axififo_frame_request_type2(unsigned char* frame_buff, unsig
     mpp_info->width = rga_info->out_width;
     mpp_info->height = rga_info->out_height;
 
-    SLOGI("out_color:%d src_width:%d src_height:%d rotate_width:%d rotate_height:%d resize_width:%d resize_height:%d image_w0:%d image_y0:%d osd_width:%d osd_height:%d out_width:%d out_height:%d totate_type:%d resize:%d crop:%d out_type:%d pixel_byte:%f\n",
+    SLOGI("out_color:%d src_width:%d src_height:%d rotate_width:%d rotate_height:%d resize_width:%d resize_height:%d image_w0:%d image_y0:%d osd_width:%d osd_height:%d out_width:%d out_height:%d totate_type:%d resize:%d crop:%d out_type:%d pixel_byte:%f odd_even_transform:%d\n",
           rga_info->out_color, rga_info->src_width,rga_info->src_height, rga_info->rotate_width, rga_info->rotate_height,
           rga_info->resize_width, rga_info->resize_height, rga_info->image_w0, rga_info->image_y0,
           rga_info->osd_width, rga_info->osd_height, rga_info->out_width, rga_info->out_height,
-          rga_info->rotate_type, rga_info->resize, rga_info->crop_flag,mpp_info->out_type, rga_info->pixel_byte);
+          rga_info->rotate_type, rga_info->resize, rga_info->crop_flag,mpp_info->out_type, rga_info->pixel_byte, rga_info->odd_even_transform);
 
 	/*判断输出的类型*/
 	switch(mpp_info->out_type){

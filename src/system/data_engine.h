@@ -79,6 +79,7 @@ typedef struct {
 	unsigned char crop;
 	unsigned int crop_width;
 	unsigned int crop_height;
+    unsigned char odd_even_transform;
 }mpp_encode_info_t;
 #pragma pack()
 typedef struct {
@@ -101,6 +102,7 @@ typedef struct {
     u_int32_t rotate_type;
     u_int32_t resize;
     u_int16_t crop_flag; /*裁剪标志*/
+    u_int16_t odd_even_transform; /*奇数行偶数行变换标志*/
 }rga_param_t ;
 typedef struct {
     pthread_t pht_up;

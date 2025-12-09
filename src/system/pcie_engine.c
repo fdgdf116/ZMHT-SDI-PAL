@@ -356,6 +356,7 @@ int decode_configuration_init(cfg_info_t* reg_val_info)
     rga_info->crop_flag = cfg_info->channel_param.crop;
     rga_info->src_width = mpp_info->width;
     rga_info->src_height = mpp_info->height;
+    rga_info->odd_even_transform = cfg_info->channel_param.odd_even_transform;
     if( rga_info->rotate_type == IM_HAL_TRANSFORM_ROT_90 || rga_info->rotate_type == IM_HAL_TRANSFORM_ROT_270 )
     {
         rga_info->rotate_width = rga_info->src_height;
@@ -413,11 +414,11 @@ int decode_configuration_init(cfg_info_t* reg_val_info)
     }
     pcie_info->out_width = rga_info->out_width;
     pcie_info->out_height = rga_info->out_height;
-    SLOGI("out_color:%d rotate_width:%d rotate_height:%d resize_width:%d resize_height:%d image_w0:%d image_y0:%d osd_width:%d osd_height:%d out_width:%d out_height:%d totate_type:%d resize:%d crop:%d pixel_byte:%f\n",
+    SLOGI("out_color:%d rotate_width:%d rotate_height:%d resize_width:%d resize_height:%d image_w0:%d image_y0:%d osd_width:%d osd_height:%d out_width:%d out_height:%d totate_type:%d resize:%d crop:%d pixel_byte:%f odd_even_transform:%d\n",
           rga_info->out_color, rga_info->rotate_width, rga_info->rotate_height,
           rga_info->resize_width, rga_info->resize_height, rga_info->image_w0, rga_info->image_y0,
           rga_info->osd_width, rga_info->osd_height, rga_info->out_width, rga_info->out_height,
-          rga_info->rotate_type, rga_info->resize, rga_info->crop_flag, rga_info->pixel_byte);
+          rga_info->rotate_type, rga_info->resize, rga_info->crop_flag, rga_info->pixel_byte, rga_info->odd_even_transform);
 
     ret = writePL_chn_init(rga_info->rga_chn);
     if(ret != 0) 
@@ -425,7 +426,7 @@ int decode_configuration_init(cfg_info_t* reg_val_info)
         SLOGI("writePL_chn_init error \n");
         goto err_1;
     }
-    ret = crop_chn_init(rga_info->rga_chn);
+    ret = crop_chn_image_init(rga_info->rga_chn);
     if(ret != 0) 
     {
         SLOGI("writePL_chn_init error \n");
@@ -958,6 +959,8 @@ int pcie_chn_data_analysis(unsigned char chn, unsigned char* chn_buf_l)
 		return 2;
 	}
 
+    rga_param_t* rga_info = &data_stream->image_chn_info[chn]->rga_info;
+
 	chn_image = data_stream->chn_image[chn];
 	if(!chn_image){
 		SLOGI("-1-CHN:%d malloc chn_image error \n", chn);
@@ -982,7 +985,7 @@ int pcie_chn_data_analysis(unsigned char chn, unsigned char* chn_buf_l)
 
 		memcpy_len = chn_data->frame_size - chn_data->data_offset; /* 剩余的进行拷贝 */
 		memcpy(chn_image_buf + chn_data->data_offset, (chn_buf_l + FPGA_PCIE_DATA_HEAD_SIZE),memcpy_len);
-        if(chn == 0)
+        if(rga_info->odd_even_transform && (chn < MPP_ENCODE_NTHREAD_MAX))
         {
             FAPI_imagebase_odd_transform_to_origin(data_stream->image_chn_info[chn]->rga_info.src_width, data_stream->image_chn_info[chn]->rga_info.src_height, 2, chn_image_buf, NULL);
             // odd_transform_yuv(chn_image_buf,chn);
