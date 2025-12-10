@@ -82,13 +82,13 @@ int crop_chn_image_init(unsigned char chn)
 	/* 初始化输入的crop buffer*/
 	for(index = 0; index < crop_image->data_frame_max+1; index++)
 	{
-		crop_image->crop_yuv_buffer[index] = (uint8_t*)aligned_alloc(4096, (crop_width * crop_hight*3/2));
+		crop_image->crop_yuv_buffer[index] = (uint8_t*)aligned_alloc(4096, (crop_width * crop_hight*2));
 		if(crop_image->crop_yuv_buffer[index] == NULL){
 			printf("[ERROR] crop yuv buffer(%d) acquire error \n", index);
 			ret = A818_CROP_DATA_BUFFER;
 			goto err_1;
 		}
-		memset(crop_image->crop_yuv_buffer[index], 0x0, (crop_width * crop_hight*3/2));
+		memset(crop_image->crop_yuv_buffer[index], 0x0, (crop_width * crop_hight*2));
 	}
 
 	crop_chn_init(chn);
