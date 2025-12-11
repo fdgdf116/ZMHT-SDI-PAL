@@ -499,6 +499,10 @@ static void* crop_thread(void* parameter)
 			{
 				FAPI_image_odd_transform_to_target(width, height, 2, crop_yuv_addr, send_yuv_addr);
 			}
+			else if(crop_chn >= MPP_ENCODE_NTHREAD_MAX)
+			{
+				memcpy(send_yuv_addr,crop_yuv_addr,width*height*2);
+			}
 		}
 		else
 		{
