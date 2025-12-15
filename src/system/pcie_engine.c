@@ -326,7 +326,12 @@ int decode_configuration_init(cfg_info_t* reg_val_info)
         printf("decoding!!!\n");
         return -1;
     }
-    parse_stream_info(cfg_info->in_filename_chn,&mpp_info->decode_type,&mpp_info->fps,&mpp_info->width, &mpp_info->height);
+    ret = parse_stream_info(cfg_info->in_filename_chn,&mpp_info->decode_type,&mpp_info->fps,&mpp_info->width, &mpp_info->height);
+    if(ret)
+    {
+        SLOGI("parse_stream_info err, ret = %d", ret);
+        return -1;
+    }
     mpp_info->fps = cfg_info->channel_param.image_fps;
     loop_data->fps = mpp_info->fps;
     loop_data->fp_input = fopen(cfg_info->in_filename_chn, "rb");

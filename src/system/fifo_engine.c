@@ -348,7 +348,7 @@ err_4:
 int DecodeStart(int chn){
     data_stream_t* data_stream = data_stream_get();
     mpp_decode_info_t* mpp_info = data_stream->mpp_decode_info[chn%MPP_DECODE_NTHREAD_MAX];
-
+    vfifo_reg_reset(chn-1);
     if(!mpp_info->decode_state)
     {
         printf("decoding!!!\n");
@@ -366,7 +366,7 @@ int DecodeStart(int chn){
 #endif
 }
 
-void DecodeStop(int chn){
+int DecodeStop(int chn){
     data_stream_t* data_stream = data_stream_get();
     mpp_decode_info_t *mpp_info = data_stream->mpp_decode_info[chn%MPP_DECODE_NTHREAD_MAX];
     picture_info_t *picture_info = &data_stream->picture_info[chn%MPP_DECODE_NTHREAD_MAX];
@@ -374,7 +374,7 @@ void DecodeStop(int chn){
     if(mpp_info->decode_state)
     {
         printf("no decoding!!!\n");
-        return;
+        return 1;
     }
     picture_info->send_flag = 1;
     mpp_info->decode_state = 1;
@@ -388,9 +388,10 @@ void DecodeStop(int chn){
     crop_chn_image_destory(chn);
     writePL_chn_destory(chn);
 
-    vfifo_reg_reset(chn+1);
+    vfifo_reg_reset(chn-1);
 	memset(&data_stream->image_chn_info[chn]->osd_info, 0x0, sizeof(osd_image_info_t));
     printf("DecodeStop finished!!!\n");
+    return 0;
 }
 
 /***********************************************************************/
@@ -420,7 +421,7 @@ void clean_system_buff_cache(void)
 	SLOGI("[Debug] %s ok \n", __func__);
 }
 
-void EncodeStop(int chn)
+int EncodeStop(int chn)
 {
 	fpga_chn_image_info_t* chn_image;
 	data_stream_t *data_stream = data_stream_get();
@@ -449,6 +450,7 @@ void EncodeStop(int chn)
 	memset(&data_stream->image_chn_info[chn]->osd_info, 0x0, sizeof(osd_image_info_t));
 	clean_system_buff_cache();
 	// pcie_fpga_reg_reset();
+    return 0;
 }
 
 /********************通用参数寄存器，用bar0配置**************************************/
@@ -480,7 +482,11 @@ static int axififo_frame_request_type17(unsigned char* frame_buff, unsigned int 
         tmp_val_info[i] = ntohs(tmp_val_info[i]);
     }
     cfg_info_t* reg_val_info = (cfg_info_t*)tmp_val_info;
-    decode_configuration_init(reg_val_info);
+    int ret = decode_configuration_init(reg_val_info);
+    if(ret)
+    {
+        return COMD_PROC_FAILED;
+    }
     return COMD_PROC_SUCCESS;
 }
 /* 帧类型2 (图像采集配置) */
@@ -783,14 +789,14 @@ int axififo_frame_request_type9(unsigned char* frame_buff, unsigned int frame_si
     if(chn >= MPP_DECODE_NTHREAD_MAX)
     {
         ret = DecodeStart(chn);
-        if(ret < 0){
+        if(ret){
             goto error;
         }
     }
     else
     {
         ret = EncodeStart(chn);
-        if(ret < 0){
+        if(ret){
             goto error;
         }
     }
@@ -944,29 +950,29 @@ int axififo_frame_request_type12(unsigned char* frame_buff, unsigned int frame_s
            osd_info->font_color,osd_info->color,osd_info->string_x,osd_info->string_y,
            osd_info->x,osd_info->y,osd_info->x_off,osd_info->y_off,
            osd_info->image_x0,osd_info->image_y0,osd_info->data_size);
-    if(osd_info->font_format >= OSD_GUI_FONT_FORMAT_MAX || osd_info->font_size >= OSD_GUI_FONT_SIZE_MAX)
-    {
-        printf("font_format or font_size error Use default parameters, osd_info->font_format:%d,osd_info->font_size:%d\n",osd_info->font_format,osd_info->font_size);
-        goto error;
-    }
-    if((osd_info->image_x0 + rga_info->image_w0 > canvas_width) || (osd_info->image_y0 + rga_info->image_y0 > canvas_height))
-    {
-        printf("image_x0 image_y0 too large, image_x0:%d,image_y0:%d canvas_width:%d canvas_height:%d\n",
-               osd_info->image_x0+rga_info->image_w0, osd_info->image_y0+rga_info->image_y0,canvas_width,canvas_height);
-        goto error;
-    }
-    if((osd_info->string_x + (osd_info->font_size+1)*11*osd_info->data_size > canvas_width) || (osd_info->string_y + (osd_info->font_size+1)*11 > canvas_height))
-    {
-        printf("string_x string_y too large, string_x:%d,string_y:%d\n",
-               osd_info->string_x + (osd_info->font_size+1)*11*osd_info->data_size, osd_info->string_y + (osd_info->font_size+1)*11);
-        goto error;
-    }
-    if((osd_info->x + osd_info->x_off > canvas_width) || (osd_info->y + osd_info->y_off > canvas_height))
-    {
-        printf("x_off y_off too large, x_off:%d,y_off:%d\n",
-            osd_info->x + osd_info->x_off, osd_info->y + osd_info->y_off);
-        goto error;
-    }
+    // if(osd_info->font_format >= OSD_GUI_FONT_FORMAT_MAX || osd_info->font_size >= OSD_GUI_FONT_SIZE_MAX)
+    // {
+    //     printf("font_format or font_size error Use default parameters, osd_info->font_format:%d,osd_info->font_size:%d\n",osd_info->font_format,osd_info->font_size);
+    //     goto error;
+    // }
+    // if((osd_info->image_x0 + rga_info->image_w0 > canvas_width) || (osd_info->image_y0 + rga_info->image_y0 > canvas_height))
+    // {
+    //     printf("image_x0 image_y0 too large, image_x0:%d,image_y0:%d canvas_width:%d canvas_height:%d\n",
+    //            osd_info->image_x0+rga_info->image_w0, osd_info->image_y0+rga_info->image_y0,canvas_width,canvas_height);
+    //     goto error;
+    // }
+    // if((osd_info->string_x + (osd_info->font_size+1)*11*osd_info->data_size > canvas_width) || (osd_info->string_y + (osd_info->font_size+1)*11 > canvas_height))
+    // {
+    //     printf("string_x string_y too large, string_x:%d,string_y:%d\n",
+    //            osd_info->string_x + (osd_info->font_size+1)*11*osd_info->data_size, osd_info->string_y + (osd_info->font_size+1)*11);
+    //     goto error;
+    // }
+    // if((osd_info->x + osd_info->x_off > canvas_width) || (osd_info->y + osd_info->y_off > canvas_height))
+    // {
+    //     printf("x_off y_off too large, x_off:%d,y_off:%d\n",
+    //         osd_info->x + osd_info->x_off, osd_info->y + osd_info->y_off);
+    //     goto error;
+    // }
     return COMD_PROC_SUCCESS;
     error:
         memset(osd_info,0x00,sizeof(osd_image_info_t));

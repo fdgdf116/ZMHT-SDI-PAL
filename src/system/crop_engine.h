@@ -46,7 +46,7 @@ void crop_chn_ringbuffer_is_empty(unsigned char chn);
  */
 bool FAPI_imagebase_odd_transform_to_origin(uint32_t width, uint32_t height, uint8_t px_size, uint8_t* img, uint8_t* temp_boost);
 // @note  将单帧图像数据转换成行场分割的图像数据（参数同上）
-bool FAPI_image_odd_transform_to_target(uint32_t width, uint32_t height, uint8_t px_size, const uint8_t* src, uint8_t* target);
+bool FAPI_image_odd_transform_to_target(uint32_t width, uint32_t height, uint8_t px_size, u_int16_t odd_even_flag, const uint8_t* src, uint8_t* target);
 int crop_stream_init(void);
 void crop_stream_destory(void);
 int crop_chn_init(unsigned char chn);

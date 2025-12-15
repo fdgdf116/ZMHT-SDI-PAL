@@ -391,7 +391,7 @@ bool FAPI_imagebase_odd_transform_to_origin(uint32_t width, uint32_t height, uin
 	}
 }
 
-bool FAPI_image_odd_transform_to_target(uint32_t width, uint32_t height, uint8_t px_size, const uint8_t* src, uint8_t* target)
+bool FAPI_image_odd_transform_to_target(uint32_t width, uint32_t height, uint8_t px_size, u_int16_t odd_even_flag, const uint8_t* src, uint8_t* target)
 {
 	if (!src || !target)
 		return false;
@@ -402,11 +402,16 @@ bool FAPI_image_odd_transform_to_target(uint32_t width, uint32_t height, uint8_t
 	for (size_t src_row = 0; src_row < height; ++src_row)
 	{
 		size_t target_row;
-#if 1 // 奇在上，偶在下
-		target_row = (src_row % 2) ? src_row / 2 : src_row / 2 + height / 2;
-#else // 偶在上，奇在下
-		target_row = (src_row % 2) ? src_row / 2 + height / 2 : src_row / 2;
-#endif
+		if(odd_even_flag == 1)
+		{
+			// 奇在上，偶在下
+			target_row = (src_row % 2) ? src_row / 2 : src_row / 2 + height / 2;
+		}
+		else if(odd_even_flag == 2)
+		{
+			// 偶在上，奇在下
+			target_row = (src_row % 2) ? src_row / 2 + height / 2 : src_row / 2;
+		}
 
 		memcpy(target + width_size * target_row, src + width_size * src_row, width_size);
 	}
@@ -497,7 +502,7 @@ static void* crop_thread(void* parameter)
 				data_stream_crop_src_to_new_yuyv(0,out_yuv_addr,crop_yuv_addr,image_chn_info->rga_info,0,0);
 			if(image_chn_info->rga_info.odd_even_transform && (crop_chn >= MPP_ENCODE_NTHREAD_MAX))
 			{
-				FAPI_image_odd_transform_to_target(width, height, 2, crop_yuv_addr, send_yuv_addr);
+				FAPI_image_odd_transform_to_target(width, height, 2, image_chn_info->rga_info.odd_even_transform, crop_yuv_addr, send_yuv_addr);
 			}
 			else if(crop_chn >= MPP_ENCODE_NTHREAD_MAX)
 			{
@@ -510,7 +515,7 @@ static void* crop_thread(void* parameter)
 			{
 				if(image_chn_info->rga_info.odd_even_transform)
 				{
-					FAPI_image_odd_transform_to_target(width, height, 2, out_yuv_addr, send_yuv_addr);
+					FAPI_image_odd_transform_to_target(width, height, 2, image_chn_info->rga_info.odd_even_transform, out_yuv_addr, send_yuv_addr);
 				}
 				else
 				{
