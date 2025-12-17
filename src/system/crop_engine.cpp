@@ -393,11 +393,14 @@ bool FAPI_imagebase_odd_transform_to_origin(uint32_t width, uint32_t height, uin
 
 bool FAPI_image_odd_transform_to_target(uint32_t width, uint32_t height, uint8_t px_size, u_int16_t odd_even_flag, const uint8_t* src, uint8_t* target)
 {
+	u_int32_t fill_row = 0;
 	if (!src || !target)
 		return false;
 	// 典型场图像要求偶数高度
-	if (height % 2 != 0)
-		return false;
+	if ((height % 2 != 0) && (odd_even_flag == 2))
+		fill_row = 1;
+	else
+		fill_row = 0;
 	const size_t width_size = (size_t)width * px_size;
 	for (size_t src_row = 0; src_row < height; ++src_row)
 	{
@@ -410,7 +413,7 @@ bool FAPI_image_odd_transform_to_target(uint32_t width, uint32_t height, uint8_t
 		else if(odd_even_flag == 2)
 		{
 			// 偶在上，奇在下
-			target_row = (src_row % 2) ? src_row / 2 + height / 2 : src_row / 2;
+			target_row = ((src_row % 2) ? src_row / 2 + height / 2 : src_row / 2) + fill_row;
 		}
 
 		memcpy(target + width_size * target_row, src + width_size * src_row, width_size);
@@ -528,9 +531,14 @@ static void* crop_thread(void* parameter)
 			}
 		}
 		// if(crop_chn < MPP_ENCODE_NTHREAD_MAX)
+		// {
 		// 	save_image_data((char*)crop_yuv_addr,width*height*3/2,"/tmp/crop_buf.raw");
+		// }
 		// else
+		// {
 		// 	save_image_data((char*)crop_yuv_addr,width*height*2,"/tmp/crop_buf.raw");
+		// 	save_image_data((char*)send_yuv_addr,width*height*2,"/tmp/send_buf.raw");
+		// }
 
 		/*放到编码的ring buffer中，后续进行编码输出*/
 		if(!ringbuffer_is_full(rb_t)){

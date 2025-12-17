@@ -114,31 +114,6 @@ void gui_osd_src_image(unsigned char chn)
 		/*获取到对应通道的画布的位置*/
 		y_start = rga_info.rga_chn * VIDEO_OSD_HIGHT;
 
-		/*根据叠加的位置获取到叠加的起始点坐标*/
-		switch(osd_info->time_position){
-			case 0:
-				position_x = 0;
-				position_y = y_start;
-				break;
-			case 1:
-				position_x = chn_width - (offset*13);
-				position_y = y_start;
-				break;
-			case 2:
-				position_x = 0;
-				position_y = y_start + chn_height - (offset*4);
-				break;
-			case 3:
-				position_x = chn_width - (offset*13);
-				position_y = y_start + chn_height - (offset*4);
-				break;
-			default:
-				position_x = 0;
-				position_y = y_start;
-				break;
-
-		}
-
     pthread_mutex_lock(&data_stream->osd_lock);
 		/*根据不同的分辨率设置时帧标显示的大小*/
 		if(chn_height <= 256){
@@ -156,6 +131,31 @@ void gui_osd_src_image(unsigned char chn)
 		} else {
 			GUI_SetFont(&GUI_FontHZ64x64_songti);
 			offset = 64;
+		}
+
+		/*根据叠加的位置获取到叠加的起始点坐标*/
+		switch(osd_info->time_position){
+			case 0:
+				position_x = offset;
+				position_y = y_start + offset;
+				break;
+			case 1:
+				position_x = chn_width - (offset*13);
+				position_y = y_start + offset;
+				break;
+			case 2:
+				position_x = offset;
+				position_y = y_start + chn_height - (offset*4);
+				break;
+			case 3:
+				position_x = chn_width - (offset*13);
+				position_y = y_start + chn_height - (offset*4);
+				break;
+			default:
+				position_x = 0;
+				position_y = y_start;
+				break;
+
 		}
 
 		GUI_SetColor(GUI_GREEN);
@@ -534,14 +534,14 @@ static void* gui_paint_on_canvas_thread(void* parameter)
               memcpy(image_over_data + osd_info->image_y0*over_width*3 + osd_info->image_x0*3 + i * over_width * 3, gpu_image->over_image + image_chn_info->rga_info.image_w0*i*3, image_chn_info->rga_info.image_w0*3);
           }
       }
+      if(((osd_info->osd_type >> Char_Osd) & 0x01) || ((osd_info->osd_type >> Shape_Osd) & 0x01))
+      {
+        gui_osd_stitchbase_image(over_chn);
+      }
       if((osd_info->osd_type >> Time_Osd) & 0x01)
       {
         /*在画布上画时针标*/
         gui_osd_src_image(over_chn);
-      }
-      if(((osd_info->osd_type >> Char_Osd) & 0x01) || ((osd_info->osd_type >> Shape_Osd) & 0x01))
-      {
-        gui_osd_stitchbase_image(over_chn);
       }
       out_gui_osd_addr = gpu_image->gui_osd_buffer[frame_info.frame_offset%(DATA_STREAM_FRAME_MAX + 1)];
       /*裁剪出需要的画布*/
