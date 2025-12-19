@@ -85,10 +85,10 @@ void* rga_deal(void* arg){
         }
         // gettimeofday(&t1, NULL);
         // pthread_mutex_lock(&data_stream->rga_lock);
+        rga_cvtColor(&chn_image->chn_data.yuv420_data[frame_info.frame_offset],\
+            &chn_image->chn_data.rgb888_data);
         if(rga_info.rotate_type)
         {
-            rga_cvtColor(&chn_image->chn_data.yuv420_data[frame_info.frame_offset],\
-                &chn_image->chn_data.rgb888_data);
             if(rga_info.resize)
             {
                 rga_rotate(&chn_image->chn_data.rgb888_data,\
@@ -103,10 +103,14 @@ void* rga_deal(void* arg){
         }
         else
         {
-            rga_cvtColor(&chn_image->chn_data.yuv420_data[frame_info.frame_offset],\
-                &gpu_image->in_rgb_buffer[chn_image->chn_data.resize_rb_offset]);
+            rga_resize(&chn_image->chn_data.rgb888_data, &gpu_image->in_rgb_buffer[chn_image->chn_data.resize_rb_offset]);
         }
-        // save_image_data((char*)gpu_image->in_rgb_buffer[chn_image->chn_data.resize_rb_offset].vir_addr, resize_size, "/tmp/rga_output.raw");
+        // if(chn == 1)
+        // {
+        //     save_image_data(chn_image->chn_data.yuv420_data[frame_info.frame_offset].vir_addr, 720*488*2, "/tmp/yuv420_data.raw");
+        //     save_image_data(chn_image->chn_data.rgb888_data.vir_addr, 720*488*3, "/tmp/rgb888_data.raw");
+        //     save_image_data((char*)gpu_image->in_rgb_buffer[chn_image->chn_data.resize_rb_offset].vir_addr, 736*488*3, "/tmp/rga_output.raw");
+        // }
         // pthread_mutex_unlock(&data_stream->rga_lock);
         if(!ringbuffer_is_full(rb_out)){
             event_param.chn = chn;
@@ -213,7 +217,7 @@ unsigned int rga_chn_image_init(unsigned char chn)
         for(index = 0; index < chn_image->data_frame_max + 1; index++){
             buffer_len = get_rga_vir_buffer_len(RK_FORMAT_YUYV_422, rga_info->src_width%16 == 0 ? rga_info->src_width : (rga_info->src_width/16 + 1)*16,rga_info->src_height%2 == 0 ? rga_info->src_height : (rga_info->src_height/2 + 1)*2);
             ret = rga_comm_create_image2(&chn_image->chn_data.yuv420_data[index],chn_image->rga_vir_addr +  chn_image->rga_addr_offset,RK_FORMAT_YUYV_422, \
-                rga_info->src_width,rga_info->src_height, rga_info->src_width%16 == 0 ? rga_info->src_width : (rga_info->src_width/16 + 1)*16, rga_info->src_height%2 == 0 ? rga_info->src_height : (rga_info->src_height/2 + 1)*2);
+                rga_info->src_width, rga_info->src_height%2 == 0 ? rga_info->src_height : (rga_info->src_height/2 + 1)*2, rga_info->src_width%16 == 0 ? rga_info->src_width : (rga_info->src_width/16 + 1)*16, rga_info->src_height%2 == 0 ? rga_info->src_height : (rga_info->src_height/2 + 1)*2);
             if(ret != 0){
                 printf("[ERROR] int rga yuv422_data[%d] error \n", index);
                 ret_val = A818_DATA_YUV_DATA;

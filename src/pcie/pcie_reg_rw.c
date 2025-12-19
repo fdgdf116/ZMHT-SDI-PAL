@@ -83,6 +83,7 @@
 
 static int gs_regrw_fd[3] = {0};
 static int bar_device_num = 2;
+extern pthread_mutex_t send_mutex;
 
 #define PCIE_GET_TIME_OFFSE_H (0x0C)
 #define PCIE_GET_TIME_OFFSE_L (0x10)
@@ -199,12 +200,17 @@ void* pcie_bar_mmap(unsigned int phy_address, unsigned int size,int bar_num)
 
 unsigned int pcie_bar_read_reg(void* addr, unsigned int offset)
 {
-	return PCIE_BAR_READ_REG(addr, offset);
+	pthread_mutex_lock(&send_mutex);
+	volatile u_int32_t value = PCIE_BAR_READ_REG(addr, offset);
+	pthread_mutex_unlock(&send_mutex);
+	return value;
 }
 
 void pcie_bar_write_reg(void* addr, unsigned int offset, unsigned int value)
 {
+	pthread_mutex_lock(&send_mutex);
 	PCIE_BAR_WRITE_REG(addr,offset,value);
+	 pthread_mutex_unlock(&send_mutex);
 	return ;
 }
 

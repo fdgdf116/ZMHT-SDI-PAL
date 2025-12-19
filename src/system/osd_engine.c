@@ -158,7 +158,7 @@ void gui_osd_src_image(unsigned char chn)
 
 		}
 
-		GUI_SetColor(GUI_GREEN);
+		GUI_SetColor(osd_info->font_color);
 
 		/*进行叠加时针标*/
 		GUI_SetPenSize(2);
@@ -455,6 +455,7 @@ static void* image_over_thread(void* parameter)
     // }
     // else if (rga_info.out_color == 3)
     // {
+    //   save_image_data(in_rgb_addr,width*height*3,"/tmp/in_rgb_addr.raw");
     //   save_image_data(out_yuv_addr,width*height*3/2,"/tmp/osd_buf.raw");
     // }
 		/*放到编码的ring buffer中，后续进行裁剪*/

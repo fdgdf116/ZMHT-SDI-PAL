@@ -532,6 +532,7 @@ static void* crop_thread(void* parameter)
 		}
 		// if(crop_chn < MPP_ENCODE_NTHREAD_MAX)
 		// {
+		// 	save_image_data((char*)out_yuv_addr,width*height*3/2,"/tmp/out_yuv_addr.raw");
 		// 	save_image_data((char*)crop_yuv_addr,width*height*3/2,"/tmp/crop_buf.raw");
 		// }
 		// else

@@ -43,8 +43,8 @@ static struct pcie_impl_info *g_pcie_info = NULL;
 
 static uint8_t *align_buf_r = NULL;
 static uint8_t *align_buf_w[DATA_CHANNEL_NUM_MAX] = {NULL};
- static uint8_t *align_buf_mpp_w[MPP_ENCODE_NTHREAD_MAX] = {NULL};
-static pthread_mutex_t send_mutex;
+static uint8_t *align_buf_mpp_w[MPP_ENCODE_NTHREAD_MAX] = {NULL};
+pthread_mutex_t send_mutex;
 
 
 static uint8_t *align_chn_reset_buf = NULL;
