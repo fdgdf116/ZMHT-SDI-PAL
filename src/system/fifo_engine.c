@@ -678,7 +678,9 @@ static unsigned int axififo_frame_request_type3(unsigned char* frame_buff, unsig
 {
     int ret = 0;
 
-    pcie_chn_stack_image(frame_buff,frame_size);
+    ret = pcie_chn_stack_image(frame_buff,frame_size);
+    if(ret != 0)
+        return COMD_PROC_FAILED;
     return COMD_PROC_SUCCESS;
 }
 /*****************************************************************************/

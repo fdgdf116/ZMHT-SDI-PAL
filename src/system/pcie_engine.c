@@ -618,7 +618,7 @@ int pcie_chn_stack_char_test_r()
     return 0;
 }
 
-void pcie_chn_stack_image(unsigned char* reg_val_info, unsigned int frame_size)
+int pcie_chn_stack_image(unsigned char* reg_val_info, unsigned int frame_size)
 {
     unsigned int reg_offset;
     unsigned char chn;
@@ -632,7 +632,12 @@ void pcie_chn_stack_image(unsigned char* reg_val_info, unsigned int frame_size)
     image_chn_info_t* image_chn_info = data_stream->image_chn_info[chn];
     rga_param_t* rga_info = &image_chn_info->rga_info;
 
-    uint8_t *pcie_buf = g_fpga_pcie->pcie_data;
+    if(data_len > 16*1024*1024)
+    {
+        printf("data_len:%d > 16MB\n",data_len);
+        return 1;
+    }
+    uint8_t *pcie_buf = align_over_buf_get();
     ret = dma_memory_mapped_read(pcie_buf,PCIE_READ_OTHER_DATA_ADDRESS, data_len,PCIE_C2H_0);
 
     if(ret == rga_info->image_w0 * rga_info->image_y0 *3)
@@ -642,7 +647,11 @@ void pcie_chn_stack_image(unsigned char* reg_val_info, unsigned int frame_size)
         // pcie_write_buf(pcie_stack_image_reg,reg_offset,pcie_buf,ret);
     }
     else
+    {
         printf("dma_memory_mapped_read err len:%d ret:%d !!!!",rga_info->image_w0 * rga_info->image_y0 *3,ret);
+        return 2;
+    }
+    return 0;
 }
 
 int pcie_chn_stack_image_test_w()
@@ -1307,7 +1316,7 @@ int pcie_read_data(uint32_t frame_size,FILE *fp){
     unsigned int pcie_read_frame = 0;
     unsigned int fpga_vfifo_size = 0;
 
-    uint8_t *pcie_buf = g_fpga_pcie->pcie_data;
+    uint8_t *pcie_buf = align_over_buf_get();
     image_frame_info_t frame_info;
 
     // fpga_vfifo_size = pcie_get_fpga2rk_vfifo_szie();

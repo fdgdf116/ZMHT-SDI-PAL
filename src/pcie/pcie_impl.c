@@ -34,14 +34,16 @@ struct pcie_impl_info {
 };
 
 static const uint32_t s_pcie_buf_size_max = (80*1024*1024);
+static const uint32_t s_image_over_buf_size_max = (16*1024*1024);
  static const uint32_t s_pcie_mpp_w_buf_size_max = (1024*1024);
-static const uint32_t s_pcie_w_buf_size_max = (5120*5120*3*(RINGBUFFER_FRAME_MAX+1));
+static const uint32_t s_pcie_w_buf_size_max = (4096*4096*3*(RINGBUFFER_FRAME_MAX+1));
 
 static const char *xdma_c2h_dev = "/dev/xdma0_c2h_0";
 static const char *xdma_h2c_dev = "/dev/xdma0_h2c_0";
 static struct pcie_impl_info *g_pcie_info = NULL;
 
 static uint8_t *align_buf_r = NULL;
+static uint8_t *align_over_data = NULL;
 static uint8_t *align_buf_w[DATA_CHANNEL_NUM_MAX] = {NULL};
 static uint8_t *align_buf_mpp_w[MPP_ENCODE_NTHREAD_MAX] = {NULL};
 pthread_mutex_t send_mutex;
@@ -84,6 +86,13 @@ int pcie_impl_init(void)
 		goto out;
 	}
 
+	posix_memalign((void **)&align_over_data, 4096 /*alignment */ , s_image_over_buf_size_max + 4096);
+	if (!align_over_data) {
+		fprintf(stderr, "OOM %lu.\n", s_image_over_buf_size_max + 4096);
+		ret = -1;
+		goto out;
+	}
+
 	posix_memalign((void **)&align_buf_r, 4096 /*alignment */ , s_pcie_buf_size_max + 4096);
 	if (!align_buf_r) {
 		fprintf(stderr, "OOM %lu.\n", s_pcie_buf_size_max + 4096);
@@ -100,14 +109,14 @@ int pcie_impl_init(void)
 		}
 	}
 
-	 for(index = 0; index < MPP_ENCODE_NTHREAD_MAX; index++){
-		 posix_memalign((void **)&align_buf_mpp_w[index], 4096 /*alignment */ , s_pcie_mpp_w_buf_size_max + 4096);
-		 if (!align_buf_w) {
-			 fprintf(stderr, "OOM %lu.\n", s_pcie_mpp_w_buf_size_max + 4096);
-			 ret = -1;
-			 goto out;
-		 }
-	 }
+	for(index = 0; index < MPP_ENCODE_NTHREAD_MAX; index++){
+		posix_memalign((void **)&align_buf_mpp_w[index], 4096 /*alignment */ , s_pcie_mpp_w_buf_size_max + 4096);
+		if (!align_buf_w) {
+			fprintf(stderr, "OOM %lu.\n", s_pcie_mpp_w_buf_size_max + 4096);
+			ret = -1;
+			goto out;
+		}
+	}
 
 	posix_memalign((void **)&align_chn_reset_buf, 4096 /*alignment */ , s_pcie_w_buf_size_max + 4096);
 	if (!align_chn_reset_buf) {
@@ -141,6 +150,10 @@ out:
 
 	if (align_buf_r) {
 		free(align_buf_r);
+	}
+
+	if (align_over_data) {
+		free(align_over_data);
 	}
 
 	for(index = 0; index < DATA_CHANNEL_NUM_MAX; index++){
@@ -177,6 +190,11 @@ void pcie_impl_destory(void)
 		align_buf_r = NULL;
 	}
 
+	if (align_over_data) {
+		free(align_over_data);
+		align_over_data = NULL;
+	}
+
 	for(int index = 0; index < DATA_CHANNEL_NUM_MAX; index++){
 		if (align_buf_w[index]) {
 			free(align_buf_w[index]);
@@ -205,6 +223,11 @@ void pcie_impl_destory(void)
 uint8_t *align_read_buf_get(void)
 {
 	return align_buf_r;
+}
+
+uint8_t *align_over_buf_get(void)
+{
+	return align_over_data;
 }
 
  uint8_t *align_write_buf_get(unsigned char index)

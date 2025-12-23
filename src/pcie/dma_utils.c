@@ -39,7 +39,7 @@ ssize_t read_to_buffer(int fd, char *buffer, uint64_t size,uint64_t base,int ch_
 		if (bytes > RW_MAX_SIZE)
 			bytes = RW_MAX_SIZE;
 
-		if (offset) {
+		// if (offset) {
 			rc = lseek(fd, offset, SEEK_SET);
 			if (rc != offset) {
 				fprintf(stderr, "c2h%d, seek off 0x%lx != 0x%lx.\n",
@@ -47,7 +47,7 @@ ssize_t read_to_buffer(int fd, char *buffer, uint64_t size,uint64_t base,int ch_
 				perror("seek file");
 				return -EIO;
 			}
-		}
+		// }
 
 		/* read data from file into memory buffer */
 		rc = read(fd, buf, bytes);

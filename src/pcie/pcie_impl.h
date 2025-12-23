@@ -37,6 +37,7 @@ int pcie_impl_init(void);
 void pcie_impl_destory(void);
 
 uint8_t *align_read_buf_get(void);
+uint8_t *align_over_buf_get(void);
 //uint8_t *align_write_buf_get(void);
  uint8_t *align_write_mpp_buf_get(unsigned char index);
 uint8_t *align_write_buf_get(unsigned char index);
