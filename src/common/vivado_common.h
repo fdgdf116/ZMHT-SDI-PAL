@@ -7,8 +7,6 @@ extern "C" {
 #include <sys/types.h>
 // #define DEC_CHN (4)
 
-#define PAL_RK3588_VERSION 0x10000001
-#define PAL_RK3588_BUILD_TIME 0x20251224
 #define TEST 0
 
 enum video_ratio_e {
