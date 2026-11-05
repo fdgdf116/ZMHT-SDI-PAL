@@ -3,8 +3,8 @@ cmake_minimum_required(VERSION 3.5.1)
 set(CMAKE_SYSTEM_NAME Linux)
 set(CMAKE_SYSTEM_PROCESSOR arm)
 
-set(CMAKE_C_COMPILER aarch64-linux-gcc)
-set(CMAKE_CXX_COMPILER aarch64-linux-g++)
+set(CMAKE_C_COMPILER /home/wang/ZMHT-Tool/rk3588_toolchain/bin/aarch64-linux-gcc)
+set(CMAKE_CXX_COMPILER /home/wang/ZMHT-Tool/rk3588_toolchain/bin/aarch64-linux-g++)
 
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
