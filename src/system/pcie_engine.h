@@ -21,16 +21,22 @@ int pcie_chn_stack_image(unsigned char* reg_val_info, unsigned int frame_size);
 void pcie_VdmaConfigInit(vdma_configuration_info_t *vdma_configuration_info);
 void vfifo_reg_reset(int chn);
 int pcie_set_rk_enable();
+int pcie_set_rk_disable(void);
 // void pcie_set_pc_enable(unsigned char val);
 
 int fpga_pcie_device_open(void);
 void fpga_pcie_device_close(void);
 
 int pcie_fpga_data_init(void);
-void pcie_fpga_data_destory(void);
+int pcie_fpga_data_destory(void);
 
 void pcie_close_chn_enable(unsigned int chn);
 void pcie_fpga_device_stop(void);
+void pcie_dma_pause(void);
+int pcie_dma_prepare_start(void);
+void pcie_dma_resume(void);
+uint32_t pcie_dma_generation_get(void);
+int pcie_dma_is_active(void);
 
 // void pcie_get_selftest_val(selftest_val_info_t* info);
 

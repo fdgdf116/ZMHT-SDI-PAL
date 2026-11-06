@@ -10,9 +10,11 @@
 #include "a818_error.h"
 #include "crop_engine.h"
 #include "gpu_interface.h"
+#include "stream_lifecycle.h"
 
 static mpi_encode_info_t *gs_mpi_encode;
 #define ringbuffer_destory ringbuffer_deinit
+static unsigned char encode_thread_created[MPP_ENCODE_NTHREAD_MAX];
 
 const char *encode_name[MPP_ENCODE_NTHREAD_MAX] = {"yuv_encode0","yuv_encode1"};
 
@@ -44,6 +46,9 @@ int  video_data_wait_and_get(uint8_t chn, uint8_t *buf, uint32_t width, uint32_t
 			return 1;
 		}       
 	}
+	STREAM_WORK_GUARD(work, chn, STREAM_WORK);
+	if (!work.active)
+		return 1;
 
 	ringbuffer_get(rb, (uint8_t *)&frame_info, sizeof(image_frame_info_t));
 	// memcpy(buf,crop_image->crop_yuv_buffer[frame_info.frame_offset],width*height*3/2);
@@ -940,6 +945,15 @@ static void *mpp_frame_encode_thread(void *arg)
 		SLOGI("Error:test mpp setup failed ret %d\n", ret);
 		goto FAILED_OUT;
 	}
+	stream_ready(info->chn, STREAM_READY_MPP);
+
+	/* Configuration precedes TYPE9. Keep the encoder parked until start. */
+	while (stream_state(info->chn) != STREAM_RUNNING) {
+		if (__atomic_load_n(&gs_mpi_encode->image_encode[info->chn].encode_flag,
+		                    __ATOMIC_ACQUIRE))
+			goto FAILED_OUT;
+		usleep(1000);
+	}
 
 	ret = app_mpp_run(info);    
 	if (ret) {
@@ -1014,6 +1028,8 @@ unsigned int mpp_encode_chn_init(unsigned int chn, unsigned char image_chn, MpiE
 {
 	int ret;
 	mpi_encode_info_t* mpi_encode = mpi_encode_info_get();
+	if (encode_thread_created[chn])
+		return A818_SUCCESS;
 
 	mpi_encode->encode_cmd[chn].width = encode_cmd->width;
 	mpi_encode->encode_cmd[chn].height = encode_cmd->height;
@@ -1062,8 +1078,17 @@ unsigned int mpp_encode_chn_init(unsigned int chn, unsigned char image_chn, MpiE
 		printf("failed to create mpp encode thread %d\n", 0);
 		return A818_MPI_INIT_ENCODE_THREAD;
 	}
-	usleep(200*1000);
-	
+	encode_thread_created[chn] = 1;
+	ret = stream_wait_ready(chn, STREAM_READY_MPP, STREAM_READY_TIMEOUT_MS);
+	if (ret != 0) {
+		SLOGI("[ERROR] mpp ready timeout chn:%u ret:%d\n", chn, ret);
+		__atomic_store_n(&mpi_encode->image_encode[chn].encode_flag, 1,
+		                 __ATOMIC_RELEASE);
+		stream_join_thread(mpi_encode->encode_ctxs[chn].thd,
+		                   STREAM_STOP_TIMEOUT_MS);
+		encode_thread_created[chn] = 0;
+		return A818_MPI_INIT_ENCODE_THREAD;
+	}
 	return A818_SUCCESS;
 }
 
@@ -1077,24 +1102,23 @@ void mpp_chn_ringbuffer_is_empty(unsigned char chn)
 	}
 }
 
-void mpp_encode_chn_destory(unsigned int chn)
+int mpp_encode_chn_destory(unsigned int chn)
 {
-	struct timeval time_val;
 	mpi_encode_info_t* mpi_encode = mpi_encode_info_get();
-	GPU_Frame_st* gpu_frame_stream = gpu_data_stream_get();
 	Crop_Frame_st* crop_stream = crop_data_stream_get();
 	crop_image_info_t* crop_image = &crop_stream->crop_image[chn];
-	image_frame_info_t frame_info = {0};
 
-	while(!ringbuffer_is_empty(gpu_frame_stream->mpp_data_rb[chn%MPP_ENCODE_NTHREAD_MAX])){
-		ringbuffer_get(gpu_frame_stream->mpp_data_rb[chn%MPP_ENCODE_NTHREAD_MAX], (uint8_t *)&frame_info, sizeof(image_frame_info_t));
-		// printf("InPutRingBuffer is_empty\n");
-		time_val.tv_sec=0;
-		time_val.tv_usec=(1000);
-		select(0,NULL,NULL,NULL,&time_val);
+	__atomic_store_n(&mpi_encode->image_encode[chn%MPP_ENCODE_NTHREAD_MAX].encode_flag,
+	                 1, __ATOMIC_RELEASE);
+	if (encode_thread_created[chn%MPP_ENCODE_NTHREAD_MAX]) {
+		if (stream_join_thread(mpi_encode->encode_ctxs[chn%MPP_ENCODE_NTHREAD_MAX].thd,
+		                       STREAM_STOP_TIMEOUT_MS) == 0) {
+			encode_thread_created[chn%MPP_ENCODE_NTHREAD_MAX] = 0;
+		} else {
+			SLOGI("[ERROR] %s chn:%d join timeout\n", __func__, chn);
+			return -1;
+		}
 	}
-	mpi_encode->image_encode[chn%MPP_ENCODE_NTHREAD_MAX].encode_flag = 1;
-	usleep(100*1000);
 	SLOGI("[DEBUG] %s chn:%d end \n", __func__, chn);
 	for(int index = 0; index < crop_image->data_frame_max+1; index++)
 	{
@@ -1103,7 +1127,7 @@ void mpp_encode_chn_destory(unsigned int chn)
 			crop_image->crop_yuv_buffer[index] = NULL;
 		}
 	}
-	return ;
+	return 0;
 }
 
 int mpp_encode_init(void)
@@ -1174,6 +1198,15 @@ void mpp_encode_destory(void)
 	int chn;
 	mpi_encode_info_t* mpi_encode = mpi_encode_info_get();
 	if(mpi_encode){
+		for (chn = 0; chn < MPP_ENCODE_NTHREAD_MAX; chn++) {
+			if (encode_thread_created[chn]) {
+				__atomic_store_n(&mpi_encode->image_encode[chn].encode_flag,
+				                 1, __ATOMIC_RELEASE);
+				if (stream_join_thread(mpi_encode->encode_ctxs[chn].thd,
+				                       STREAM_STOP_TIMEOUT_MS) == 0)
+					encode_thread_created[chn] = 0;
+			}
+		}
 		gs_mpi_encode = NULL;
 
 		for(chn = 0; chn < MPP_ENCODE_NTHREAD_MAX; chn++) {

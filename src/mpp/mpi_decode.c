@@ -11,6 +11,7 @@
 #include <string.h>
 #include "mpi_decode.h"
 #include "data_engine.h"
+#include "stream_lifecycle.h"
 #include "rga_engine.h"
 #include "ringbuffer.h"
 #include "pthread.h"
@@ -277,7 +278,6 @@ static int decode_simple(MpiDecLoopData *data)
 // }
 
 void *thread_decode(void *arg){
-    pthread_detach(pthread_self());
     int chn = *(int*)arg;
     int ret;
     printf("thread_decode chn :%d\n",chn);
@@ -381,6 +381,7 @@ int mpi_dec_chn_init(int chn)
         ret = -1;
         goto MPP_TEST_OUT;
     }
+    mpp_info->decode_thread_created = 1;
     return ret;
 MPP_TEST_OUT:
     printf("MPP_TEST_OUT MpiDecDestroy!!!!\n");
@@ -388,12 +389,19 @@ MPP_TEST_OUT:
     return ret;
 }
 
-void MpiDecodeDestroy(int chn){
+int MpiDecodeDestroy(int chn){
     // pthread_cancel(pht_dec[chn]);
     data_stream_t* data_stream = data_stream_get();
     mpp_decode_info_t* mpp_info = data_stream->mpp_decode_info[chn%MPP_ENCODE_NTHREAD_MAX];
     MpiDecLoopData* mpi_data = &mpp_info->dec_data;
     printf("chn:%d %s %d mpi_data:%p\n",chn,__func__,__LINE__, mpi_data);
+    if (mpp_info->decode_thread_created) {
+        if (stream_join_thread(mpp_info->pht_dec, STREAM_STOP_TIMEOUT_MS) != 0) {
+            SLOGI("[ERROR] decode thread chn:%d join timeout; resources retained\n", chn);
+            return -1;
+        }
+        mpp_info->decode_thread_created = 0;
+    }
     if (mpi_data->packet) {
         mpp_packet_deinit(&mpi_data->packet);
         mpi_data->packet = NULL;
@@ -425,6 +433,7 @@ void MpiDecodeDestroy(int chn){
         fclose(mpi_data->fp_input);
         mpi_data->fp_input = NULL;
     }
+    return 0;
 }
 
 

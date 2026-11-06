@@ -11,6 +11,7 @@
 #include "a818_error.h"
 #include "mpi_decode.h"
 #include "crop_engine.h"
+#include "stream_lifecycle.h"
 
 #define ringbuffer_destory ringbuffer_deinit
 
@@ -373,6 +374,11 @@ static void* image_over_thread(void* parameter)
   struct timeval start, end;
   long usec1;
 	while(!gs_osd_stream->chn_info[osd_chn].over_flag){
+        STREAM_WORK_GUARD(work, osd_chn, STREAM_WORK);
+        if (!work.active) {
+            usleep(500);
+            continue;
+        }
 
 		while(ringbuffer_is_empty(osd_data_rb)){
 			time.tv_sec=0;
@@ -505,6 +511,11 @@ static void* gui_paint_on_canvas_thread(void* parameter)
   struct timeval start, end;
   long usec1;
 	while(!gs_osd_stream->chn_info[over_chn].osd_flag){
+        STREAM_WORK_GUARD(work, over_chn, STREAM_WORK);
+        if (!work.active) {
+            usleep(500);
+            continue;
+        }
 		while(ringbuffer_is_empty(resize_data_rb)){
 			time.tv_sec=0;
 			time.tv_usec=(1000);
@@ -575,17 +586,26 @@ int gui_osd_overlapped_chn_init(unsigned char chn)
   chn_image->frame_num = 0;
   gs_osd_stream->chn_info[chn].over_flag = 0;
   gs_osd_stream->chn_info[chn].osd_flag = 0;
+  if (gs_osd_stream->chn_info[chn].over_created &&
+      gs_osd_stream->chn_info[chn].osd_created)
+    return 0;
 
   ret = pthread_create(&gs_osd_stream->chn_info[chn].over_tid, NULL, &image_over_thread, &gs_osd_stream->chn_info[chn].chn);
   if (ret != 0) {
       printf("[ERROR] Create image_over_thread failed %d\n",__func__,ret);
       return A818_OSD_GPU_THREAD;
   }
+  gs_osd_stream->chn_info[chn].over_created = 1;
   ret = pthread_create(&gs_osd_stream->chn_info[chn].osd_tid, NULL, &gui_paint_on_canvas_thread, &gs_osd_stream->chn_info[chn].chn);
   if (ret != 0) {
       printf("[ERROR] Create gui_paint_on_canvas_thread failed %d\n",__func__,ret);
+      gs_osd_stream->chn_info[chn].over_flag = 1;
+      stream_join_thread(gs_osd_stream->chn_info[chn].over_tid, STREAM_STOP_TIMEOUT_MS);
+      gs_osd_stream->chn_info[chn].over_created = 0;
       return A818_OSD_GPU_THREAD;
   }
+  gs_osd_stream->chn_info[chn].osd_created = 1;
+  stream_ready(chn, STREAM_READY_OSD);
   SLOGI("[Debug] %s chn:%d \n", __func__, chn);
   return 0;
 }
@@ -780,41 +800,26 @@ err_1:
   return ret;
 }
 
-void gui_osd_overlapped_chn_destory(unsigned char chn)
+int gui_osd_overlapped_chn_destory(unsigned char chn)
 {
-  struct timeval time_val;
-	GPU_Frame_st* gpu_frame_stream = gpu_data_stream_get();
-	gpu_image_info_t *gpu_image = &gpu_frame_stream->gpu_image[chn];
-	data_stream_t *data_stream = data_stream_get();
-  fpga_chn_image_info_t* chn_image = data_stream->chn_image[chn];
-  ring_buffer_t* osd_data_rb = gpu_frame_stream->osd_data_rb[chn];
-	ring_buffer_t* resize_data_rb = chn_image->resize_data_rb;
-  image_frame_info_t frame_info = {0};
+  struct osd_chn_info_t *info = &gs_osd_stream->chn_info[chn];
+  int ret = 0;
+  info->osd_flag = 1;
+  info->over_flag = 1;
 
-  while(!ringbuffer_is_empty(resize_data_rb)){
-    ringbuffer_get(resize_data_rb, (uint8_t *)&frame_info, sizeof(image_frame_info_t));
-    // printf("InPutRingBuffer is_empty\n");
-    time_val.tv_sec=0;
-    time_val.tv_usec=(1000);
-    select(0,NULL,NULL,NULL,&time_val);
+  if (info->osd_created) {
+    if (stream_join_thread(info->osd_tid, STREAM_STOP_TIMEOUT_MS) == 0)
+      info->osd_created = 0;
+    else
+      ret = -1;
   }
-  while(!ringbuffer_is_empty(osd_data_rb)){
-    ringbuffer_get(osd_data_rb, (uint8_t *)&frame_info, sizeof(image_frame_info_t));
-    // printf("InPutRingBuffer is_empty\n");
-    time_val.tv_sec=0;
-    time_val.tv_usec=(1000);
-    select(0,NULL,NULL,NULL,&time_val);
+  if (info->over_created) {
+    if (stream_join_thread(info->over_tid, STREAM_STOP_TIMEOUT_MS) == 0)
+      info->over_created = 0;
+    else
+      ret = -1;
   }
-  if(!gs_osd_stream->chn_info[chn].osd_flag){
-    //pthread_cancel(gs_osd_stream->chn_info[chn].osd_tid);
-    gs_osd_stream->chn_info[chn].osd_flag = 1;
-    xt_nanosleep(0, 1000*1000);
-  }
-  if(!gs_osd_stream->chn_info[chn].over_flag){
-    //pthread_cancel(gs_osd_stream->chn_info[chn].osd_tid);
-    gs_osd_stream->chn_info[chn].over_flag = 1;
-    xt_nanosleep(0, 1000*1000);
-  }
+  return ret;
 }
 
 void osd_ringbuffer_destory(void)
@@ -860,13 +865,13 @@ int gui_osd_init(void)
   }
   memset(gs_osd_stream, 0x0, sizeof(osd_data_stream_t));
 
-  gs_osd_stream->gs_osd_data = (unsigned char *)malloc(VIDEO_OSD_WIDTH * VIDEO_OSD_HIGHT *2 * DATA_CHANNEL_NUM_MAX);
+  gs_osd_stream->gs_osd_data = (unsigned char *)calloc(
+      VIDEO_OSD_WIDTH * VIDEO_OSD_HIGHT * 2 * DATA_CHANNEL_NUM_MAX, 1);
   if(gs_osd_stream->gs_osd_data == NULL){
     printf("[err] ucgui lib osd buffer malloc error \n");
     return 222;
   }
 
-  memset(gs_osd_stream->gs_osd_data, 0x0, (VIDEO_OSD_WIDTH * VIDEO_OSD_HIGHT *2 * DATA_CHANNEL_NUM_MAX));
   ucgui_lib_init(&gs_osd_stream->gs_osd_data);
 
 	return A818_SUCCESS;
@@ -874,6 +879,11 @@ int gui_osd_init(void)
 
 void gui_osd_destory(void)
 {
+  if (!gs_osd_stream)
+    return;
+  osd_ringbuffer_destory();
   free(gs_osd_stream->gs_osd_data);
-  return ;
+  gs_osd_stream->gs_osd_data = NULL;
+  free(gs_osd_stream);
+  gs_osd_stream = NULL;
 }

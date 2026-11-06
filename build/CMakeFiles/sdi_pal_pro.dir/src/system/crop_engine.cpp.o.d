@@ -489,4 +489,6 @@ CMakeFiles/sdi_pal_pro.dir/src/system/crop_engine.cpp.o: \
  /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/log/logd.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/sys/uio.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/uio-ext.h \
- /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/a818_error.h
+ /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/a818_error.h \
+ /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/stream_lifecycle.h \
+ /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/vivado_common.h

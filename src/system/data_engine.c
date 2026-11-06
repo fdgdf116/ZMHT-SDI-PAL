@@ -32,6 +32,7 @@
 #include "data_engine.h"
 #include "fps_calc.h"
 #include "crop_engine.h"
+#include "stream_lifecycle.h"
 
 extern void* pcie_common_param_reg;
 static data_stream_t *gs_data_stream = NULL;
@@ -81,7 +82,7 @@ ring_buffer_t *GetOutPutRingBufferPt(int chn){
 }
 
 void *thread_picture_decode(void *arg){
-    int chn = (int)arg;
+    int chn = (int)*(u_int32_t *)arg;
     unsigned int fifo_num = 0;
     struct timeval time;
     data_stream_t* data_stream = data_stream_get();
@@ -143,12 +144,13 @@ int picture_init(u_int32_t chn)
     if(picture_info->chn == 0)
         FAPI_image_odd_transform_to_target(picture_info->weidth, picture_info->height, 2, data_stream->image_chn_info[chn+2]->rga_info.odd_even_transform, picture_info->pitture_buf, picture_info->pitture_buf);
     picture_info->send_flag = 0;
-    mpp_info->decode_state = pthread_create(&picture_info->pht_picture, NULL, thread_picture_decode, &picture_info->chn);
+    if (pthread_create(&picture_info->pht_picture, NULL, thread_picture_decode, &picture_info->chn) != 0)
+        return 5;
+    picture_info->picture_created = 1;
     return 0;
 }
 
 void *thread_writePL(void *arg){
-    pthread_detach(pthread_self());
     // pthread_mutex_lock(&mutex);
     int rb_len,get_len;
     image_frame_info_t frame_info;
@@ -159,6 +161,10 @@ void *thread_writePL(void *arg){
     int chn = *(int*)arg;
     struct timeval t1, t2;
     send_buf = align_write_buf_get(chn+2);
+    if (!send_buf) {
+        SLOGI("[ERROR] %s chn:%d write buffer allocate failed\n", __func__, chn);
+        return NULL;
+    }
     rb_t = GetOutPutRingBufferPt(chn);
     data_stream_t* data_stream = data_stream_get();
     pcie_info_t* pcie_info = data_stream->pcie_info[chn];
@@ -240,30 +246,23 @@ void *thread_writePL(void *arg){
     }
 stop:
     printf("chn[%d] writePL finish!!!\n",chn);
+    free(send_tmp);
     return NULL;
 }
 
 int writePL_chn_destory(unsigned char chn)
 {
-    struct timeval time_val;
     data_stream_t *data_stream = data_stream_get();
-    fpga_chn_image_info_t* chn_image = data_stream->chn_image[chn];
     pcie_info_t* pcie_info = data_stream->pcie_info[chn%MPP_DECODE_NTHREAD_MAX];
-    ring_buffer_t* pcie_data_rb = chn_image->pcie_data_rb;
 	Crop_Frame_st* crop_stream = crop_data_stream_get();
 	crop_image_info_t *crop_image = &crop_stream->crop_image[chn];
-    image_frame_info_t frame_info = {0};
-
-    while(!ringbuffer_is_empty(pcie_data_rb)){
-        ringbuffer_get(pcie_data_rb, (uint8_t *)&frame_info, sizeof(image_frame_info_t));
-        // printf("InPutRingBuffer is_empty\n");
-        time_val.tv_sec=0;
-        time_val.tv_usec=(1000);
-        select(0,NULL,NULL,NULL,&time_val);
-    }
-    if(!pcie_info->send_flag){
-        pcie_info->send_flag = 1;
-        printf("chn[%d] writePL thread destoryed\n",chn);
+    pcie_info->send_flag = 1;
+    if (pcie_info->send_created) {
+        if (stream_join_thread(pcie_info->pht_up, STREAM_STOP_TIMEOUT_MS) != 0) {
+            SLOGI("[ERROR] writePL chn:%d join timeout; resources retained\n", chn);
+            return -1;
+        }
+        pcie_info->send_created = 0;
     }
 	for(int index = 0; index < crop_image->data_frame_max+1; index++)
 	{
@@ -281,6 +280,8 @@ int writePL_chn_init(unsigned char chn)
     mpp_decode_info_t* mpp_decode_info = data_stream->mpp_decode_info[chn%MPP_DECODE_NTHREAD_MAX];
     pcie_info_t* pcie_info = data_stream->pcie_info[chn%MPP_DECODE_NTHREAD_MAX];
 
+    if (!align_write_buf_get(chn+2))
+        return -1;
     pcie_info->send_flag = 0;
     int ret = 0;
     ret = pthread_create(&pcie_info->pht_up,NULL,thread_writePL,&mpp_decode_info->mpp_chn);
@@ -288,6 +289,7 @@ int writePL_chn_init(unsigned char chn)
         printf("[%s]Create WritePL thread failed\n",__func__);
         return -1;
     }
+    pcie_info->send_created = 1;
     return 0;
 }
 
@@ -387,16 +389,15 @@ err_1:
 
 void data_stream_destory(void)
 {
+    data_stream_t *data_stream = data_stream_get();
+    if (!data_stream)
+        return;
+
     for(int chn = 0; chn < DATA_CHANNEL_NUM_MAX;chn++){
-        data_stream_t* data_stream = data_stream_get();
         image_chn_info_t *image_chn_info = data_stream->image_chn_info[chn];
         fpga_chn_image_info_t *chn_image = data_stream->chn_image[chn];
-        mpp_decode_info_t* mpp_decode_info = data_stream->mpp_decode_info[chn%MPP_DECODE_NTHREAD_MAX];
-        mpp_encode_info_t* mpp_encode_info = data_stream->mpp_encode_info[chn%MPP_ENCODE_NTHREAD_MAX];
-        pcie_info_t* pcie_info = data_stream->pcie_info[chn%MPP_DECODE_NTHREAD_MAX];
 
         if(chn_image){
-
             if(chn_image->rga_data_rb){
                 ringbuffer_deinit(chn_image->rga_data_rb);
             }
@@ -407,32 +408,23 @@ void data_stream_destory(void)
                 ringbuffer_deinit(chn_image->pcie_data_rb);
             }
             free(chn_image);
-            chn_image = NULL;
-        }
-        if(mpp_decode_info)
-        {
-            free(mpp_decode_info);
-            mpp_decode_info = NULL;
-        }
-        if(mpp_encode_info)
-        {
-            free(mpp_encode_info);
-            mpp_encode_info = NULL;
-        }
-        if(pcie_info)
-        {
-            free(pcie_info);
-            pcie_info = NULL;
         }
         if(image_chn_info)
-        {
             free(image_chn_info);
-            image_chn_info = NULL;
-        }
-        if(data_stream)
-        {
-            free(data_stream);
-            data_stream = NULL;
-        }
     }
+
+    for (int i = 0; i < MPP_DECODE_NTHREAD_MAX; i++) {
+        free(data_stream->mpp_decode_info[i]);
+        free(data_stream->pcie_info[i]);
+        data_stream->mpp_decode_info[i] = NULL;
+        data_stream->pcie_info[i] = NULL;
+    }
+    for (int i = 0; i < MPP_ENCODE_NTHREAD_MAX; i++) {
+        free(data_stream->mpp_encode_info[i]);
+        data_stream->mpp_encode_info[i] = NULL;
+    }
+    pthread_mutex_destroy(&data_stream->osd_lock);
+    pthread_mutex_destroy(&data_stream->rga_lock);
+    free(data_stream);
+    gs_data_stream = NULL;
 }

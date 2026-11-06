@@ -147,6 +147,11 @@ CMakeFiles/sdi_pal_pro.dir/src/main.cpp.o: \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/types/struct_sigstack.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/sigthread.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/signal_ext.h \
+ /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/inttypes.h \
+ /home/wang/ZMHT-Tool/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include/stdint.h \
+ /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/stdint.h \
+ /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/wchar.h \
+ /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/stdint-uintn.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/linux/videodev2.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/linux/ioctl.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/asm/ioctl.h \
@@ -154,10 +159,6 @@ CMakeFiles/sdi_pal_pro.dir/src/main.cpp.o: \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/linux/v4l2-common.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/linux/v4l2-controls.h \
  /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/ringbuffer.h \
- /home/wang/ZMHT-Tool/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include/stdint.h \
- /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/stdint.h \
- /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/wchar.h \
- /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/stdint-uintn.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include/stdbool.h \
  /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/mpp/mpi_decode.h \
  /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/include/mpp/rk_mpi.h \
@@ -260,4 +261,7 @@ CMakeFiles/sdi_pal_pro.dir/src/main.cpp.o: \
  /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/include/mpp/rk_venc_cmd.h \
  /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/mpp/utils/utils.h \
  /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/include/mpp/mpp_frame.h \
- /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/mpp/utils/mpp_enc_roi_utils.h
+ /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/mpp/utils/mpp_enc_roi_utils.h \
+ /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/stream_lifecycle.h \
+ /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/vivado_common.h \
+ /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/a818_error.h

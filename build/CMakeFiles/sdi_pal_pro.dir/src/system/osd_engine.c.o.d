@@ -45,8 +45,13 @@ CMakeFiles/sdi_pal_pro.dir/src/system/osd_engine.c.o: \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/types/struct___jmp_buf_tag.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/pthread_stack_min-dynamic.h \
  /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/vivado_common.h \
- /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/sys/types.h \
+ /home/wang/ZMHT-Tool/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include/stdint.h \
+ /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/stdint.h \
+ /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/libc-header-start.h \
+ /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/wchar.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/stdint-intn.h \
+ /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/stdint-uintn.h \
+ /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/sys/types.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/endian.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/byteswap.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/uintn-identity.h \
@@ -55,7 +60,6 @@ CMakeFiles/sdi_pal_pro.dir/src/system/osd_engine.c.o: \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/types/sigset_t.h \
  /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/ringbuffer.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/stdio.h \
- /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/libc-header-start.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include/stdarg.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/types/__fpos_t.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/types/__mbstate_t.h \
@@ -67,10 +71,6 @@ CMakeFiles/sdi_pal_pro.dir/src/system/osd_engine.c.o: \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/stdio_lim.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/floatn.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/floatn-common.h \
- /home/wang/ZMHT-Tool/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include/stdint.h \
- /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/stdint.h \
- /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/wchar.h \
- /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/stdint-uintn.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/lib/gcc/aarch64-buildroot-linux-gnu/11.3.0/include/stdbool.h \
  /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/log/log.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/unistd.h \
@@ -209,4 +209,6 @@ CMakeFiles/sdi_pal_pro.dir/src/system/osd_engine.c.o: \
  /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/pcie/pcie_reg_rw.h \
  /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/xutils.h \
  /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/a818_error.h \
- /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/system/crop_engine.h
+ /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/system/crop_engine.h \
+ /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/stream_lifecycle.h \
+ /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/vivado_common.h

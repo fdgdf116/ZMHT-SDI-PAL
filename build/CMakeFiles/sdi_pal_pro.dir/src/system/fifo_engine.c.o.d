@@ -232,5 +232,7 @@ CMakeFiles/sdi_pal_pro.dir/src/system/fifo_engine.c.o: \
  /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/xutils.h \
  /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/system/osd_engine.h \
  /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/system/crop_engine.h \
+ /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/stream_lifecycle.h \
+ /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/vivado_common.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/sys/statfs.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/statfs.h

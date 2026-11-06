@@ -81,12 +81,12 @@ clean: CMakeFiles/sdi_pal_pro.dir/clean
 CMakeFiles/sdi_pal_pro.dir/all:
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/sdi_pal_pro.dir/build.make CMakeFiles/sdi_pal_pro.dir/depend
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/sdi_pal_pro.dir/build.make CMakeFiles/sdi_pal_pro.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/build/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26 "Built target sdi_pal_pro"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/build/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27 "Built target sdi_pal_pro"
 .PHONY : CMakeFiles/sdi_pal_pro.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/sdi_pal_pro.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/build/CMakeFiles 26
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/build/CMakeFiles 27
 	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 CMakeFiles/sdi_pal_pro.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/build/CMakeFiles 0
 .PHONY : CMakeFiles/sdi_pal_pro.dir/rule

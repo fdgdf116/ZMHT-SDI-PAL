@@ -15,6 +15,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <time.h>
+#include <inttypes.h>
 
 #include <sys/mman.h>
 #include <sys/stat.h>
@@ -47,17 +48,24 @@ static uint8_t *align_over_data = NULL;
 static uint8_t *align_buf_w[DATA_CHANNEL_NUM_MAX] = {NULL};
 static uint8_t *align_buf_mpp_w[MPP_ENCODE_NTHREAD_MAX] = {NULL};
 pthread_mutex_t send_mutex;
+static pthread_mutex_t alloc_lock = PTHREAD_MUTEX_INITIALIZER;
 
 
 static uint8_t *align_chn_reset_buf = NULL;
 
+static uint64_t alloc_perf_us(void)
+{
+	struct timespec ts;
+	clock_gettime(CLOCK_MONOTONIC, &ts);
+	return (uint64_t)ts.tv_sec * 1000000U + (uint64_t)ts.tv_nsec / 1000U;
+}
 
 extern 
 int pcie_impl_init(void) 
 {
 	int ret = 0;
-	int fd_r = 0;
-	int fd_w = 0;
+	int fd_r = -1;
+	int fd_w = -1;
 	int index;
 	struct pcie_impl_info *info = NULL;
 
@@ -69,6 +77,7 @@ int pcie_impl_init(void)
 		ret = -1;
 		goto out;
 	}
+	memset(info, 0xff, sizeof(*info));
 	
 	fd_r = open(xdma_c2h_dev, O_RDWR);
 	if (fd_r < 0) {
@@ -100,31 +109,14 @@ int pcie_impl_init(void)
 		goto out;
 	}
 
-	for(index = 0; index < DATA_CHANNEL_NUM_MAX; index++){
-		posix_memalign((void **)&align_buf_w[index], 4096 /*alignment */ , s_pcie_w_buf_size_max + 4096);
-		if (!align_buf_w) {
-			fprintf(stderr, "OOM %lu.\n", s_pcie_w_buf_size_max + 4096);
-			ret = -1;
-			goto out;
-		}
-	}
-
 	for(index = 0; index < MPP_ENCODE_NTHREAD_MAX; index++){
 		posix_memalign((void **)&align_buf_mpp_w[index], 4096 /*alignment */ , s_pcie_mpp_w_buf_size_max + 4096);
-		if (!align_buf_w) {
+		if (!align_buf_mpp_w[index]) {
 			fprintf(stderr, "OOM %lu.\n", s_pcie_mpp_w_buf_size_max + 4096);
 			ret = -1;
 			goto out;
 		}
 	}
-
-	posix_memalign((void **)&align_chn_reset_buf, 4096 /*alignment */ , s_pcie_w_buf_size_max + 4096);
-	if (!align_chn_reset_buf) {
-		fprintf(stderr, "OOM %lu.\n", s_pcie_w_buf_size_max + 4096);
-		ret = -1;
-		goto out;
-	}
-
 
 	info->fd_r[0] = fd_r;
 	info->fd_w[0] = fd_w;
@@ -140,11 +132,11 @@ out:
 		free(info);
 	}
 
-	if (fd_r) {
+	if (fd_r >= 0) {
 		close(fd_r);
 	}
 
-	if (fd_w) {
+	if (fd_w >= 0) {
 		close(fd_w);
 	}
 
@@ -159,6 +151,14 @@ out:
 	for(index = 0; index < DATA_CHANNEL_NUM_MAX; index++){
 		if (align_buf_w[index]) {
 			free(align_buf_w[index]);
+			align_buf_w[index] = NULL;
+		}
+	}
+
+	for(index = 0; index < MPP_ENCODE_NTHREAD_MAX; index++){
+		if (align_buf_mpp_w[index]) {
+			free(align_buf_mpp_w[index]);
+			align_buf_mpp_w[index] = NULL;
 		}
 	}
 
@@ -172,6 +172,18 @@ out:
 
 uint8_t *align_chn_reset_buf_get(void)
 {
+	uint64_t started = 0;
+	pthread_mutex_lock(&alloc_lock);
+	if (!align_chn_reset_buf) {
+		started = alloc_perf_us();
+		if (posix_memalign((void **)&align_chn_reset_buf, 4096,
+		                   s_pcie_w_buf_size_max + 4096) != 0)
+			align_chn_reset_buf = NULL;
+		printf("[PERF] lazy reset buffer alloc elapsed=%" PRIu64
+		       " us result=%p\n", alloc_perf_us() - started,
+		       align_chn_reset_buf);
+	}
+	pthread_mutex_unlock(&alloc_lock);
 	return align_chn_reset_buf;
 }
 
@@ -211,11 +223,14 @@ void pcie_impl_destory(void)
 
 	if (info) {
 	
-		close(info->fd_r[0]);
-		close(info->fd_w[0]);
+		if (info->fd_r[0] >= 0)
+			close(info->fd_r[0]);
+		if (info->fd_w[0] >= 0)
+			close(info->fd_w[0]);
 
 		free(info);
 	}
+	g_pcie_info = NULL;
 
 	printf("%s OK\n",__func__);
 }
@@ -232,6 +247,20 @@ uint8_t *align_over_buf_get(void)
 
  uint8_t *align_write_buf_get(unsigned char index)
  {
+	 if (index >= DATA_CHANNEL_NUM_MAX)
+		 return NULL;
+	 uint64_t started = 0;
+	 pthread_mutex_lock(&alloc_lock);
+	 if (!align_buf_w[index] &&
+	     (started = alloc_perf_us(),
+	      posix_memalign((void **)&align_buf_w[index], 4096,
+	                     s_pcie_w_buf_size_max + 4096) != 0))
+		 align_buf_w[index] = NULL;
+	 if (started)
+		 printf("[PERF] lazy write buffer index=%u elapsed=%" PRIu64
+		        " us result=%p\n", index, alloc_perf_us() - started,
+		        align_buf_w[index]);
+	 pthread_mutex_unlock(&alloc_lock);
 	 return align_buf_w[index];
  }
  

@@ -85,4 +85,7 @@
 #define A818_CROP_DATA_RB               (66)
 #define A818_CROP_THREAD                (67)
 #define A818_CROP_FRAME_MALLOC          (68)
+
+/* Stop is still in progress. Resources are retained and the command can retry. */
+#define A818_STREAM_STOP_TIMEOUT        (74)
 #endif

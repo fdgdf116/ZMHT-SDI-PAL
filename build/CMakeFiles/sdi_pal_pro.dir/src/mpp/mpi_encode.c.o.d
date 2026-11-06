@@ -210,4 +210,6 @@ CMakeFiles/sdi_pal_pro.dir/src/mpp/mpi_encode.c.o: \
  /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/pcie/pcie_reg_rw.h \
  /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/xutils.h \
  /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/a818_error.h \
- /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/system/crop_engine.h
+ /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/system/crop_engine.h \
+ /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/stream_lifecycle.h \
+ /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/vivado_common.h

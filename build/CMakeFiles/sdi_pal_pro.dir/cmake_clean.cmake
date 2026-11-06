@@ -1,6 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/sdi_pal_pro.dir/src/common/ringbuffer.c.o"
   "CMakeFiles/sdi_pal_pro.dir/src/common/ringbuffer.c.o.d"
+  "CMakeFiles/sdi_pal_pro.dir/src/common/stream_lifecycle.c.o"
+  "CMakeFiles/sdi_pal_pro.dir/src/common/stream_lifecycle.c.o.d"
   "CMakeFiles/sdi_pal_pro.dir/src/common/xutils.c.o"
   "CMakeFiles/sdi_pal_pro.dir/src/common/xutils.c.o.d"
   "CMakeFiles/sdi_pal_pro.dir/src/fifo/stream_fifo.c.o"

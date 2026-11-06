@@ -13,6 +13,7 @@ extern "C" {
 typedef struct {
 	unsigned char chn;
 	pthread_t tid;
+	unsigned char thread_created;
 	unsigned char crop_flag;
 	unsigned int crop_width;          /* 裁剪后图像的宽*/
 	unsigned int crop_height;         /* 裁剪后图像的高*/
@@ -50,7 +51,7 @@ bool FAPI_image_odd_transform_to_target(uint32_t width, uint32_t height, uint8_t
 int crop_stream_init(void);
 void crop_stream_destory(void);
 int crop_chn_init(unsigned char chn);
-void crop_chn_destory(unsigned char chn);
+int crop_chn_destory(unsigned char chn);
 #ifdef __cplusplus
 }
 #endif

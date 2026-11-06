@@ -42,7 +42,7 @@ int mpi_dec_chn_init(int chn);
 void DumpYUYVtoFile(MppFrame frame,int chn);
 static int decode_simple(MpiDecLoopData *data);
 
-void MpiDecodeDestroy(int chn);
+int MpiDecodeDestroy(int chn);
 void SetOutputFilename(unsigned char *name);
 void SetInputFilename(unsigned char *name);
 void BindChnFilename(int chn,unsigned char *name,unsigned char *out_name);

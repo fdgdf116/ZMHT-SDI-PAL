@@ -4,6 +4,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+#include <stdint.h>
 #include <sys/types.h>
 // #define DEC_CHN (4)
 
@@ -252,6 +253,7 @@ typedef struct {
     volatile unsigned int frame_size;
     volatile unsigned int frame_index;
     volatile unsigned int frame_offset;
+    volatile uint32_t generation;
 }image_frame_info_t;
 
 

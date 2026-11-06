@@ -9,6 +9,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
   "/home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/ringbuffer.c" "CMakeFiles/sdi_pal_pro.dir/src/common/ringbuffer.c.o" "gcc" "CMakeFiles/sdi_pal_pro.dir/src/common/ringbuffer.c.o.d"
+  "/home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/stream_lifecycle.c" "CMakeFiles/sdi_pal_pro.dir/src/common/stream_lifecycle.c.o" "gcc" "CMakeFiles/sdi_pal_pro.dir/src/common/stream_lifecycle.c.o.d"
   "/home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/xutils.c" "CMakeFiles/sdi_pal_pro.dir/src/common/xutils.c.o" "gcc" "CMakeFiles/sdi_pal_pro.dir/src/common/xutils.c.o.d"
   "/home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/fifo/stream_fifo.c" "CMakeFiles/sdi_pal_pro.dir/src/fifo/stream_fifo.c.o" "gcc" "CMakeFiles/sdi_pal_pro.dir/src/fifo/stream_fifo.c.o.d"
   "/home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/log/logd_write.c" "CMakeFiles/sdi_pal_pro.dir/src/log/logd_write.c.o" "gcc" "CMakeFiles/sdi_pal_pro.dir/src/log/logd_write.c.o.d"

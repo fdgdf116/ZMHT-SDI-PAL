@@ -19,6 +19,7 @@
 #include <arpa/inet.h>
 #include <inttypes.h>
 #include <string.h>
+#include <semaphore.h>
 
 #include "log.h"
 #include "xutils.h"
@@ -35,6 +36,7 @@
 #include "crop_engine.h"
 #include "mpi_encode.h"
 #include "data_engine.h"
+#include "stream_lifecycle.h"
 
 #define ringbuffer_destory ringbuffer_deinit
 #define PCIE_READ_OTHER_DATA_ADDRESS (0x000000000)
@@ -119,10 +121,23 @@ typedef struct {
 	uint8_t *pcie_data;
     ring_buffer_t *pcie_data_rb;
     void* pcie_reg;
-    // void* pcie_pc_reg;
+    pthread_t read_tid;
+    pthread_t analysis_tid;
+    pthread_t send_tid;
+    unsigned char thread_created;
 } pcie_fpga_info_t;
 
 static pcie_fpga_info_t *g_fpga_pcie;
+static sem_t g_pcie_thread_ready;
+static volatile int g_pcie_threads_stop;
+static pthread_mutex_t g_dma_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_cond_t g_dma_cv = PTHREAD_COND_INITIALIZER;
+static unsigned int g_dma_accepting;
+static unsigned int g_dma_inflight;
+static uint32_t g_dma_generation = 1;
+static uint64_t g_dma_drop_count;
+
+#define PCIE_DMA_QUIESCE_TIMEOUT_MS 50U
 static void* pcie_reg;
 void* pcie_common_param_reg;
 static void* pcie_stack_char_reg;
@@ -797,17 +812,105 @@ static void pcie_data_to_queue(image_frame_info_t *frame_info, ring_buffer_t *rb
 
 void pcie_fpga_device_stop(void)
 {
+    pcie_dma_pause();
     pcie_set_rk_disable();
-    // pcie_set_pc_enable(0);
-    // pcie_fpga_reg_reset();
+    if (g_fpga_pcie && g_fpga_pcie->pcie_data_rb)
+        ringbuffer_reset(g_fpga_pcie->pcie_data_rb);
+}
 
-    // while(pcie_get_fpga2rk_vfifo_szie()){
-    //     usleep(1000);
-    // }
+void pcie_dma_pause(void)
+{
+    pthread_mutex_lock(&g_dma_lock);
+    g_dma_accepting = 0;
+    g_dma_generation++;
+    pthread_cond_broadcast(&g_dma_cv);
+    pthread_mutex_unlock(&g_dma_lock);
+}
 
-    while(!ringbuffer_is_empty(g_fpga_pcie->pcie_data_rb)){
-        usleep(100);  
+int pcie_dma_prepare_start(void)
+{
+    struct timespec deadline;
+    int ret = 0;
+    unsigned int remaining;
+    if (!g_fpga_pcie || !g_fpga_pcie->pcie_data_rb)
+        return -1;
+
+    clock_gettime(CLOCK_REALTIME, &deadline);
+    deadline.tv_nsec += PCIE_DMA_QUIESCE_TIMEOUT_MS * 1000000L;
+    if (deadline.tv_nsec >= 1000000000L) {
+        deadline.tv_sec++;
+        deadline.tv_nsec -= 1000000000L;
     }
+
+    pthread_mutex_lock(&g_dma_lock);
+    g_dma_accepting = 0;
+    g_dma_generation++;
+    while (g_dma_inflight != 0) {
+        ret = pthread_cond_timedwait(&g_dma_cv, &g_dma_lock, &deadline);
+        if (ret == ETIMEDOUT)
+            break;
+    }
+    remaining = g_dma_inflight;
+    pthread_mutex_unlock(&g_dma_lock);
+    if (ret == ETIMEDOUT || remaining != 0) {
+        SLOGI("[ERROR] PCIe DMA did not become idle before start\n");
+        return -1;
+    }
+
+    ringbuffer_reset(g_fpga_pcie->pcie_data_rb);
+    vfifo_reg_reset(0);
+    return 0;
+}
+
+void pcie_dma_resume(void)
+{
+    pthread_mutex_lock(&g_dma_lock);
+    g_dma_accepting = 1;
+    pthread_cond_broadcast(&g_dma_cv);
+    pthread_mutex_unlock(&g_dma_lock);
+}
+
+uint32_t pcie_dma_generation_get(void)
+{
+    uint32_t generation;
+    pthread_mutex_lock(&g_dma_lock);
+    generation = g_dma_generation;
+    pthread_mutex_unlock(&g_dma_lock);
+    return generation;
+}
+
+int pcie_dma_is_active(void)
+{
+    int active;
+    pthread_mutex_lock(&g_dma_lock);
+    active = g_dma_accepting != 0;
+    pthread_mutex_unlock(&g_dma_lock);
+    return active;
+}
+
+static int pcie_dma_begin(uint32_t *generation)
+{
+    int accepted = 0;
+    pthread_mutex_lock(&g_dma_lock);
+    if (g_dma_accepting) {
+        *generation = g_dma_generation;
+        g_dma_inflight++;
+        accepted = 1;
+    }
+    pthread_mutex_unlock(&g_dma_lock);
+    return accepted;
+}
+
+static int pcie_dma_end(uint32_t generation)
+{
+    int valid;
+    pthread_mutex_lock(&g_dma_lock);
+    if (g_dma_inflight)
+        g_dma_inflight--;
+    valid = g_dma_accepting && generation == g_dma_generation;
+    pthread_cond_broadcast(&g_dma_cv);
+    pthread_mutex_unlock(&g_dma_lock);
+    return valid;
 }
 
 /* pcie 读取数据线程 */
@@ -830,27 +933,37 @@ static void *pcie_read_data_thread(void* parameter)
     struct timespec start_tm,end_tm;
     long long time_cost = 0;
     clock_gettime(CLOCK_MONOTONIC,&start_tm);
+    sem_post(&g_pcie_thread_ready);
 
-    while(1) {
+    while(!g_pcie_threads_stop) {
         fpga_vfifo_size = pcie_get_fpga2rk_vfifo_szie()*32;
         if(fpga_vfifo_size >= frame_size) {
+            uint32_t generation;
+            if (!pcie_dma_begin(&generation)) {
+                usleep(500);
+                continue;
+            }
             if(pcie_buf_offset >= pcie_offset_max){
                 pcie_buf_offset = 0;
             }
             
             ret = dma_memory_mapped_read(pcie_buf + pcie_buf_offset,PCIE_READ_IMAGE_DATA_ADDRESS, frame_size,PCIE_C2H_0);
+            int generation_valid = pcie_dma_end(generation);
             if(ret == frame_size){
-                // save_image_data(pcie_buf + pcie_buf_offset, ret, "/tmp/pcie_data.raw");
-                frame_info.frame_offset = pcie_buf_offset;
-                //frame_info.frame_index=pcie_read_frame;
-                pcie_data_to_queue(&frame_info, rb);
-                pcie_buf_offset += pcie_offset;
-                pcie_read_frame += 1;
-                // clock_gettime(CLOCK_MONOTONIC,&end_tm);
-                // time_cost = (end_tm.tv_sec - start_tm.tv_sec) * 1000000 + (end_tm.tv_nsec - start_tm.tv_nsec) / 1000;
-                // printf("speed %f MBps read frame %d, time cost %lld us\n",frame_size*1.0/1024/1024/time_cost*1000000,pcie_read_frame,time_cost);
-                // memcpy(&start_tm,&end_tm,sizeof(struct timespec));
-
+                if (generation_valid) {
+                    memset(&frame_info, 0, sizeof(frame_info));
+                    frame_info.frame_offset = pcie_buf_offset;
+                    frame_info.generation = generation;
+                    pcie_data_to_queue(&frame_info, rb);
+                    pcie_buf_offset += pcie_offset;
+                    pcie_read_frame += 1;
+                } else {
+                    g_dma_drop_count++;
+                    if (g_dma_drop_count == 1 ||
+                        (g_dma_drop_count % 100) == 0)
+                        SLOGI("[INFO] drop late PCIe DMA generation=%u current=%u count=%" PRIu64 "\n",
+                              generation, pcie_dma_generation_get(), g_dma_drop_count);
+                }
             } else {
                 SLOGI("[ERROR] PCIE READ DATA ERROR \n");
             }
@@ -949,7 +1062,7 @@ void pcie_fpga2rga_image_to_queue(unsigned char chn, image_frame_info_t *frame_i
 	返回值:
 	  正确返回0，失败返回其他
 */
-int pcie_chn_data_analysis(unsigned char chn, unsigned char* chn_buf_l)
+static int pcie_chn_data_analysis_internal(unsigned char chn, unsigned char* chn_buf_l)
 {
 	ring_buffer_t *chn_rb;
 	uint32_t memcpy_offset; 
@@ -1045,6 +1158,17 @@ int pcie_chn_data_analysis(unsigned char chn, unsigned char* chn_buf_l)
 	return 0;
 }
 
+static int pcie_chn_data_analysis(unsigned char chn, unsigned char* chn_buf_l)
+{
+    if (chn >= MPP_ENCODE_NTHREAD_MAX)
+        return pcie_chn_data_analysis_internal(chn, chn_buf_l);
+
+    STREAM_WORK_GUARD(work, chn, STREAM_WORK);
+    if (!work.active)
+        return 0;
+    return pcie_chn_data_analysis_internal(chn, chn_buf_l);
+}
+
 /*
 	函数: static void *pcie_data_analysis_thread(void* parameter)
 	作用: 读取到的数据解析线程
@@ -1103,8 +1227,9 @@ static void *pcie_data_analysis_thread(void* parameter)
         SLOGI("-1-CHN:%d malloc chn_data error \n", chn);
 		return 5;
     } 
+    sem_post(&g_pcie_thread_ready);
 
-	while(1){
+	while(!g_pcie_threads_stop){
 		chn_image_buf = (uint8_t*)chn_image->chn_data.yuv420_data[chn_data->rb_offset].vir_addr;
 		if(chn_image_buf == NULL)
 		{
@@ -1158,14 +1283,22 @@ static void *pcie_data_analysis_thread(void* parameter)
 	CPU_SET(4, &mask), CPU_SET(5, &mask);
 	CPU_SET(6, &mask), CPU_SET(7, &mask);
 	pthread_setaffinity_np(pthread_self( ), sizeof(mask), &mask);
+    sem_post(&g_pcie_thread_ready);
 
-	while(1){
-		while(ringbuffer_is_empty(rb)) {
+	while(!g_pcie_threads_stop){
+		while(ringbuffer_is_empty(rb) && !g_pcie_threads_stop) {
 			time.tv_sec=0;
 			time.tv_usec=1;
 			select(0,NULL,NULL,NULL,&time);
 		}
+		if (g_pcie_threads_stop)
+			break;
 		ringbuffer_get(rb, (uint8_t *)&frame_info, sizeof(image_frame_info_t));
+		if (frame_info.generation != pcie_dma_generation_get()) {
+			SLOGI("[INFO] discard stale PCIe descriptor generation=%u current=%u\n",
+			      frame_info.generation, pcie_dma_generation_get());
+			continue;
+		}
 
 		if(ringbuffer_is_full(rb)){
 			SLOGI("[%s] ringbuffer full \n", __func__);
@@ -1284,10 +1417,14 @@ static void *pcie_mpp_send_thread(void* parameter)
 
     mpi_image_encode_info_t *image_encode;
     mpi_encode_info_t* mpi_encode = mpi_encode_info_get();
+    sem_post(&g_pcie_thread_ready);
 
-    while(1){
+    while(!g_pcie_threads_stop){
         /*遍历编码通道，有数据则通过PCIE发送出去*/
         for(int chn = 0; chn < MPP_ENCODE_NTHREAD_MAX; chn++){
+            STREAM_WORK_GUARD(work, chn, STREAM_DMA_WRITE);
+            if (!work.active)
+                continue;
             rb =mpi_encode->mpp_encode_rb[chn];
             image_encode = &mpi_encode->image_encode[chn];
             if(!ringbuffer_is_empty(rb)) {
@@ -1299,6 +1436,7 @@ static void *pcie_mpp_send_thread(void* parameter)
                 ret = pcie_send_mpp_data(chn, &frame_info);
                 if(ret != 0){
                     SLOGI("rk2fpga chn:%d offset:0x%x size:(%d) data error \n", chn, frame_info.frame_offset, frame_info.frame_size);
+                    stream_request_stop(chn);
                 }
             }
         }
@@ -1430,21 +1568,46 @@ err_1:
 
 void fpga_pcie_device_close(void)
 {
-    pcie_bar_munmap(pcie_reg, FPGA_PCIE_REG_LEN);
+    pcie_bar_munmap(pcie_common_param_reg, FPGA_PCIE_REG_LEN);
+    pcie_common_param_reg = NULL;
     pcie_impl_destory();
     pcie_bar_close();
+}
+
+static int pcie_wait_threads_ready(unsigned int count, unsigned int timeout_ms)
+{
+    struct timespec deadline;
+    clock_gettime(CLOCK_REALTIME, &deadline);
+    deadline.tv_sec += timeout_ms / 1000U;
+    deadline.tv_nsec += (long)(timeout_ms % 1000U) * 1000000L;
+    if (deadline.tv_nsec >= 1000000000L) {
+        deadline.tv_sec++;
+        deadline.tv_nsec -= 1000000000L;
+    }
+
+    for (unsigned int i = 0; i < count; i++) {
+        if (sem_timedwait(&g_pcie_thread_ready, &deadline) != 0)
+            return -1;
+    }
+    return 0;
 }
 
 int pcie_fpga_data_init(void)
 {
 	int ret;
-	pthread_t read_tid, analysis_tid, send_tid;
+    unsigned int created = 0;
+
+    g_pcie_threads_stop = 0;
+    if (sem_init(&g_pcie_thread_ready, 0, 0) != 0)
+        return A818_PCIE_READ_THREAD;
 
 	g_fpga_pcie = (pcie_fpga_info_t*)malloc(sizeof(pcie_fpga_info_t));
 	if(NULL == g_fpga_pcie){
 		printf("[ERROR] fpga pcie malloc error \n");
+        sem_destroy(&g_pcie_thread_ready);
 		return A818_PCIE_DATA_MALLOC;
 	}
+    memset(g_fpga_pcie, 0, sizeof(*g_fpga_pcie));
     //初始化cfg_info
     for(int index=0; index < MPP_DECODE_NTHREAD_MAX; index++){
         cfg_info[index] = (cfg_info_t *)malloc(sizeof(cfg_info_t));
@@ -1469,54 +1632,92 @@ int pcie_fpga_data_init(void)
 	// }
 
 	/* 初始化相关线程 */
-	ret = pthread_create(&read_tid,NULL,&pcie_read_data_thread,NULL);
+	ret = pthread_create(&g_fpga_pcie->read_tid,NULL,&pcie_read_data_thread,NULL);
 	if (ret != 0) {
 		printf("[ERROR] Create pcie read data thread failed %d\n",__func__,ret);
 		ret = A818_PCIE_READ_THREAD;
 		goto err_3;
 	}
+    created |= 1U << 0;
 
-	ret = pthread_create(&analysis_tid,NULL,&pcie_data_analysis_thread,NULL);
+	ret = pthread_create(&g_fpga_pcie->analysis_tid,NULL,&pcie_data_analysis_thread,NULL);
 	if (ret != 0) {
 		printf("[ERROR] Create pcie data analysis thread failed %d\n",__func__,ret);
 		ret = A818_PCIE_ANALYSIS_THREAD;
 		goto err_4;
 	}
+    created |= 1U << 1;
 
-	ret = pthread_create(&send_tid,NULL,&pcie_mpp_send_thread,NULL);
+	ret = pthread_create(&g_fpga_pcie->send_tid,NULL,&pcie_mpp_send_thread,NULL);
 	if (ret != 0) {
 		printf("[ERROR] Create pcie data send thread failed %d\n",__func__,ret);
 		ret = A818_PCIE_SEND_THREAD;
 		goto err_5;
 	}
+    created |= 1U << 2;
+    g_fpga_pcie->thread_created = (unsigned char)created;
+
+    if (pcie_wait_threads_ready(3, STREAM_READY_TIMEOUT_MS) != 0) {
+        SLOGI("[ERROR] PCIe worker ready timeout\n");
+        ret = A818_PCIE_READ_THREAD;
+        goto err_5;
+    }
 
 	// pcie_fpga_reg_reset();
     SLOGI("[%s] pcie init ok \n", __func__);
-    usleep(200*1000);
 
     return A818_SUCCESS;
 err_5:
-	pthread_cancel(analysis_tid);
+    g_pcie_threads_stop = 1;
+    if (created & (1U << 2))
+        stream_join_thread(g_fpga_pcie->send_tid, STREAM_STOP_TIMEOUT_MS);
 err_4:
-    pthread_cancel(read_tid);
+    if (created & (1U << 1))
+        stream_join_thread(g_fpga_pcie->analysis_tid, STREAM_STOP_TIMEOUT_MS);
 err_3:
-    // pcie_bar_munmap(g_fpga_pcie->pcie_pc_reg, FPGA_PCIE_REG_LEN);  
+    if (created & (1U << 0))
+        stream_join_thread(g_fpga_pcie->read_tid, STREAM_STOP_TIMEOUT_MS);
 err_2:
-    ringbuffer_destory(g_fpga_pcie->pcie_data_rb);
+    if (g_fpga_pcie->pcie_data_rb)
+        ringbuffer_destory(g_fpga_pcie->pcie_data_rb);
 err_1:
     free(g_fpga_pcie);
+    g_fpga_pcie = NULL;
+    sem_destroy(&g_pcie_thread_ready);
     return ret;
 }
 
 
-void pcie_fpga_data_destory(void)
+int pcie_fpga_data_destory(void)
 {
     if(g_fpga_pcie){
+        pcie_dma_pause();
+        g_pcie_threads_stop = 1;
         pcie_set_rk_disable();
-        // pcie_set_pc_enable(0);
+        if ((g_fpga_pcie->thread_created & (1U << 0)) &&
+            stream_join_thread(g_fpga_pcie->read_tid, STREAM_STOP_TIMEOUT_MS) != 0) {
+            SLOGI("[ERROR] PCIe read thread join timeout; resources retained\n");
+            return -1;
+        }
+        if ((g_fpga_pcie->thread_created & (1U << 1)) &&
+            stream_join_thread(g_fpga_pcie->analysis_tid, STREAM_STOP_TIMEOUT_MS) != 0) {
+            SLOGI("[ERROR] PCIe analysis thread join timeout; resources retained\n");
+            return -1;
+        }
+        if ((g_fpga_pcie->thread_created & (1U << 2)) &&
+            stream_join_thread(g_fpga_pcie->send_tid, STREAM_STOP_TIMEOUT_MS) != 0) {
+            SLOGI("[ERROR] PCIe send thread join timeout; resources retained\n");
+            return -1;
+        }
         ringbuffer_destory(g_fpga_pcie->pcie_data_rb);
+        for (int i = 0; i < MPP_DECODE_NTHREAD_MAX; i++) {
+            free(cfg_info[i]);
+            cfg_info[i] = NULL;
+        }
         free(g_fpga_pcie);
         g_fpga_pcie = NULL;
+        sem_destroy(&g_pcie_thread_ready);
     }
+    return 0;
 }
 

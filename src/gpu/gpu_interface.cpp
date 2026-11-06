@@ -210,11 +210,19 @@ void gpu_lib_destory(void)
                 ringbuffer_destory(gpu_frame_stream->osd_data_rb[chn]); 
                 gpu_frame_stream->osd_data_rb[chn] = NULL;
             }
+            if(gpu_frame_stream->image_over_rb[chn]){
+                ringbuffer_destory(gpu_frame_stream->image_over_rb[chn]);
+                gpu_frame_stream->image_over_rb[chn] = NULL;
+            }
+            if(gpu_frame_stream->mpp_data_rb[chn]){
+                ringbuffer_destory(gpu_frame_stream->mpp_data_rb[chn]);
+                gpu_frame_stream->mpp_data_rb[chn] = NULL;
+            }
         }
         
         gpu_frame_stream->htr.compute_release(gpu_frame_stream->hetero_hdr);
         free(gpu_frame_stream);
-        gpu_frame_stream = NULL;
+        g_gpu_frame_stream = NULL;
     }
 
     return ;

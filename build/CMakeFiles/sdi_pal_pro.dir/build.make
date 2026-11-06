@@ -335,10 +335,24 @@ CMakeFiles/sdi_pal_pro.dir/src/common/ringbuffer.c.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/sdi_pal_pro.dir/src/common/ringbuffer.c.s"
 	/home/wang/ZMHT-Tool/rk3588_toolchain/bin/aarch64-linux-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/ringbuffer.c -o CMakeFiles/sdi_pal_pro.dir/src/common/ringbuffer.c.s
 
+CMakeFiles/sdi_pal_pro.dir/src/common/stream_lifecycle.c.o: CMakeFiles/sdi_pal_pro.dir/flags.make
+CMakeFiles/sdi_pal_pro.dir/src/common/stream_lifecycle.c.o: ../src/common/stream_lifecycle.c
+CMakeFiles/sdi_pal_pro.dir/src/common/stream_lifecycle.c.o: CMakeFiles/sdi_pal_pro.dir/compiler_depend.ts
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building C object CMakeFiles/sdi_pal_pro.dir/src/common/stream_lifecycle.c.o"
+	/home/wang/ZMHT-Tool/rk3588_toolchain/bin/aarch64-linux-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/sdi_pal_pro.dir/src/common/stream_lifecycle.c.o -MF CMakeFiles/sdi_pal_pro.dir/src/common/stream_lifecycle.c.o.d -o CMakeFiles/sdi_pal_pro.dir/src/common/stream_lifecycle.c.o -c /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/stream_lifecycle.c
+
+CMakeFiles/sdi_pal_pro.dir/src/common/stream_lifecycle.c.i: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing C source to CMakeFiles/sdi_pal_pro.dir/src/common/stream_lifecycle.c.i"
+	/home/wang/ZMHT-Tool/rk3588_toolchain/bin/aarch64-linux-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -E /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/stream_lifecycle.c > CMakeFiles/sdi_pal_pro.dir/src/common/stream_lifecycle.c.i
+
+CMakeFiles/sdi_pal_pro.dir/src/common/stream_lifecycle.c.s: cmake_force
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling C source to assembly CMakeFiles/sdi_pal_pro.dir/src/common/stream_lifecycle.c.s"
+	/home/wang/ZMHT-Tool/rk3588_toolchain/bin/aarch64-linux-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -S /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/stream_lifecycle.c -o CMakeFiles/sdi_pal_pro.dir/src/common/stream_lifecycle.c.s
+
 CMakeFiles/sdi_pal_pro.dir/src/common/xutils.c.o: CMakeFiles/sdi_pal_pro.dir/flags.make
 CMakeFiles/sdi_pal_pro.dir/src/common/xutils.c.o: ../src/common/xutils.c
 CMakeFiles/sdi_pal_pro.dir/src/common/xutils.c.o: CMakeFiles/sdi_pal_pro.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_20) "Building C object CMakeFiles/sdi_pal_pro.dir/src/common/xutils.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building C object CMakeFiles/sdi_pal_pro.dir/src/common/xutils.c.o"
 	/home/wang/ZMHT-Tool/rk3588_toolchain/bin/aarch64-linux-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/sdi_pal_pro.dir/src/common/xutils.c.o -MF CMakeFiles/sdi_pal_pro.dir/src/common/xutils.c.o.d -o CMakeFiles/sdi_pal_pro.dir/src/common/xutils.c.o -c /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/common/xutils.c
 
 CMakeFiles/sdi_pal_pro.dir/src/common/xutils.c.i: cmake_force
@@ -352,7 +366,7 @@ CMakeFiles/sdi_pal_pro.dir/src/common/xutils.c.s: cmake_force
 CMakeFiles/sdi_pal_pro.dir/src/pcie/dma_utils.c.o: CMakeFiles/sdi_pal_pro.dir/flags.make
 CMakeFiles/sdi_pal_pro.dir/src/pcie/dma_utils.c.o: ../src/pcie/dma_utils.c
 CMakeFiles/sdi_pal_pro.dir/src/pcie/dma_utils.c.o: CMakeFiles/sdi_pal_pro.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_21) "Building C object CMakeFiles/sdi_pal_pro.dir/src/pcie/dma_utils.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building C object CMakeFiles/sdi_pal_pro.dir/src/pcie/dma_utils.c.o"
 	/home/wang/ZMHT-Tool/rk3588_toolchain/bin/aarch64-linux-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/sdi_pal_pro.dir/src/pcie/dma_utils.c.o -MF CMakeFiles/sdi_pal_pro.dir/src/pcie/dma_utils.c.o.d -o CMakeFiles/sdi_pal_pro.dir/src/pcie/dma_utils.c.o -c /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/pcie/dma_utils.c
 
 CMakeFiles/sdi_pal_pro.dir/src/pcie/dma_utils.c.i: cmake_force
@@ -366,7 +380,7 @@ CMakeFiles/sdi_pal_pro.dir/src/pcie/dma_utils.c.s: cmake_force
 CMakeFiles/sdi_pal_pro.dir/src/pcie/pcie_impl.c.o: CMakeFiles/sdi_pal_pro.dir/flags.make
 CMakeFiles/sdi_pal_pro.dir/src/pcie/pcie_impl.c.o: ../src/pcie/pcie_impl.c
 CMakeFiles/sdi_pal_pro.dir/src/pcie/pcie_impl.c.o: CMakeFiles/sdi_pal_pro.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_22) "Building C object CMakeFiles/sdi_pal_pro.dir/src/pcie/pcie_impl.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building C object CMakeFiles/sdi_pal_pro.dir/src/pcie/pcie_impl.c.o"
 	/home/wang/ZMHT-Tool/rk3588_toolchain/bin/aarch64-linux-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/sdi_pal_pro.dir/src/pcie/pcie_impl.c.o -MF CMakeFiles/sdi_pal_pro.dir/src/pcie/pcie_impl.c.o.d -o CMakeFiles/sdi_pal_pro.dir/src/pcie/pcie_impl.c.o -c /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/pcie/pcie_impl.c
 
 CMakeFiles/sdi_pal_pro.dir/src/pcie/pcie_impl.c.i: cmake_force
@@ -380,7 +394,7 @@ CMakeFiles/sdi_pal_pro.dir/src/pcie/pcie_impl.c.s: cmake_force
 CMakeFiles/sdi_pal_pro.dir/src/pcie/pcie_reg_rw.c.o: CMakeFiles/sdi_pal_pro.dir/flags.make
 CMakeFiles/sdi_pal_pro.dir/src/pcie/pcie_reg_rw.c.o: ../src/pcie/pcie_reg_rw.c
 CMakeFiles/sdi_pal_pro.dir/src/pcie/pcie_reg_rw.c.o: CMakeFiles/sdi_pal_pro.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_23) "Building C object CMakeFiles/sdi_pal_pro.dir/src/pcie/pcie_reg_rw.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building C object CMakeFiles/sdi_pal_pro.dir/src/pcie/pcie_reg_rw.c.o"
 	/home/wang/ZMHT-Tool/rk3588_toolchain/bin/aarch64-linux-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/sdi_pal_pro.dir/src/pcie/pcie_reg_rw.c.o -MF CMakeFiles/sdi_pal_pro.dir/src/pcie/pcie_reg_rw.c.o.d -o CMakeFiles/sdi_pal_pro.dir/src/pcie/pcie_reg_rw.c.o -c /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/pcie/pcie_reg_rw.c
 
 CMakeFiles/sdi_pal_pro.dir/src/pcie/pcie_reg_rw.c.i: cmake_force
@@ -394,7 +408,7 @@ CMakeFiles/sdi_pal_pro.dir/src/pcie/pcie_reg_rw.c.s: cmake_force
 CMakeFiles/sdi_pal_pro.dir/src/fifo/stream_fifo.c.o: CMakeFiles/sdi_pal_pro.dir/flags.make
 CMakeFiles/sdi_pal_pro.dir/src/fifo/stream_fifo.c.o: ../src/fifo/stream_fifo.c
 CMakeFiles/sdi_pal_pro.dir/src/fifo/stream_fifo.c.o: CMakeFiles/sdi_pal_pro.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_24) "Building C object CMakeFiles/sdi_pal_pro.dir/src/fifo/stream_fifo.c.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building C object CMakeFiles/sdi_pal_pro.dir/src/fifo/stream_fifo.c.o"
 	/home/wang/ZMHT-Tool/rk3588_toolchain/bin/aarch64-linux-gcc $(C_DEFINES) $(C_INCLUDES) $(C_FLAGS) -MD -MT CMakeFiles/sdi_pal_pro.dir/src/fifo/stream_fifo.c.o -MF CMakeFiles/sdi_pal_pro.dir/src/fifo/stream_fifo.c.o.d -o CMakeFiles/sdi_pal_pro.dir/src/fifo/stream_fifo.c.o -c /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/fifo/stream_fifo.c
 
 CMakeFiles/sdi_pal_pro.dir/src/fifo/stream_fifo.c.i: cmake_force
@@ -408,7 +422,7 @@ CMakeFiles/sdi_pal_pro.dir/src/fifo/stream_fifo.c.s: cmake_force
 CMakeFiles/sdi_pal_pro.dir/src/gpu/gpu_interface.cpp.o: CMakeFiles/sdi_pal_pro.dir/flags.make
 CMakeFiles/sdi_pal_pro.dir/src/gpu/gpu_interface.cpp.o: ../src/gpu/gpu_interface.cpp
 CMakeFiles/sdi_pal_pro.dir/src/gpu/gpu_interface.cpp.o: CMakeFiles/sdi_pal_pro.dir/compiler_depend.ts
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_25) "Building CXX object CMakeFiles/sdi_pal_pro.dir/src/gpu/gpu_interface.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Building CXX object CMakeFiles/sdi_pal_pro.dir/src/gpu/gpu_interface.cpp.o"
 	/home/wang/ZMHT-Tool/rk3588_toolchain/bin/aarch64-linux-g++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -MD -MT CMakeFiles/sdi_pal_pro.dir/src/gpu/gpu_interface.cpp.o -MF CMakeFiles/sdi_pal_pro.dir/src/gpu/gpu_interface.cpp.o.d -o CMakeFiles/sdi_pal_pro.dir/src/gpu/gpu_interface.cpp.o -c /home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/src/gpu/gpu_interface.cpp
 
 CMakeFiles/sdi_pal_pro.dir/src/gpu/gpu_interface.cpp.i: cmake_force
@@ -440,6 +454,7 @@ sdi_pal_pro_OBJECTS = \
 "CMakeFiles/sdi_pal_pro.dir/src/mpp/utils/mpp_opt.c.o" \
 "CMakeFiles/sdi_pal_pro.dir/src/mpp/utils/utils.c.o" \
 "CMakeFiles/sdi_pal_pro.dir/src/common/ringbuffer.c.o" \
+"CMakeFiles/sdi_pal_pro.dir/src/common/stream_lifecycle.c.o" \
 "CMakeFiles/sdi_pal_pro.dir/src/common/xutils.c.o" \
 "CMakeFiles/sdi_pal_pro.dir/src/pcie/dma_utils.c.o" \
 "CMakeFiles/sdi_pal_pro.dir/src/pcie/pcie_impl.c.o" \
@@ -469,6 +484,7 @@ sdi_pal_pro: CMakeFiles/sdi_pal_pro.dir/src/mpp/utils/mpp_enc_roi_utils.c.o
 sdi_pal_pro: CMakeFiles/sdi_pal_pro.dir/src/mpp/utils/mpp_opt.c.o
 sdi_pal_pro: CMakeFiles/sdi_pal_pro.dir/src/mpp/utils/utils.c.o
 sdi_pal_pro: CMakeFiles/sdi_pal_pro.dir/src/common/ringbuffer.c.o
+sdi_pal_pro: CMakeFiles/sdi_pal_pro.dir/src/common/stream_lifecycle.c.o
 sdi_pal_pro: CMakeFiles/sdi_pal_pro.dir/src/common/xutils.c.o
 sdi_pal_pro: CMakeFiles/sdi_pal_pro.dir/src/pcie/dma_utils.c.o
 sdi_pal_pro: CMakeFiles/sdi_pal_pro.dir/src/pcie/pcie_impl.c.o
@@ -477,7 +493,7 @@ sdi_pal_pro: CMakeFiles/sdi_pal_pro.dir/src/fifo/stream_fifo.c.o
 sdi_pal_pro: CMakeFiles/sdi_pal_pro.dir/src/gpu/gpu_interface.cpp.o
 sdi_pal_pro: CMakeFiles/sdi_pal_pro.dir/build.make
 sdi_pal_pro: CMakeFiles/sdi_pal_pro.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_26) "Linking CXX executable sdi_pal_pro"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/home/wang/ZMHT-Project/ZMHT-SDI-PAL/ZMHT-SDI-PAL/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_27) "Linking CXX executable sdi_pal_pro"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/sdi_pal_pro.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.

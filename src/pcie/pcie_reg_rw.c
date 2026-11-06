@@ -81,7 +81,7 @@
 // #include "pcie_impl.h"
 #include "pcie_reg_rw.h"
 
-static int gs_regrw_fd[3] = {0};
+static int gs_regrw_fd[3] = {-1, -1, -1};
 static int bar_device_num = 2;
 extern pthread_mutex_t send_mutex;
 
@@ -166,9 +166,15 @@ void pcie_read_buf(void* addr, unsigned int offset, unsigned char * buf,unsigned
 }
 int pcie_bar_open(int bar_x)
 {
+	if (bar_x < 0 || bar_x >= 3)
+		return -EINVAL;
 	SetBarDevice(bar_x);
 	const char *device = GetBarDevice();
 	printf("device name :%s\n",device);
+	if (gs_regrw_fd[bar_x] >= 0) {
+		close(gs_regrw_fd[bar_x]);
+		gs_regrw_fd[bar_x] = -1;
+	}
 	if ((gs_regrw_fd[bar_x] = open(device, O_RDWR | O_SYNC)) == -1) {
 		printf("character device %s opened failed: %s.\n",
 			device, strerror(errno));
@@ -227,8 +233,12 @@ void pcie_bar_munmap(void* user_addr, unsigned int size)
 
 void pcie_bar_close(void)
 {
-	close(gs_regrw_fd[0]);
-	close(gs_regrw_fd[2]);
+	for (int i = 0; i < 3; i++) {
+		if (gs_regrw_fd[i] >= 0) {
+			close(gs_regrw_fd[i]);
+			gs_regrw_fd[i] = -1;
+		}
+	}
 	return ;
 }
 

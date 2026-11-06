@@ -37,6 +37,7 @@
 #include "xutils.h"
 #include "osd_engine.h"
 #include "crop_engine.h"
+#include "stream_lifecycle.h"
 
 #define SLOGI printf
 
@@ -54,7 +55,7 @@
 #define AXIFIFO_HEAD_SIZE (2)
 #define AXIFIFO_LENGH_SIZE (4)
 
-#define BUILD_TIME 0x20251224
+#define BUILD_TIME 0x20261106
 #define VERSION 0x10000001
 
 #define FILE_NAME_MAX_SIZE 256
@@ -114,6 +115,10 @@ static unsigned int upgrade_state;
 static unsigned char* cmd_buff = NULL;
 static cfg_info_t* cfg_info = NULL;
 static uint8_t* osd_tmp_info = NULL;
+static unsigned char capture_resources_ready[MPP_ENCODE_NTHREAD_MAX];
+static pthread_t g_fifo_recv_tid;
+static volatile int g_fifo_recv_stop;
+static uint64_t g_stop_retry_at_ms;
 
 static char * ZPK_PWD  = "/userdata/zpk/";
 static unsigned char* zpk_upgrade_state_patch = "/tmp/sd_update";
@@ -323,26 +328,60 @@ static void request_type2_mpp_destory(int chn)
 }
 
 int EncodeStart(int chn){
-    if(g_axififo_info->rk_enable[chn%MPP_ENCODE_NTHREAD_MAX]) {
-        int ret = rga_chn_image_init(chn);
-        if (ret != 0) {
-            SLOGI("rga_chn_image_init error \n");
-            goto err_4;
-        }
-        sleep(1);
+    int ret;
+    unsigned int mpp_chn = chn % MPP_ENCODE_NTHREAD_MAX;
+    data_stream_t *data_stream = data_stream_get();
+    fpga_chn_image_info_t *chn_image = data_stream->chn_image[chn];
+    osd_data_stream_t *osd_stream = GetOsdDataStream();
+    GPU_Frame_st *gpu_stream = gpu_data_stream_get();
+    Crop_Frame_st *crop_stream = crop_data_stream_get();
+    mpi_encode_info_t *mpi_encode = mpi_encode_info_get();
+
+    if (stream_state(chn) == STREAM_RUNNING)
+        return 0;
+    if (!g_axififo_info->rk_enable[mpp_chn] ||
+        !capture_resources_ready[mpp_chn]) {
+        SLOGI("[ERROR] %s chn:%d is not configured\n", __func__, chn);
+        return 1;
+    }
+
+    ret = stream_wait_ready(chn, STREAM_READY_ALL, STREAM_READY_TIMEOUT_MS);
+    if (ret != 0) {
+        SLOGI("[ERROR] worker ready timeout chn:%d ret:%d\n", chn, ret);
+        return 1;
+    }
+
+    ringbuffer_reset(chn_image->rga_data_rb);
+    ringbuffer_reset(chn_image->resize_data_rb);
+    ringbuffer_reset(chn_image->pcie_data_rb);
+    ringbuffer_reset(osd_stream->chn_info[chn].osd_rb);
+    ringbuffer_reset(gpu_stream->osd_data_rb[chn]);
+    ringbuffer_reset(gpu_stream->mpp_data_rb[mpp_chn]);
+    ringbuffer_reset(crop_stream->crop_data_rb[chn]);
+    ringbuffer_reset(mpi_encode->mpp_encode_rb[mpp_chn]);
+    int dma_prepared = 0;
+    if (!pcie_dma_is_active() && pcie_dma_prepare_start() != 0) {
+        SLOGI("[ERROR] PCIe DMA prepare start failed chn:%d\n", chn);
+        return 1;
+    }
+    dma_prepared = !pcie_dma_is_active();
+
 #if TEST
 #else
-        pcie_set_rk_enable();
+    pcie_set_rk_enable();
 #endif
+    ret = stream_start(chn);
+    if (ret != 0) {
+        SLOGI("[ERROR] stream_start chn:%d ret:%d\n", chn, ret);
+        if (dma_prepared) {
+            pcie_set_rk_disable();
+            pcie_dma_pause();
+        }
+        return 1;
     }
-    // if(g_axififo_info->pc_enable) {
-    //     pcie_set_pc_enable(1);
-    // }
+    if (dma_prepared)
+        pcie_dma_resume();
     return 0;
-err_4:
-    rga_pthread_chn_destory(chn);
-    data_stream_chn_data_destory(chn);
-    return 1;
 }
 
 int DecodeStart(int chn){
@@ -378,15 +417,25 @@ int DecodeStop(int chn){
     }
     picture_info->send_flag = 1;
     mpp_info->decode_state = 1;
-    sleep(1);
-    MpiDecodeDestroy(chn);
-    rga_pthread_chn_destory(chn);
+    if (picture_info->picture_created) {
+        if (stream_join_thread(picture_info->pht_picture, STREAM_STOP_TIMEOUT_MS) != 0)
+            return A818_STREAM_STOP_TIMEOUT;
+        picture_info->picture_created = 0;
+    }
+    if (MpiDecodeDestroy(chn) != 0)
+        return A818_STREAM_STOP_TIMEOUT;
+    if (rga_pthread_chn_destory(chn) != 0)
+        return A818_STREAM_STOP_TIMEOUT;
+    if (gui_osd_overlapped_chn_destory(chn) != 0)
+        return A818_STREAM_STOP_TIMEOUT;
+    if (crop_chn_destory(chn) != 0)
+        return A818_STREAM_STOP_TIMEOUT;
+    if (writePL_chn_destory(chn) != 0)
+        return A818_STREAM_STOP_TIMEOUT;
+
     data_stream_chn_data_destory(chn);
-    gui_osd_overlapped_chn_destory(chn);
     gpu_osd_chn_image_destory(chn);
-    crop_chn_destory(chn);
     crop_chn_image_destory(chn);
-    writePL_chn_destory(chn);
 
     vfifo_reg_reset(chn-1);
 	memset(&data_stream->image_chn_info[chn]->osd_info, 0x0, sizeof(osd_image_info_t));
@@ -394,62 +443,70 @@ int DecodeStop(int chn){
     return 0;
 }
 
-/***********************************************************************/
-/**************************axififo_frame_request_type9******************/
-/*
-	函数: void clean_system_buff_cache(void)
-	作用: 释放系统缓存
-	参数:
-		无
-	返回值:
-		无
-*/
-void clean_system_buff_cache(void)
-{
-	char cmd[128];
-	sprintf(cmd, "echo %d > /proc/sys/vm/drop_caches", 1);
-	system(cmd);
-	usleep(200*1000);
-
-	sprintf(cmd, "echo %d > /proc/sys/vm/drop_caches", 2);
-	system(cmd);
-	usleep(200*1000);
-
-	sprintf(cmd, "echo %d > /proc/sys/vm/drop_caches", 3);
-	system(cmd);
-	usleep(200*1000);
-	SLOGI("[Debug] %s ok \n", __func__);
-}
-
 int EncodeStop(int chn)
 {
-	fpga_chn_image_info_t* chn_image;
-	data_stream_t *data_stream = data_stream_get();
-	mpi_encode_info_t* mpi_encode = mpi_encode_info_get();
+    unsigned int mpp_chn = chn % MPP_ENCODE_NTHREAD_MAX;
+    data_stream_t *data_stream = data_stream_get();
+    image_chn_info_t *image_info = data_stream->image_chn_info[chn];
+    fpga_chn_image_info_t *chn_image = data_stream->chn_image[chn];
+    mpi_encode_info_t *mpi_encode = mpi_encode_info_get();
+    osd_data_stream_t *osd_stream = GetOsdDataStream();
+    GPU_Frame_st *gpu_stream = gpu_data_stream_get();
+    Crop_Frame_st *crop_stream = crop_data_stream_get();
+    int ret = 0;
 
-	pcie_fpga_device_stop();
-	sleep(1);
+    if (stream_state(chn) == STREAM_STOPPED &&
+        !capture_resources_ready[mpp_chn])
+        return 0;
 
-    rga_pthread_chn_destory(chn);
+    stream_request_stop(chn);
+    pcie_fpga_device_stop();
+
+    /* Close admission first, then wake every channel worker. */
+    image_info->rga_info.rga_flag = 1;
+    osd_stream->chn_info[chn].osd_flag = 1;
+    osd_stream->chn_info[chn].over_flag = 1;
+    crop_stream->crop_image[chn].crop_flag = 0;
+    __atomic_store_n(&mpi_encode->image_encode[mpp_chn].encode_flag,
+                     1, __ATOMIC_RELEASE);
+
+    if (stream_wait_idle(chn, STREAM_STOP_TIMEOUT_MS) != 0) {
+        SLOGI("[ERROR] %s chn:%d inflight timeout\n", __func__, chn);
+        return A818_STREAM_STOP_TIMEOUT;
+    }
+
+    if (rga_pthread_chn_destory(chn) != 0)
+        ret = A818_STREAM_STOP_TIMEOUT;
+    if (gui_osd_overlapped_chn_destory(chn) != 0)
+        ret = A818_STREAM_STOP_TIMEOUT;
+    if (mpp_encode_chn_destory(chn) != 0)
+        ret = A818_STREAM_STOP_TIMEOUT;
+    if (crop_chn_destory(chn) != 0)
+        ret = A818_STREAM_STOP_TIMEOUT;
+    if (ret != 0)
+        return ret;
+
+    /* All consumers are parked; discard stale descriptors before release. */
+    ringbuffer_reset(chn_image->rga_data_rb);
+    ringbuffer_reset(chn_image->resize_data_rb);
+    ringbuffer_reset(chn_image->pcie_data_rb);
+    ringbuffer_reset(osd_stream->chn_info[chn].osd_rb);
+    ringbuffer_reset(gpu_stream->osd_data_rb[chn]);
+    ringbuffer_reset(gpu_stream->mpp_data_rb[mpp_chn]);
+    ringbuffer_reset(crop_stream->crop_data_rb[chn]);
+    ringbuffer_reset(mpi_encode->mpp_encode_rb[mpp_chn]);
+
     data_stream_chn_data_destory(chn);
-    gui_osd_overlapped_chn_destory(chn);
     gpu_osd_chn_image_destory(chn);
-    crop_chn_destory(chn);
     crop_chn_image_destory(chn);
 
-    /*释放申请的编码资源*/
-    mpp_encode_chn_destory(chn);
-	SLOGI("[Debug] %s mpp_encode_chn_destory ok \n", __func__);
-	usleep(100*1000);
+    capture_resources_ready[mpp_chn] = 0;
+    g_axififo_info->rk_enable[mpp_chn] = 0;
+    mpi_encode->encode_size_max = MPP_OUTPUT_FRAME_SIZE;
+    memset(&image_info->osd_info, 0x0, sizeof(osd_image_info_t));
 
-	g_axififo_info->rk_enable[chn%MPP_ENCODE_NTHREAD_MAX] = 0;
-	// g_axififo_info->pc_enable = 0;
-
-	mpi_encode->encode_size_max = MPP_OUTPUT_FRAME_SIZE;
-
-	memset(&data_stream->image_chn_info[chn]->osd_info, 0x0, sizeof(osd_image_info_t));
-	clean_system_buff_cache();
-	// pcie_fpga_reg_reset();
+    if (stream_finish_stop(chn) != 0)
+        return A818_STREAM_STOP_TIMEOUT;
     return 0;
 }
 
@@ -610,6 +667,17 @@ static unsigned int axififo_frame_request_type2(unsigned char* frame_buff, unsig
           rga_info->osd_width, rga_info->osd_height, rga_info->out_width, rga_info->out_height,
           rga_info->rotate_type, rga_info->resize, rga_info->crop_flag,mpp_info->out_type, rga_info->pixel_byte, rga_info->odd_even_transform);
 
+    if (stream_state(chn) == STREAM_STOPPING ||
+        stream_state(chn) == STREAM_FAULT)
+        return COMD_PROC_FAILED;
+    if (capture_resources_ready[chn%MPP_ENCODE_NTHREAD_MAX])
+        return COMD_PROC_SUCCESS;
+    ret = stream_configure(chn);
+    if (ret != 0 && ret != -EBUSY) {
+        SLOGI("[ERROR] stream_configure chn:%d ret:%d\n", chn, ret);
+        return COMD_PROC_FAILED;
+    }
+
 	/*判断输出的类型*/
 	switch(mpp_info->out_type){
 		case NULL_OUT_TYPE:
@@ -656,13 +724,20 @@ static unsigned int axififo_frame_request_type2(unsigned char* frame_buff, unsig
             SLOGI("request_type2_mpp_init ERROR \n");
             goto err_4;
         }
-        usleep(10*1000);
+        ret = rga_chn_image_init(rga_info->rga_chn);
+        if (ret != 0) {
+            SLOGI("rga_chn_image_init ERROR \n");
+            goto err_5;
+        }
 
 		printf("rgb rk_enable\n");
 		g_axififo_info->rk_enable[chn%MPP_ENCODE_NTHREAD_MAX] = 1;
+        capture_resources_ready[chn%MPP_ENCODE_NTHREAD_MAX] = 1;
 	}
 	return COMD_PROC_SUCCESS;
 
+err_5:
+    rga_pthread_chn_destory(rga_info->rga_chn);
 err_4:
     request_type2_mpp_destory(rga_info->rga_chn);
 err_3:
@@ -849,14 +924,17 @@ int axififo_frame_request_type10(unsigned char* frame_buff, unsigned int frame_s
     int chn = frame_buff[1];
     if(chn >= MPP_DECODE_NTHREAD_MAX)
     {
-        DecodeStop(chn);
+        ret = DecodeStop(chn);
     }
     else
     {
-        EncodeStop(chn);
+        ret = EncodeStop(chn);
     }
-
-    return COMD_PROC_SUCCESS;
+    if (ret == 0)
+        return COMD_PROC_SUCCESS;
+    if (ret == A818_STREAM_STOP_TIMEOUT)
+        return A818_STREAM_STOP_TIMEOUT;
+    return COMD_PROC_FAILED;
     error:
         return COMD_PROC_FAILED;
 #endif
@@ -1350,6 +1428,7 @@ void axififo_frame_data_analyse(unsigned char* frame_buffer, unsigned int frame_
 {
     unsigned int cmd_ok;
     unsigned char swap1,swap2;
+    uint64_t op_started_us = stream_monotonic_us();
 
     cmd_ok = COMD_PROC_FAILED;
 
@@ -1495,6 +1574,16 @@ void axififo_frame_data_analyse(unsigned char* frame_buffer, unsigned int frame_
             break;
     }
     axififo_send(frame_buffer[0], cmd_ok);
+    if (frame_buffer[0] == UARTLIST_REQUEST_TYPE2 ||
+        frame_buffer[0] == UARTLIST_REQUEST_TYPE9 ||
+        frame_buffer[0] == UARTLIST_REQUEST_TYPE10) {
+        uint64_t op_finished_us = stream_monotonic_us();
+        SLOGI("[PERF] TYPE%u chn=%u rc=0x%x started=%" PRIu64
+              " finished=%" PRIu64 " elapsed=%" PRIu64 " us\n",
+              frame_buffer[0], frame_size > 1 ? frame_buffer[1] : 0,
+              cmd_ok, op_started_us, op_finished_us,
+              op_finished_us - op_started_us);
+    }
 }
 /******************************************************************************************/
 
@@ -1562,7 +1651,18 @@ static void *axififo_recv_data_pthread(void* parameter)
     printf("axififo_recv_data_pthread start\n");
 	u_int32_t recv_cnt;
     unsigned char RecvBuffer[AXIFIFO_RECV_DATA_SIZE];
-    while(1){
+    while(!g_fifo_recv_stop){
+        uint64_t now = stream_monotonic_ms();
+        if (now >= g_stop_retry_at_ms) {
+            for (int chn = 0; chn < MPP_ENCODE_NTHREAD_MAX; chn++) {
+                if (stream_state(chn) == STREAM_STOPPING) {
+                    int ret = EncodeStop(chn);
+                    if (ret != 0)
+                        SLOGI("[INFO] automatic stop retry chn:%d ret:%d\n", chn, ret);
+                }
+            }
+            g_stop_retry_at_ms = stream_monotonic_ms() + 100;
+        }
         recv_cnt = stream_fifo_read_data_len(&g_axififo_info->fifo_reg);
         if(recv_cnt > 0){
             printf("fifo have data\n");
@@ -1582,8 +1682,8 @@ static void *axififo_recv_data_pthread(void* parameter)
 int axififo_data_init(void)
 {
 	int ret;
-	pthread_t recv_tid;
     char temp[100] = {0};
+    g_fifo_recv_stop = 0;
     
 	g_axififo_info = (axififo_info_t*)malloc(sizeof(axififo_info_t));
 	if(NULL == g_axififo_info){
@@ -1618,7 +1718,7 @@ int axififo_data_init(void)
 #endif
     stream_fifo_reset(&g_axififo_info->fifo_reg);
 
-	ret = pthread_create(&recv_tid,NULL,&axififo_recv_data_pthread,NULL);
+	ret = pthread_create(&g_fifo_recv_tid,NULL,&axififo_recv_data_pthread,NULL);
     if (ret != 0) {
         printf("[ERROR] Create axififo_recv_data_pthread thread failed %d\n",__func__,ret);
         ret = A818_FIFO_RECV_THREAD;
@@ -1778,16 +1878,21 @@ int run_destory()
 	return 0;
 }
 
-#if 0
 void axififo_data_destory(void)
 {
-	int index;
-	if(NULL != g_axififo_info){
+    g_fifo_recv_stop = 1;
+    if (stream_join_thread(g_fifo_recv_tid, STREAM_STOP_TIMEOUT_MS) != 0) {
+        SLOGI("[ERROR] FIFO receive thread join timeout; resources retained\n");
+        return;
+    }
+    if (g_axififo_info) {
         pcie_bar_munmap(g_axififo_info->fifo_reg.cfg, FPGA_PCIE_AXIFIFO_LEN);
-		free(g_axififo_info);
-	}
+        free(g_axififo_info);
+        g_axififo_info = NULL;
+    }
 	return ;
 }
+#if 0
 int SendType4(){
     int ret = 0;
     unsigned char send_buf[] = {0xec,0x91,0x5,0x4,'t','e','s','t',0xc4};

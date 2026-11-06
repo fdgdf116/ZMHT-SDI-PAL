@@ -19,6 +19,7 @@
 #include "xutils.h"
 #include "log.h"
 #include "a818_error.h"
+#include "stream_lifecycle.h"
 
 #define ringbuffer_destory ringbuffer_deinit
 static Crop_Frame_st *g_crop_frame_stream = NULL;
@@ -91,7 +92,9 @@ int crop_chn_image_init(unsigned char chn)
 		memset(crop_image->crop_yuv_buffer[index], 0x0, (crop_width * crop_hight*2));
 	}
 
-	crop_chn_init(chn);
+	ret = crop_chn_init(chn);
+	if (ret != 0)
+		goto err_1;
 
 	return A818_SUCCESS;
 err_1:
@@ -131,16 +134,21 @@ void crop_chn_ringbuffer_is_empty(unsigned char chn)
 	返回值:
 			无
 */
-void crop_chn_destory(unsigned char chn)
+int crop_chn_destory(unsigned char chn)
 {
 	Crop_Frame_st* crop_stream = crop_data_stream_get();
-	crop_chn_ringbuffer_is_empty(chn);
-	if(crop_stream->crop_image[chn].crop_flag){
-		crop_stream->crop_image[chn].crop_flag = 0;
-		SLOGI("[Debug] %s chn:%d \n", __func__, chn);
-		xt_nanosleep(0, 100*1000);
+	crop_image_info_t *crop_image = &crop_stream->crop_image[chn];
+	crop_image->crop_flag = 0;
+	if (!crop_image->thread_created)
+		return 0;
+	if (stream_join_thread(crop_image->tid, STREAM_STOP_TIMEOUT_MS) == 0) {
+		crop_image->thread_created = 0;
+		SLOGI("[Debug] %s chn:%d joined\n", __func__, chn);
+		return 0;
+	} else {
+		SLOGI("[ERROR] %s chn:%d join timeout\n", __func__, chn);
+		return -1;
 	}
-	usleep(1000);
 }
 
 /*
@@ -241,7 +249,7 @@ void crop_stream_destory(void)
 			}
 		}
 		free(crop_frame_stream);
-		crop_frame_stream = NULL;
+		g_crop_frame_stream = NULL;
 	}
 
 	return ;
@@ -454,7 +462,15 @@ static void* crop_thread(void* parameter)
 	gpu_image = &gpu_frame_stream->gpu_image[crop_chn];
 	crop_image_info_t *crop_image = &crop_stream->crop_image[crop_chn];
 
-    uint8_t* send_buf = align_write_buf_get(crop_chn);
+    uint8_t* send_buf = NULL;
+    if (crop_chn >= MPP_ENCODE_NTHREAD_MAX) {
+        send_buf = align_write_buf_get(crop_chn);
+        if (!send_buf) {
+            SLOGI("[ERROR] %s chn:%d write buffer allocate failed\n",
+                  __func__, crop_chn);
+            return NULL;
+        }
+    }
 	unsigned char mpp_chn = crop_chn%MPP_ENCODE_NTHREAD_MAX;
 	if(crop_chn < MPP_ENCODE_NTHREAD_MAX)
 		rb_t = gpu_frame_stream->mpp_data_rb[mpp_chn];
@@ -470,6 +486,11 @@ static void* crop_thread(void* parameter)
 	while(1){
 		if(!crop_image->crop_flag){
 			break;
+		}
+		STREAM_WORK_GUARD(work, crop_chn, STREAM_WORK);
+		if (!work.active) {
+			usleep(500);
+			continue;
 		}
 		while(ringbuffer_is_empty(rb)){
 			time.tv_sec=0;
@@ -573,11 +594,15 @@ int crop_chn_init(unsigned char chn)
 
 	crop_image->chn = chn;
 	crop_image->crop_flag = 1;
+	if (crop_image->thread_created)
+		return 0;
 
 	ret = pthread_create(&crop_image->tid, NULL, &crop_thread, &crop_image->chn);
 	if (ret != 0) {
 		printf("[ERROR]:%s Create crop_thread_thread failed %d\n",__func__,ret);
 		return A818_CROP_THREAD;
 	}
+	crop_image->thread_created = 1;
+	stream_ready(chn, STREAM_READY_CROP);
 	return ret;
 }

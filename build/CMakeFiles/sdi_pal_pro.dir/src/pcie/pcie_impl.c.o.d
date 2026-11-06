@@ -83,6 +83,7 @@ CMakeFiles/sdi_pal_pro.dir/src/pcie/pcie_impl.c.o: \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/timex.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/types/struct_tm.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/types/struct_itimerspec.h \
+ /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/inttypes.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/sys/mman.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/mman.h \
  /home/wang/ZMHT-Tool/rk3588_toolchain/aarch64-buildroot-linux-gnu/sysroot/usr/include/bits/mman-map-flags-generic.h \

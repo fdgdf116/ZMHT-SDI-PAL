@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <sys/time.h>
 #include <signal.h>
+#include <inttypes.h>
 #include <linux/videodev2.h>
 
 #include "ringbuffer.h"
@@ -27,29 +28,24 @@
 #include "gpu_interface.h"
 #include "crop_engine.h"
 #include "mpi_encode.h"
+#include "stream_lifecycle.h"
+#include "a818_error.h"
 
 int rga_test_main();
+static volatile sig_atomic_t g_shutdown_requested;
 static void sig_handler(int sig)
 {
-    for(int chn = MPP_DECODE_NTHREAD_MAX; chn < DATA_CHANNEL_NUM_MAX; chn++){
-        DecodeStop(chn);
-    }
-    for(int chn = 0; chn < MPP_ENCODE_NTHREAD_MAX; chn++){
-        EncodeStop(chn);
-    }
-    crop_stream_destory();
-    data_stream_destory();
-    gui_osd_destory();
-    exit(0);
+    (void)sig;
+    g_shutdown_requested = 1;
 }
 #if 1
 int main(int argc, char *argv[])
 {
     int ret = 0; 
+    uint64_t open_started = stream_monotonic_us();
     printf("Test Mpp...\n");
     signal(SIGPIPE, SIG_IGN);
     signal(SIGINT, sig_handler);
-    signal(SIGKILL, sig_handler);
     signal(SIGTERM, sig_handler);
 
     ret = gpu_lib_init();
@@ -113,14 +109,59 @@ int main(int argc, char *argv[])
         goto err_8;
     }
     printf("init finished!!!\n");
+    {
+        uint64_t open_finished = stream_monotonic_us();
+        SLOGI("[PERF] board open ready: started=%" PRIu64
+              " finished=%" PRIu64 " elapsed=%" PRIu64 " us\n",
+              open_started, open_finished, open_finished - open_started);
+    }
 
 #if TEST
 	pcie_fpga_reg_reset();
 	run_test();
 #endif
 
-    while(1){
-        sleep(1);
+    while(!g_shutdown_requested){
+        usleep(100*1000);
+    }
+    {
+        uint64_t close_started = stream_monotonic_us();
+        int capture_stopped = 1;
+        int stop_ret;
+        SLOGI("[PERF] board close begin\n");
+        for (int chn = MPP_DECODE_NTHREAD_MAX; chn < DATA_CHANNEL_NUM_MAX; chn++) {
+            stop_ret = DecodeStop(chn);
+            if (stop_ret == A818_STREAM_STOP_TIMEOUT)
+                capture_stopped = 0;
+        }
+        for (int chn = 0; chn < MPP_ENCODE_NTHREAD_MAX; chn++) {
+            stop_ret = EncodeStop(chn);
+            if (stop_ret != 0)
+                capture_stopped = 0;
+        }
+        if (!capture_stopped) {
+            SLOGI("[ERROR] board close aborted: capture workers did not stop; "
+                  "resources retained and process will exit\n");
+            return A818_STREAM_STOP_TIMEOUT;
+        }
+        axififo_data_destory();
+        int pcie_stopped = pcie_fpga_data_destory() == 0;
+        crop_stream_destory();
+        mpp_encode_destory();
+        gui_osd_destory();
+        data_stream_destory();
+        if (pcie_stopped)
+            fpga_pcie_device_close();
+        else
+            SLOGI("[ERROR] PCIe workers still active; BAR left mapped\n");
+        gpu_lib_destory();
+        {
+            uint64_t close_finished = stream_monotonic_us();
+            SLOGI("[PERF] board close complete: started=%" PRIu64
+                  " finished=%" PRIu64 " elapsed=%" PRIu64 " us\n",
+                  close_started, close_finished, close_finished - close_started);
+        }
+        return 0;
     }
 err_8:
     crop_stream_destory();

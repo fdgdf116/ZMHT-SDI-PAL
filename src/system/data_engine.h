@@ -30,6 +30,7 @@ typedef struct {
     u_int32_t height;
     u_int32_t fps;
     u_int32_t send_flag;
+    unsigned char picture_created;
     u_int8_t* pitture_buf;
     FILE* pitture_fp;
     char picture_name[256];
@@ -55,6 +56,7 @@ typedef struct {
     u_int32_t width;
     u_int32_t height;
     int decode_state;
+    unsigned char decode_thread_created;
     MpiDecLoopData dec_data;
 }mpp_decode_info_t ;
 #pragma pack(1)
@@ -107,6 +109,7 @@ typedef struct {
 typedef struct {
     pthread_t pht_up;
     u_int16_t send_flag;
+    unsigned char send_created;
     u_int16_t out_width;
     u_int16_t out_height;
 }pcie_info_t ;

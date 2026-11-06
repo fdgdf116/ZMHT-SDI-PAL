@@ -25,6 +25,8 @@ struct osd_chn_info_t{
   pthread_t over_tid;
   unsigned char osd_flag;
   unsigned char over_flag;
+  unsigned char osd_created;
+  unsigned char over_created;
   ring_buffer_t *osd_rb;
 };
 typedef struct {
@@ -41,7 +43,7 @@ void gui_osd_destory(void);
 osd_data_stream_t* GetOsdDataStream();
 void gui_osd_ringbuffer_is_empty(int chn);
 int gui_osd_overlapped_chn_init(unsigned char chn);
-void gui_osd_overlapped_chn_destory(unsigned char chn);
+int gui_osd_overlapped_chn_destory(unsigned char chn);
 int gpu_osd_chn_image_init(unsigned char chn);
 void gpu_osd_chn_image_destory(unsigned char chn);
 #ifdef __cplusplus

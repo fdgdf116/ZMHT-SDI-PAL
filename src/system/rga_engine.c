@@ -21,12 +21,13 @@
 #include "mpi_decode.h"
 #include "a818_error.h"
 #include "log.h"
+#include "stream_lifecycle.h"
 
 static char *rga_test_file = "output.yuv";
 static char *cvtcolor_test_file = "/userdata/sda1/cvtcolor_1920x1080.raw";
+static unsigned char rga_thread_created[DATA_CHANNEL_NUM_MAX];
 
 void* rga_deal(void* arg){
-    pthread_detach(pthread_self());
     int ret;
     int chn = *(int *)arg;
     data_stream_t* data_stream = data_stream_get();
@@ -44,9 +45,15 @@ void* rga_deal(void* arg){
     ring_buffer_t *rb_out = NULL;
 
     printf("chn:[%d] %s start\n", chn, __func__);
+    stream_ready(chn, STREAM_READY_RGA);
     image_frame_info_t frame_info = {0};
     while (!image_chn_info->rga_info.rga_flag)
     {
+        STREAM_WORK_GUARD(work, chn, STREAM_WORK);
+        if (!work.active) {
+            usleep(500);
+            continue;
+        }
         while(ringbuffer_is_empty(rb_in)){
             // printf("InPutRingBuffer is_empty\n");
             time_val.tv_sec=0;
@@ -144,6 +151,9 @@ unsigned int rga_chn_image_init(unsigned char chn)
     image_chn_info_t* image_chn_info = data_stream->image_chn_info[chn];
     fpga_chn_image_info_t *chn_image = data_stream->chn_image[chn];
     rga_param_t* rga_info = &image_chn_info->rga_info;
+    if (rga_thread_created[chn])
+        return A818_SUCCESS;
+
 	chn_image->chn = chn;
 	chn_image->frame_num = 0;
     unsigned int w_stride = rga_info->src_width%16 == 0 ? rga_info->src_width : (rga_info->src_width/16 + 1)*16;
@@ -261,6 +271,7 @@ unsigned int rga_chn_image_init(unsigned char chn)
       ret_val = A818_DATA_LOW_CHN_THREAD;
       goto err_5;
     }
+    rga_thread_created[chn] = 1;
     SLOGI("[Debug] %s chn:%d \n", __func__, chn);
 	return A818_SUCCESS;
 
@@ -291,26 +302,21 @@ err_4:
 	return ret_val;
 }
 
-void rga_pthread_chn_destory(unsigned char chn)
+int rga_pthread_chn_destory(unsigned char chn)
 {
     data_stream_t *data_stream = data_stream_get();
     image_chn_info_t* image_chn_info = data_stream->image_chn_info[chn];
-    ring_buffer_t *rb_in = GetInPutRingBufferPt(chn);
-    struct timeval time_val;
-    image_frame_info_t frame_info = {0};
+    if (!rga_thread_created[chn])
+        return 0;
 
-    while(!ringbuffer_is_empty(rb_in)){
-        ringbuffer_get(rb_in, (uint8_t *)&frame_info, sizeof(image_frame_info_t));
-        // printf("InPutRingBuffer is_empty\n");
-        time_val.tv_sec=0;
-        time_val.tv_usec=(1000);
-        select(0,NULL,NULL,NULL,&time_val);
-    }
-    if(!image_chn_info->rga_info.rga_flag){
-        //pthread_cancel(gs_osd_stream->chn_info[chn].osd_tid);
-        image_chn_info->rga_info.rga_flag = 1;
-        SLOGI("[Debug] %s chn:%d \n", __func__, chn);
-        xt_nanosleep(0, 1000*1000);
+    image_chn_info->rga_info.rga_flag = 1;
+    if (stream_join_thread(image_chn_info->pht_rga, STREAM_STOP_TIMEOUT_MS) == 0) {
+        rga_thread_created[chn] = 0;
+        SLOGI("[Debug] %s chn:%d joined\n", __func__, chn);
+        return 0;
+    } else {
+        SLOGI("[ERROR] %s chn:%d join timeout\n", __func__, chn);
+        return -1;
     }
 }
 
