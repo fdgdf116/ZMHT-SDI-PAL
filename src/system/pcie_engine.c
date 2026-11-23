@@ -1492,7 +1492,7 @@ int pcie_fpga_data_init(void)
 
 	// pcie_fpga_reg_reset();
     SLOGI("[%s] pcie init ok \n", __func__);
-    usleep(200*1000);
+    usleep(150*1000);
 
     return A818_SUCCESS;
 err_5:

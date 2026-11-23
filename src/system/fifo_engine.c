@@ -54,8 +54,8 @@
 #define AXIFIFO_HEAD_SIZE (2)
 #define AXIFIFO_LENGH_SIZE (4)
 
-#define BUILD_TIME 0x20251224
-#define VERSION 0x10000001
+#define BUILD_TIME 0x20261123
+#define VERSION 0x10000004
 
 #define FILE_NAME_MAX_SIZE 256
 #if TEST
@@ -329,7 +329,7 @@ int EncodeStart(int chn){
             SLOGI("rga_chn_image_init error \n");
             goto err_4;
         }
-        sleep(1);
+        usleep(150*1000);
 #if TEST
 #else
         pcie_set_rk_enable();
@@ -409,15 +409,12 @@ void clean_system_buff_cache(void)
 	char cmd[128];
 	sprintf(cmd, "echo %d > /proc/sys/vm/drop_caches", 1);
 	system(cmd);
-	usleep(200*1000);
 
 	sprintf(cmd, "echo %d > /proc/sys/vm/drop_caches", 2);
 	system(cmd);
-	usleep(200*1000);
 
 	sprintf(cmd, "echo %d > /proc/sys/vm/drop_caches", 3);
 	system(cmd);
-	usleep(200*1000);
 	SLOGI("[Debug] %s ok \n", __func__);
 }
 
@@ -428,7 +425,7 @@ int EncodeStop(int chn)
 	mpi_encode_info_t* mpi_encode = mpi_encode_info_get();
 
 	pcie_fpga_device_stop();
-	sleep(1);
+	usleep(150*1000);
 
     rga_pthread_chn_destory(chn);
     data_stream_chn_data_destory(chn);
@@ -440,7 +437,7 @@ int EncodeStop(int chn)
     /*释放申请的编码资源*/
     mpp_encode_chn_destory(chn);
 	SLOGI("[Debug] %s mpp_encode_chn_destory ok \n", __func__);
-	usleep(100*1000);
+	usleep(80*1000);
 
 	g_axififo_info->rk_enable[chn%MPP_ENCODE_NTHREAD_MAX] = 0;
 	// g_axififo_info->pc_enable = 0;
